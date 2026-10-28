@@ -165,9 +165,13 @@ export const AI_DECKS = [
     'young_centaur', 'academy_student', 'steppe_rider', 'nomad_falconer', 'bola_thrower', 'archivist',
     'beaked_healer', 'wild_gallop', 'mana_surge', 'centaur_warrior', 'steppe_wind', 'living_tome',
   ],
+  [ // Laberinto: minotauros, sueños y callejones sin salida
+    'maze_rat', 'dream_moth', 'young_minotaur', 'labyrinth_guide', 'nightmare_hound', 'sandman',
+    'maze_warden', 'night_mare', 'horn_charge', 'dead_end', 'gem_light', 'bad_dream',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto'];
