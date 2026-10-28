@@ -86,6 +86,7 @@ export const ACHIEVEMENTS = [
   { id: 'a_col300', text: 'Consigue 300 cartas distintas', stat: 'unique', goal: 300, coins: 600, fragments: 200 },
   { id: 'a_col400', text: 'Consigue 400 cartas distintas', stat: 'unique', goal: 400, coins: 800, fragments: 300 },
   { id: 'a_col500', text: 'Consigue 500 cartas distintas', stat: 'unique', goal: 500, coins: 1000, fragments: 500 },
+  { id: 'a_col600', text: 'Consigue 600 cartas distintas', stat: 'unique', goal: 600, coins: 1500, fragments: 800 },
   { id: 'a_leg1', text: 'Consigue una carta legendaria', stat: 'legendaries', goal: 1, coins: 100 },
   { id: 'a_leg10', text: 'Consigue 10 legendarias distintas', stat: 'legendaries', goal: 10, coins: 300, fragments: 100 },
   { id: 'a_foil1', text: 'Mejora una carta a brillante', stat: 'foils', goal: 1, coins: 50 },
@@ -160,9 +161,13 @@ export const AI_DECKS = [
     'hunter_apprentice', 'toucan', 'pickpocket', 'jungle_shaman', 'jaguar', 'ruins_explorer',
     'temple_guard', 'fence', 'jade_offering', 'smoke_bomb', 'river_crocodile', 'lockpick',
   ],
+  [ // Estepa: centauros veloces y halcones
+    'young_centaur', 'academy_student', 'steppe_rider', 'nomad_falconer', 'bola_thrower', 'archivist',
+    'beaked_healer', 'wild_gallop', 'mana_surge', 'centaur_warrior', 'steppe_wind', 'living_tome',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento'];
