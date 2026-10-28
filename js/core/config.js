@@ -186,9 +186,13 @@ export const AI_DECKS = [
     'satyr', 'spring_nymph', 'gnome_lookout', 'dervish', 'first_wish', 'amazon_archer',
     'dune_viper', 'oasis_merchant', 'caravan_camel', 'gorgon_acolyte', 'javelin', 'hoplite',
   ],
+  [ // Torneo: abejas, escuderos y monjes
+    'worker_bee', 'page_boy', 'beekeeper', 'drone_bee', 'herald', 'tourney_squire',
+    'novice_monk', 'staff_monk', 'jousting_knight', 'honey_jar', 'iron_fist', 'meditation',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo'];
