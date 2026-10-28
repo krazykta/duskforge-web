@@ -14,7 +14,7 @@ function showMenu() {
   app.innerHTML = `
     <section class="screen scenic">
       ${topBar()}
-      <h1 class="logo">DUSK<span>FORGE</span></h1>
+      <h1 class="logo"><img src="img/ui/logo.webp" alt="DUSKFORGE"></h1>
       <div class="profile">
         <div class="profile-row"><span>Nivel ${levelOf(p.xp)}</span><span class="sub">${p.wins} V · ${p.losses} D</span></div>
         <div class="xpbar" title="Experiencia"><div style="width:${(xpIntoLevel(p.xp) / ECONOMY.xpPerLevel) * 100}%"></div></div>
