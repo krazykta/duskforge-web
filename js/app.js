@@ -23,7 +23,7 @@ function showMenu() {
       <button class="btn gold big-play" data-go="battle">⚔️ Jugar</button>
       <nav class="tiles">
         <button class="tile" data-go="collection"><img src="img/ui/icon_collection.webp" alt="">Colección</button>
-        <button class="tile" data-go="deck"><img src="img/ui/icon_deck.webp" alt="">Mazo</button>
+        <button class="tile" data-go="deck"><img src="img/ui/icon_deck.webp" alt="">Mazos</button>
         <button class="tile" data-go="shop"><img src="img/ui/icon_shop.webp" alt="">Tienda</button>
         <button class="tile" data-go="missions"><img src="img/ui/icon_missions.webp" alt="">Misiones${missionBadge()}</button>
         <button class="tile" data-go="settings"><img src="img/ui/icon_settings.webp" alt="">Ajustes</button>
