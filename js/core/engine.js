@@ -64,7 +64,7 @@ function startTurn(state, p, drawCard = true) {
   state.turnNumber++;
   pl.maxEnergy = Math.min(state.rules.maxEnergy, pl.maxEnergy + 1);
   pl.energy = pl.maxEnergy;
-  pl.board.forEach((u) => (u.ready = true));
+  pl.board.forEach((u) => { u.ready = !u.frozen; u.frozen = false; u.furyUsed = false; });
   emit(state, { type: 'turn', player: p });
   if (drawCard) draw(state, p);
   checkGameOver(state);
@@ -80,12 +80,13 @@ function makeUnit(state, id) {
   return {
     uid: state.nextUid++, id, atk: c.atk, hp: c.hp, maxHp: c.hp,
     guard: kw.includes('guard'), swift: kw.includes('swift'), shield: kw.includes('shield'), drain: kw.includes('drain'),
-    ready: kw.includes('swift'),
+    poison: kw.includes('poison'), stealth: kw.includes('stealth'), fury: kw.includes('fury'),
+    ready: kw.includes('swift'), frozen: false, furyUsed: false,
   };
 }
 
-// Devuelve el daño realmente infligido (0 si lo anula un escudo).
-function damage(state, target, amount) {
+// Devuelve el daño realmente infligido (0 si lo anula un escudo). source: criatura que golpea (para Letal).
+function damage(state, target, amount, source = null) {
   if (amount <= 0) return 0;
   if (target.uid === HERO) {
     state.players[target.player].hp -= amount;
@@ -100,6 +101,7 @@ function damage(state, target, amount) {
     return 0;
   }
   u.hp -= amount;
+  if (source?.poison && u.hp > 0) u.hp = 0;
   emit(state, { type: 'damage', ...target, amount });
   return amount;
 }
@@ -175,6 +177,45 @@ function applyEffect(state, p, effect, target, source) {
     case 'buffSelf':
       if (source) { source.atk += a; emit(state, { type: 'buff', player: p, uid: source.uid }); }
       break;
+    case 'damageAll':
+      state.players.forEach((pl, q) => [...pl.board].forEach((u) => damage(state, { player: q, uid: u.uid }, a)));
+      break;
+    case 'destroy': {
+      const u = target && findUnit(state, target.player, target.uid);
+      if (u) { emit(state, { type: 'damage', ...target, amount: u.hp }); u.hp = 0; } // atraviesa el Escudo
+      break;
+    }
+    case 'freeze': {
+      const u = target && findUnit(state, target.player, target.uid);
+      if (u) { u.frozen = true; u.ready = false; emit(state, { type: 'freeze', ...target }); }
+      break;
+    }
+    case 'buffAll':
+      for (const u of state.players[p].board) {
+        if (u === source) continue;
+        u.atk += a; u.hp += a; u.maxHp += a;
+        emit(state, { type: 'buff', player: p, uid: u.uid });
+      }
+      break;
+    case 'energy': state.players[p].energy += a; break;
+    case 'damageHeal': if (target) heal(state, p, damage(state, target, a)); break;
+    case 'bounce': {
+      const owner = target && state.players[target.player];
+      const u = target && findUnit(state, target.player, target.uid);
+      if (!u) break;
+      owner.board = owner.board.filter((x) => x !== u);
+      emit(state, { type: 'bounce', ...target, card: u.id });
+      if (CARD_BY_ID[u.id].token) break; // las fichas desaparecen
+      if (owner.hand.length >= state.rules.maxHand) emit(state, { type: 'burn', player: target.player, card: u.id });
+      else owner.hand.push(u.id);
+      break;
+    }
+    case 'missiles':
+      for (let i = 0; i < a; i++) {
+        const pool = [...state.players[foe].board.filter((u) => u.hp > 0).map((u) => ({ player: foe, uid: u.uid })), { player: foe, uid: HERO }];
+        damage(state, pool[Math.floor(nextRandom(state) * pool.length)], 1);
+      }
+      break;
     default: throw new Error(`Efecto desconocido: ${effect.kind}`);
   }
 }
@@ -182,7 +223,8 @@ function applyEffect(state, p, effect, target, source) {
 // Objetivos válidos para un tipo de objetivo de efecto ("enemy", "enemyUnit", "allyUnit").
 export function effectTargets(state, p, targetType) {
   const foe = other(p);
-  const units = (q) => state.players[q].board.map((u) => ({ player: q, uid: u.uid }));
+  // El Sigilo protege de los objetivos del rival, no de los propios.
+  const units = (q) => state.players[q].board.filter((u) => q === p || !u.stealth).map((u) => ({ player: q, uid: u.uid }));
   if (targetType === 'enemy') return [...units(foe), { player: foe, uid: HERO }];
   if (targetType === 'enemyUnit') return units(foe);
   if (targetType === 'allyUnit') return units(p);
@@ -237,7 +279,7 @@ export function playCard(state, p, handIndex, target = null) {
     // Sinergia: criaturas que reaccionan a tus hechizos.
     for (const u of [...pl.board]) {
       const e = CARD_BY_ID[u.id].effect;
-      if (e && e.trigger === 'spell') applyEffect(state, p, e, null, u);
+      if (e && e.trigger === 'spell' && u.hp > 0) applyEffect(state, p, e, null, u);
     }
   }
   resolveDeaths(state);
@@ -248,7 +290,7 @@ export function attackTargets(state, p, uid) {
   const u = findUnit(state, p, uid);
   if (!u || !u.ready || u.atk <= 0 || state.turn !== p || state.winner !== null) return [];
   const foe = other(p);
-  const guards = state.players[foe].board.filter((x) => x.guard);
+  const guards = state.players[foe].board.filter((x) => x.guard && !x.stealth);
   if (guards.length) return guards.map((x) => ({ player: foe, uid: x.uid }));
   return effectTargets(state, p, 'enemy');
 }
@@ -258,11 +300,13 @@ export function attack(state, p, uid, target) {
     return { ok: false, error: 'Ataque no válido' };
   }
   const u = findUnit(state, p, uid);
-  u.ready = false;
+  if (u.fury && !u.furyUsed) u.furyUsed = true; // Furia: el primer ataque no la agota
+  else u.ready = false;
+  u.stealth = false; // atacar revela
   emit(state, { type: 'attack', player: p, uid, target });
   const defender = target.uid === HERO ? null : findUnit(state, target.player, target.uid);
-  const dealt = damage(state, target, u.atk);
-  if (defender) damage(state, { player: p, uid }, defender.atk); // contraataque simultáneo
+  const dealt = damage(state, target, u.atk, u);
+  if (defender) damage(state, { player: p, uid }, defender.atk, defender); // contraataque simultáneo
   if (u.drain) heal(state, p, dealt);
   resolveDeaths(state);
   return { ok: true };
@@ -270,6 +314,12 @@ export function attack(state, p, uid, target) {
 
 export function endTurn(state, p) {
   if (state.winner !== null || state.turn !== p) return { ok: false, error: 'No es tu turno' };
+  for (const u of [...state.players[p].board]) {
+    const e = CARD_BY_ID[u.id].effect;
+    if (e && e.trigger === 'turnEnd' && u.hp > 0) applyEffect(state, p, e, null, u);
+  }
+  resolveDeaths(state);
+  if (state.winner !== null) return { ok: true };
   startTurn(state, other(p));
   return { ok: true };
 }

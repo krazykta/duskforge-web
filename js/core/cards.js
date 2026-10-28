@@ -4,8 +4,12 @@
 //            swift  = Ímpetu (puede atacar el turno en que entra)
 //            shield = Escudo (anula el primer daño que recibe)
 //            drain  = Vampírico (al atacar, cura a tu héroe lo que inflige)
-// effect.trigger: play (al jugarla) | death (al morir) | spell (cuando lanzas un hechizo)
+//            poison = Letal (destruye a cualquier criatura a la que dañe)
+//            stealth= Sigilo (no se puede atacar ni elegir como objetivo hasta que ataque)
+//            fury   = Furia (puede atacar dos veces por turno)
+// effect.trigger: play (al jugarla) | death (al morir) | spell (cuando lanzas un hechizo) | turnEnd (al final de tu turno)
 // effect.target:  enemy (unidad o héroe enemigo) | enemyUnit | allyUnit | (sin objetivo)
+// Solo "play" y los hechizos pueden llevar objetivo; los demás disparadores usan efectos sin objetivo.
 
 export const CARDS = [
   // --- Comunes ---
@@ -26,6 +30,53 @@ export const CARDS = [
     effect: { kind: 'shield', target: 'allyUnit' } },
   { id: 'dark_blessing', name: 'Bendición Oscura', type: 'spell', rarity: 'common', cost: 2, art: '🌑',
     effect: { kind: 'buff', amount: 2, target: 'allyUnit' } },
+  { id: 'grave_rat', name: 'Rata de Fosa', type: 'unit', rarity: 'common', cost: 1, atk: 1, hp: 1, keywords: ['poison'], art: '🐀' },
+  { id: 'cinder_imp', name: 'Diablillo de Brasa', type: 'unit', rarity: 'common', cost: 1, atk: 1, hp: 2, art: '😈',
+    effect: { trigger: 'death', kind: 'damageHero', amount: 1 } },
+  { id: 'shadow_cutpurse', name: 'Ratero Sombrío', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 1, keywords: ['stealth'], art: '🥷' },
+  { id: 'bog_lurker', name: 'Acechador del Pantano', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 3, art: '🐊',
+    effect: { trigger: 'turnEnd', kind: 'buffSelf', amount: 1 } },
+  { id: 'tower_archer', name: 'Arquera de la Torre', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 2, art: '🏹',
+    effect: { trigger: 'play', kind: 'damage', amount: 1, target: 'enemy' } },
+  { id: 'ironhide_boar', name: 'Jabalí Acorazado', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 3, keywords: ['guard'], art: '🐗' },
+  { id: 'frost_wisp', name: 'Fuego Fatuo Helado', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 2, art: '❄️',
+    effect: { trigger: 'play', kind: 'freeze', target: 'enemyUnit' } },
+  { id: 'ember_hound', name: 'Sabueso de Ascuas', type: 'unit', rarity: 'common', cost: 2, atk: 3, hp: 1, keywords: ['swift'], art: '🐕' },
+  { id: 'chapel_healer', name: 'Sanadora de la Capilla', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 3, art: '🕯️',
+    effect: { trigger: 'play', kind: 'heal', amount: 3 } },
+  { id: 'bone_warden', name: 'Guardián de Hueso', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 2, keywords: ['guard'], art: '🦴',
+    effect: { trigger: 'death', kind: 'summon', amount: 1, token: 'skeleton' } },
+  { id: 'dune_stalker', name: 'Merodeador de Dunas', type: 'unit', rarity: 'common', cost: 3, atk: 3, hp: 3, keywords: ['stealth'], art: '🦂' },
+  { id: 'venom_spitter', name: 'Escupevenenos', type: 'unit', rarity: 'common', cost: 3, atk: 1, hp: 4, keywords: ['poison'], art: '🐍' },
+  { id: 'militia_captain', name: 'Capitán de la Milicia', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 2, art: '⚜️',
+    effect: { trigger: 'play', kind: 'buffAll', amount: 1 } },
+  { id: 'wolf_rider', name: 'Jinete Lobo', type: 'unit', rarity: 'common', cost: 3, atk: 3, hp: 2, keywords: ['swift'], art: '🐺' },
+  { id: 'tomb_scholar', name: 'Erudita de la Tumba', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 2, art: '📖',
+    effect: { trigger: 'death', kind: 'draw', amount: 1 } },
+  { id: 'cave_troll', name: 'Trol de Caverna', type: 'unit', rarity: 'common', cost: 4, atk: 4, hp: 5, art: '🧌' },
+  { id: 'iron_golem', name: 'Gólem de Hierro', type: 'unit', rarity: 'common', cost: 4, atk: 2, hp: 5, keywords: ['guard', 'shield'], art: '⚙️' },
+  { id: 'storm_crow', name: 'Cuervo de Tormenta', type: 'unit', rarity: 'common', cost: 4, atk: 2, hp: 3, keywords: ['fury'], art: '🐦' },
+  { id: 'plague_bearer', name: 'Portador de la Plaga', type: 'unit', rarity: 'common', cost: 4, atk: 3, hp: 3, art: '☣️',
+    effect: { trigger: 'death', kind: 'damageAll', amount: 1 } },
+  { id: 'siege_ogre', name: 'Ogro de Asedio', type: 'unit', rarity: 'common', cost: 5, atk: 6, hp: 5, art: '👹' },
+  { id: 'frost_bolt', name: 'Saeta de Escarcha', type: 'spell', rarity: 'common', cost: 1, art: '🧊',
+    effect: { kind: 'freeze', target: 'enemyUnit' } },
+  { id: 'blood_pact', name: 'Pacto de Sangre', type: 'spell', rarity: 'common', cost: 1, art: '🩸',
+    effect: { kind: 'energy', amount: 2 } },
+  { id: 'quick_study', name: 'Estudio Rápido', type: 'spell', rarity: 'common', cost: 1, art: '📘',
+    effect: { kind: 'draw', amount: 1 } },
+  { id: 'firebolt', name: 'Rayo Ígneo', type: 'spell', rarity: 'common', cost: 2, art: '☄️',
+    effect: { kind: 'damage', amount: 3, target: 'enemy' } },
+  { id: 'soul_siphon', name: 'Sifón de Almas', type: 'spell', rarity: 'common', cost: 2, art: '🌀',
+    effect: { kind: 'damageHeal', amount: 2, target: 'enemy' } },
+  { id: 'war_cry', name: 'Grito de Guerra', type: 'spell', rarity: 'common', cost: 2, art: '📯',
+    effect: { kind: 'buffAll', amount: 1 } },
+  { id: 'magic_missiles', name: 'Proyectiles Arcanos', type: 'spell', rarity: 'common', cost: 2, art: '💫',
+    effect: { kind: 'missiles', amount: 3 } },
+  { id: 'banish', name: 'Destierro', type: 'spell', rarity: 'common', cost: 3, art: '🌫️',
+    effect: { kind: 'bounce', target: 'enemyUnit' } },
+  { id: 'healing_rain', name: 'Lluvia Sanadora', type: 'spell', rarity: 'common', cost: 3, art: '🌧️',
+    effect: { kind: 'heal', amount: 6 } },
 
   // --- Raras ---
   { id: 'storm_apprentice', name: 'Aprendiz de Tormenta', type: 'unit', rarity: 'rare', cost: 2, atk: 1, hp: 3, art: '🌩️',
@@ -40,6 +91,46 @@ export const CARDS = [
     effect: { kind: 'draw', amount: 2 } },
   { id: 'lightning_lance', name: 'Lanza de Rayo', type: 'spell', rarity: 'rare', cost: 3, art: '🔱',
     effect: { kind: 'damage', amount: 4, target: 'enemy' } },
+  { id: 'phantom_thief', name: 'Ladrón Fantasma', type: 'unit', rarity: 'rare', cost: 2, atk: 2, hp: 2, keywords: ['stealth'], art: '🎭',
+    effect: { trigger: 'play', kind: 'draw', amount: 1 } },
+  { id: 'shadow_assassin', name: 'Asesina de las Sombras', type: 'unit', rarity: 'rare', cost: 3, atk: 3, hp: 2, keywords: ['stealth', 'poison'], art: '🔪' },
+  { id: 'pyromancer', name: 'Piromante', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 3, art: '🔥',
+    effect: { trigger: 'spell', kind: 'damageAllEnemies', amount: 1 } },
+  { id: 'dawn_cleric', name: 'Clériga del Alba', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 4, art: '🌅',
+    effect: { trigger: 'spell', kind: 'heal', amount: 2 } },
+  { id: 'twin_blade', name: 'Danzante de Hojas', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 2, keywords: ['swift', 'fury'], art: '🌀' },
+  { id: 'spore_mother', name: 'Madre Esporas', type: 'unit', rarity: 'rare', cost: 3, atk: 1, hp: 4, art: '🍄',
+    effect: { trigger: 'death', kind: 'summon', amount: 2, token: 'larva' } },
+  { id: 'stone_gargoyle', name: 'Gárgola de Piedra', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 4, keywords: ['guard', 'shield'], art: '🗿' },
+  { id: 'crimson_berserker', name: 'Berserker Escarlata', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 4, keywords: ['fury'], art: '🪓' },
+  { id: 'ash_wyvern', name: 'Guiverno Cenizo', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 2, keywords: ['swift', 'poison'], art: '🐲' },
+  { id: 'grave_digger', name: 'Sepulturero', type: 'unit', rarity: 'rare', cost: 4, atk: 2, hp: 3, art: '⚰️',
+    effect: { trigger: 'turnEnd', kind: 'summon', amount: 1, token: 'skeleton' } },
+  { id: 'blood_knight', name: 'Caballero de Sangre', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 4, keywords: ['guard', 'drain'], art: '⚔️' },
+  { id: 'ice_warden', name: 'Celadora de Hielo', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 4, art: '🧊',
+    effect: { trigger: 'play', kind: 'freeze', target: 'enemyUnit' } },
+  { id: 'war_drummer', name: 'Tamborilero de Guerra', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '🥁',
+    effect: { trigger: 'turnEnd', kind: 'buffAll', amount: 1 } },
+  { id: 'hex_witch', name: 'Bruja del Maleficio', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '🧹',
+    effect: { trigger: 'play', kind: 'bounce', target: 'enemyUnit' } },
+  { id: 'soul_reaper', name: 'Segadora de Almas', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '💀',
+    effect: { trigger: 'play', kind: 'damageHeal', amount: 2, target: 'enemy' } },
+  { id: 'beast_tamer', name: 'Domadora de Bestias', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '🐾',
+    effect: { trigger: 'play', kind: 'summon', amount: 1, token: 'wolf_pup' } },
+  { id: 'blind_oracle', name: 'Oráculo Ciego', type: 'unit', rarity: 'rare', cost: 4, atk: 2, hp: 4, art: '🔮',
+    effect: { trigger: 'play', kind: 'draw', amount: 2 } },
+  { id: 'ember_wave', name: 'Ola de Brasas', type: 'spell', rarity: 'rare', cost: 2, art: '🔥',
+    effect: { kind: 'damageAllEnemies', amount: 1 } },
+  { id: 'chain_lightning', name: 'Cadena de Relámpagos', type: 'spell', rarity: 'rare', cost: 3, art: '⚡',
+    effect: { kind: 'missiles', amount: 5 } },
+  { id: 'raise_dead', name: 'Alzar a los Muertos', type: 'spell', rarity: 'rare', cost: 3, art: '💀',
+    effect: { kind: 'summon', amount: 3, token: 'skeleton' } },
+  { id: 'forbidden_tome', name: 'Tomo Prohibido', type: 'spell', rarity: 'rare', cost: 3, art: '📕',
+    effect: { kind: 'draw', amount: 3 } },
+  { id: 'death_mark', name: 'Marca de la Muerte', type: 'spell', rarity: 'rare', cost: 4, art: '☠️',
+    effect: { kind: 'destroy', target: 'enemyUnit' } },
+  { id: 'soul_drain', name: 'Drenar Almas', type: 'spell', rarity: 'rare', cost: 4, art: '🖤',
+    effect: { kind: 'damageHeal', amount: 4, target: 'enemy' } },
 
   // --- Épicas ---
   { id: 'obsidian_colossus', name: 'Coloso de Obsidiana', type: 'unit', rarity: 'epic', cost: 5, atk: 5, hp: 6, keywords: ['guard'], art: '🪨' },
@@ -47,6 +138,31 @@ export const CARDS = [
     effect: { trigger: 'play', kind: 'growPerAlly', amount: 1 } },
   { id: 'ash_storm', name: 'Tormenta de Ceniza', type: 'spell', rarity: 'epic', cost: 4, art: '🌪️',
     effect: { kind: 'damageAllEnemies', amount: 2 } },
+  { id: 'wailing_banshee', name: 'Banshee Aullante', type: 'unit', rarity: 'epic', cost: 3, atk: 3, hp: 3, art: '😱',
+    effect: { trigger: 'death', kind: 'missiles', amount: 3 } },
+  { id: 'necromancer', name: 'Nigromante', type: 'unit', rarity: 'epic', cost: 4, atk: 2, hp: 4, art: '🧟',
+    effect: { trigger: 'spell', kind: 'summon', amount: 1, token: 'skeleton' } },
+  { id: 'plague_doctor', name: 'Doctora de la Peste', type: 'unit', rarity: 'epic', cost: 4, atk: 3, hp: 3, art: '🦠',
+    effect: { trigger: 'death', kind: 'damageAllEnemies', amount: 2 } },
+  { id: 'crystal_golem', name: 'Gólem de Cristal', type: 'unit', rarity: 'epic', cost: 4, atk: 3, hp: 5, keywords: ['shield'], art: '💎',
+    effect: { trigger: 'turnEnd', kind: 'buffSelf', amount: 1 } },
+  { id: 'frost_giant', name: 'Gigante de Escarcha', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 6, art: '🏔️',
+    effect: { trigger: 'play', kind: 'freeze', target: 'enemyUnit' } },
+  { id: 'void_stalker', name: 'Acechador del Vacío', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 4, keywords: ['stealth', 'fury'], art: '🕳️' },
+  { id: 'ember_titan', name: 'Titán de Brasa', type: 'unit', rarity: 'epic', cost: 5, atk: 6, hp: 6, art: '🌋',
+    effect: { trigger: 'play', kind: 'damageAll', amount: 1 } },
+  { id: 'storm_caller', name: 'Invocatormentas', type: 'unit', rarity: 'epic', cost: 5, atk: 3, hp: 5, art: '🌪️',
+    effect: { trigger: 'play', kind: 'missiles', amount: 4 } },
+  { id: 'knight_commander', name: 'Comandante Caballero', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 4, art: '🏰',
+    effect: { trigger: 'play', kind: 'buffAll', amount: 2 } },
+  { id: 'blood_moon', name: 'Luna de Sangre', type: 'spell', rarity: 'epic', cost: 4, art: '🌕',
+    effect: { kind: 'buffAll', amount: 2 } },
+  { id: 'void_rift', name: 'Grieta del Vacío', type: 'spell', rarity: 'epic', cost: 4, art: '🌌',
+    effect: { kind: 'missiles', amount: 8 } },
+  { id: 'meteor', name: 'Meteoro', type: 'spell', rarity: 'epic', cost: 5, art: '☄️',
+    effect: { kind: 'damage', amount: 6, target: 'enemy' } },
+  { id: 'cataclysm', name: 'Cataclismo', type: 'spell', rarity: 'epic', cost: 5, art: '💥',
+    effect: { kind: 'damageAll', amount: 5 } },
 
   // --- Legendarias ---
   { id: 'eclipse_dragon', name: 'Dragón del Eclipse', type: 'unit', rarity: 'legendary', cost: 5, atk: 5, hp: 5, art: '🐉',
@@ -54,9 +170,24 @@ export const CARDS = [
   { id: 'ember_queen', name: 'Reina de las Brasas', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 4, keywords: ['swift', 'drain'], art: '👑' },
   { id: 'archmage_velkar', name: 'Archimago Velkar', type: 'unit', rarity: 'legendary', cost: 4, atk: 2, hp: 4, art: '🧙',
     effect: { trigger: 'spell', kind: 'damageHero', amount: 1 } },
+  { id: 'ash_phoenix', name: 'Fénix de Ceniza', type: 'unit', rarity: 'legendary', cost: 4, atk: 4, hp: 3, keywords: ['swift'], art: '🔥',
+    effect: { trigger: 'death', kind: 'damageAllEnemies', amount: 2 } },
+  { id: 'bone_sovereign', name: 'Soberano de Hueso', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 5, art: '☠️',
+    effect: { trigger: 'play', kind: 'summon', amount: 3, token: 'skeleton' } },
+  { id: 'void_empress', name: 'Emperatriz del Vacío', type: 'unit', rarity: 'legendary', cost: 5, atk: 5, hp: 5, keywords: ['stealth'], art: '🖤',
+    effect: { trigger: 'play', kind: 'destroy', target: 'enemyUnit' } },
+  { id: 'storm_titan', name: 'Titán de la Tormenta', type: 'unit', rarity: 'legendary', cost: 5, atk: 5, hp: 5, keywords: ['fury'], art: '⛈️',
+    effect: { trigger: 'play', kind: 'missiles', amount: 3 } },
+  { id: 'winter_queen', name: 'Reina del Invierno', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 6, keywords: ['shield'], art: '❄️',
+    effect: { trigger: 'play', kind: 'damageAllEnemies', amount: 2 } },
+  { id: 'ancient_warden', name: 'Guardián Ancestral', type: 'unit', rarity: 'legendary', cost: 5, atk: 3, hp: 8, keywords: ['guard'], art: '🌳',
+    effect: { trigger: 'turnEnd', kind: 'heal', amount: 3 } },
+  { id: 'shadow_archon', name: 'Arconte de la Sombra', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 4, keywords: ['poison', 'fury', 'drain'], art: '😈' },
 
   // --- Fichas (no coleccionables) ---
   { id: 'larva', name: 'Larva', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, art: '🐛', token: true },
+  { id: 'skeleton', name: 'Esqueleto', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, art: '💀', token: true },
+  { id: 'wolf_pup', name: 'Cachorro de Lobo', type: 'unit', rarity: 'common', cost: 0, atk: 2, hp: 2, art: '🐺', token: true },
 ];
 
 export const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
@@ -66,10 +197,13 @@ export const KEYWORD_TEXT = {
   swift: 'Ímpetu',
   shield: 'Escudo',
   drain: 'Vampírico',
+  poison: 'Letal',
+  stealth: 'Sigilo',
+  fury: 'Furia',
 };
 
 const TARGET_TEXT = { enemy: 'a un enemigo', enemyUnit: 'a una criatura enemiga', allyUnit: 'a una criatura aliada' };
-const TRIGGER_TEXT = { play: 'Al jugarla: ', death: 'Al morir: ', spell: 'Cuando lanzas un hechizo: ' };
+const TRIGGER_TEXT = { play: 'Al jugarla: ', death: 'Al morir: ', spell: 'Cuando lanzas un hechizo: ', turnEnd: 'Al final de tu turno: ' };
 
 // Texto de reglas legible, generado a partir de los datos (una sola fuente de verdad).
 export function cardText(card) {
@@ -85,9 +219,17 @@ export function cardText(card) {
       draw: `roba ${e.amount} carta${e.amount > 1 ? 's' : ''}`,
       shield: `da Escudo ${t}`,
       buff: `da +${e.amount}/+${e.amount} ${t}`,
-      summon: `invoca ${e.amount} ${CARD_BY_ID[e.token]?.name ?? e.token} 1/1`,
+      summon: `invoca ${e.amount} ${CARD_BY_ID[e.token]?.name ?? e.token} ${CARD_BY_ID[e.token]?.atk}/${CARD_BY_ID[e.token]?.hp}`,
       growPerAlly: `gana +${e.amount}/+${e.amount} por cada otra criatura aliada`,
       buffSelf: `gana +${e.amount} de ataque`,
+      damageAll: `inflige ${e.amount} de daño a TODAS las criaturas`,
+      destroy: `destruye ${t}`,
+      freeze: `congela ${t} (no podrá atacar en su próximo turno)`,
+      buffAll: `da +${e.amount}/+${e.amount} a tus ${card.type === 'unit' ? 'otras ' : ''}criaturas`,
+      energy: `ganas ${e.amount} de energía este turno`,
+      damageHeal: `inflige ${e.amount} de daño ${t} y cura ${e.amount} a tu héroe`,
+      bounce: `devuelve ${t} a la mano de su dueño`,
+      missiles: `lanza ${e.amount} proyectiles de 1 de daño contra enemigos al azar`,
     }[e.kind];
     const text = (TRIGGER_TEXT[e.trigger] || '') + body;
     parts.push(text.charAt(0).toUpperCase() + text.slice(1) + '.');

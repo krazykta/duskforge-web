@@ -11,7 +11,7 @@ const byAtkDesc = (state) => (a, b) => (unitOf(state, b)?.atk ?? 0) - (unitOf(st
 
 function chooseCardTarget(state, p, card, targets) {
   const e = card.effect;
-  if (e.kind === 'damage') {
+  if (e.kind === 'damage' || e.kind === 'damageHeal') {
     // Prioriza matar la criatura enemiga más peligrosa; si no, al héroe; si no, a la más fuerte.
     const kills = targets.filter((t) => { const u = unitOf(state, t); return u && !u.shield && u.hp <= e.amount; });
     if (kills.length) return kills.sort(byAtkDesc(state))[0];
@@ -23,7 +23,11 @@ function chooseCardTarget(state, p, card, targets) {
     const unshielded = targets.filter((t) => !unitOf(state, t).shield);
     return unshielded.sort(byAtkDesc(state))[0] || null;
   }
-  return targets.sort(byAtkDesc(state))[0]; // buff: a la aliada más fuerte
+  if (e.kind === 'freeze') {
+    const ready = targets.filter((t) => !unitOf(state, t).frozen);
+    return (ready.length ? ready : targets).sort(byAtkDesc(state))[0];
+  }
+  return targets.sort(byAtkDesc(state))[0]; // buff, destruir o devolver: la más fuerte
 }
 
 // ¿Merece la pena jugarla ahora? Evita desperdiciar curaciones y barridos.
@@ -32,7 +36,16 @@ function isUseful(state, p, card) {
   if (!e || card.type === 'unit') return true;
   const me = state.players[p];
   if (e.kind === 'heal') return me.maxHp - me.hp >= Math.min(3, e.amount);
-  if (e.kind === 'damageAllEnemies') return state.players[other(p)].board.length > 0;
+  const foeBoard = state.players[other(p)].board;
+  if (e.kind === 'damageAllEnemies') return foeBoard.length > 0;
+  if (e.kind === 'damageAll') return foeBoard.length > me.board.length; // solo si sale ganando
+  if (e.kind === 'buffAll') return me.board.length >= 2;
+  if (e.kind === 'summon') return me.board.length < state.rules.boardSize;
+  if (e.kind === 'energy') {
+    // Solo si la energía extra permite jugar algo que ahora no cabe.
+    const left = me.energy - card.cost;
+    return me.hand.some((id) => CARD_BY_ID[id] !== card && CARD_BY_ID[id].cost > left && CARD_BY_ID[id].cost <= left + e.amount);
+  }
   return true;
 }
 
@@ -65,8 +78,8 @@ function chooseAttack(state, p) {
     const good = targets.filter((t) => {
       const d = unitOf(state, t);
       if (!d || d.shield) return false;
-      const kills = u.atk >= d.hp;
-      const survives = u.shield || d.atk < u.hp;
+      const kills = u.atk >= d.hp || u.poison;
+      const survives = u.shield || (d.atk < u.hp && !d.poison);
       return kills && (survives || d.atk > u.atk);
     });
     if (good.length) return { type: 'attack', uid: u.uid, target: good.sort(byAtkDesc(state))[0] };

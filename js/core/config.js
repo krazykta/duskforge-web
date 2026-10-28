@@ -68,3 +68,20 @@ export const AI_DECK = [
   'ash_bat', 'ash_bat', 'rune_squire', 'flame_acolyte', 'night_leech', 'doom_herald',
   'storm_apprentice', 'lightning_rider', 'spark', 'dark_blessing', 'aegis', 'arcane_vision',
 ];
+
+// Mazos del rival: la partida elige uno al azar. Cada uno enseña un estilo de juego.
+export const AI_DECKS = [
+  AI_DECK, // Asalto: criaturas rápidas y hechizos de apoyo
+  [ // Cripta: muertos que vuelven y veneno
+    'grave_rat', 'ash_bat', 'cinder_imp', 'cinder_imp', 'bone_warden', 'tomb_scholar',
+    'venom_spitter', 'spore_mother', 'plague_bearer', 'soul_siphon', 'dusk_recruit', 'ash_bat',
+  ],
+  [ // Escarcha: congelar, aguantar y rematar
+    'frost_wisp', 'frost_wisp', 'frost_bolt', 'ironhide_boar', 'dusk_recruit', 'chapel_healer',
+    'tower_archer', 'ice_warden', 'firebolt', 'ironhide_boar', 'banish', 'bog_lurker',
+  ],
+  [ // Sombras: sigilo, furia y proyectiles
+    'shadow_cutpurse', 'shadow_cutpurse', 'ember_hound', 'ember_hound', 'phantom_thief', 'twin_blade',
+    'ash_bat', 'wolf_rider', 'magic_missiles', 'magic_missiles', 'blood_pact', 'storm_crow',
+  ],
+];
