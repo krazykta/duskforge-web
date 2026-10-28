@@ -112,8 +112,13 @@ export const AI_DECKS = [
     'mushroom_folk', 'mushroom_folk', 'dryad', 'wise_owl', 'forest_hermit', 'brambles',
     'healing_spring', 'fairy_dust', 'mischief_fairy', 'white_stag', 'mounted_lancer', 'light_lance',
   ],
+  [ // Carnaval: bufones y marionetas que distraen
+    'jester', 'jester', 'cog_mouse', 'fortune_teller', 'acrobat', 'puppeteer',
+    'juggling', 'oil_gears', 'healing_spring', 'cursed_clown', 'fire_breather', 'old_rum',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
-  'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque'];
+  'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
+  'El Maestro de Pista'];
