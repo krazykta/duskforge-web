@@ -190,9 +190,13 @@ export const AI_DECKS = [
     'worker_bee', 'page_boy', 'beekeeper', 'drone_bee', 'herald', 'tourney_squire',
     'novice_monk', 'staff_monk', 'jousting_knight', 'honey_jar', 'iron_fist', 'meditation',
   ],
+  [ // Arena: gladiadores, tritones y bandidos
+    'young_gladiator', 'road_bandit', 'net_fighter', 'highwayman', 'sunken_priest', 'pearl_diver',
+    'highway_toll', 'triton_guard', 'bandit_archer', 'sand_in_eyes', 'stolen_purse', 'crowd_cheer',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista'];
