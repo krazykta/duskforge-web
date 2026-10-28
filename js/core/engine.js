@@ -204,6 +204,24 @@ function applyEffect(state, p, effect, target, source) {
       if (u) silence(state, target.player, u);
       break;
     }
+    case 'grant': {
+      const u = target && findUnit(state, target.player, target.uid);
+      if (!u) break;
+      u[effect.keyword] = true;
+      if (effect.keyword === 'swift' && !u.frozen) u.ready = true;
+      emit(state, { type: 'buff', ...target });
+      break;
+    }
+    case 'freezeAll':
+      for (const u of state.players[foe].board) { u.frozen = true; u.ready = false; emit(state, { type: 'freeze', player: foe, uid: u.uid }); }
+      break;
+    case 'shieldAll':
+      for (const u of state.players[p].board) {
+        if (u === source) continue;
+        u.shield = true;
+        emit(state, { type: 'buff', player: p, uid: u.uid });
+      }
+      break;
     case 'silenceAll': [...state.players[foe].board].forEach((u) => silence(state, foe, u)); break;
     case 'weaken': {
       const u = target && findUnit(state, target.player, target.uid);

@@ -27,6 +27,10 @@ function chooseCardTarget(state, p, card, targets) {
     const ready = targets.filter((t) => !unitOf(state, t).frozen);
     return (ready.length ? ready : targets).sort(byAtkDesc(state))[0];
   }
+  if (e.kind === 'grant') {
+    const without = targets.filter((t) => !unitOf(state, t)[e.keyword]);
+    return (without.length ? without : targets).sort(byAtkDesc(state))[0];
+  }
   if (e.kind === 'silence') {
     // Lo que más estorba: guardianes, escudos, veneno y efectos que siguen actuando.
     const worth = (u) => (u.guard ? 3 : 0) + (u.shield ? 2 : 0) + (u.poison || u.fury || u.drain ? 2 : 0) + (CARD_BY_ID[u.id].effect && !u.silenced ? 1 : 0) + u.atk / 10;
@@ -47,6 +51,9 @@ function isUseful(state, p, card) {
   if (e.kind === 'buffAll') return me.board.length >= 2;
   if (e.kind === 'silence') return foeBoard.some((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.drain || CARD_BY_ID[u.id].effect));
   if (e.kind === 'silenceAll') return foeBoard.filter((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.stealth || CARD_BY_ID[u.id].effect)).length >= 2;
+  if (e.kind === 'grant') return me.board.some((u) => !u[e.keyword]);
+  if (e.kind === 'freezeAll') return foeBoard.filter((u) => !u.frozen && u.atk > 0).length >= 2;
+  if (e.kind === 'shieldAll') return me.board.filter((u) => !u.shield).length >= 2;
   if (e.kind === 'weaken') return foeBoard.some((u) => u.atk >= 2);
   if (e.kind === 'summon') return me.board.length < state.rules.boardSize;
   if (e.kind === 'energy') {

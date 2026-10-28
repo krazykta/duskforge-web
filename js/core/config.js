@@ -91,5 +91,12 @@ export const AI_DECKS = [
   [ // Telaraña: arañas, silencio y debilitar
     'spider_weaver', 'spider_weaver', 'night_moth', 'mire_toad', 'sea_hag', 'silent_monk',
     'blinding_ash', 'vow_of_silence', 'ash_crawler', 'raven_messenger', 'raven_messenger', 'crypt_lamplighter',
+  ],  [ // Manada: lobos y bestias que crecen al atacar
+    'rabid_wolf', 'rabid_wolf', 'storm_hawk', 'highland_ram', 'trapper', 'cave_bear',
+    'wolverine', 'frost_wolf', 'call_of_the_pack', 'charge', 'ash_bat', 'mire_toad',
+  ],
+  [ // Sangre: vampíricos que se curan mientras pegan
+    'blood_thrall', 'blood_thrall', 'bat_swarm', 'bloodlust', 'night_leech', 'skeleton_legionary',
+    'forest_spirit', 'hungry_shade', 'mercenary', 'soul_siphon', 'vampire_noble', 'giant_wasp',
   ],
 ];
