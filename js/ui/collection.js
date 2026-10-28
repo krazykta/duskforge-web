@@ -20,16 +20,19 @@ function bindSearch(state, repaint) {
 // ---------- Colección ----------
 const filters = { rarity: 'all', type: 'all', cost: 'all', owned: 'all', query: '' };
 
-function chip(group, value, label) {
-  return `<button class="chip ${filters[group] === value ? 'on' : ''}" data-filter="${group}:${value}">${label}</button>`;
+function chip(group, value, label, state = filters) {
+  return `<button class="chip ${state[group] === value ? 'on' : ''}" data-filter="${group}:${value}">${label}</button>`;
 }
+
+const costMatch = (c, cost) => cost === 'all' || (cost === '4' ? c.cost >= 4 : c.cost === Number(cost));
+const costChips = (state) => chip('cost', 'all', 'Todo coste', state) + ['0', '1', '2', '3'].map((c) => chip('cost', c, `${c}💎`, state)).join('') + chip('cost', '4', '4+💎', state);
 
 function collectionGrid() {
   const p = getProfile();
   const cards = COLLECTIBLE.filter((c) =>
     (filters.rarity === 'all' || c.rarity === filters.rarity) &&
     (filters.type === 'all' || c.type === filters.type) &&
-    (filters.cost === 'all' || (filters.cost === '4' ? c.cost >= 4 : c.cost === Number(filters.cost))) &&
+    costMatch(c, filters.cost) &&
     (filters.owned === 'all' || !!p.collection[c.id] === (filters.owned === 'yes')) &&
     matches(c, filters.query)).sort(sortCards);
   return cards.map((c) => cardFace(c, { count: p.collection[c.id] || 0, foil: p.foils.includes(c.id), locked: !p.collection[c.id], attrs: `data-card="${c.id}"` })).join('')
@@ -51,8 +54,8 @@ export function showCollection() {
         ${searchBox(filters.query)}
         <div>${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
         <div>${chip('rarity', 'all', 'Toda rareza')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
-        <div>${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}
-          ${chip('cost', 'all', 'Coste')}${['1', '2', '3'].map((c) => chip('cost', c, `${c}💎`)).join('')}${chip('cost', '4', '4+💎')}</div>
+        <div>${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}</div>
+        <div>${costChips(filters)}</div>
       </div>
       <div class="grid">${collectionGrid()}</div>
     </section>`;
@@ -107,11 +110,11 @@ function showCardDetail(id) {
 
 // ---------- Constructor de mazos ----------
 let draft = null; // mazo en edición (sin guardar)
-const builder = { query: '' };
+const builder = { query: '', cost: 'all' };
 
 function poolGrid(inDeck) {
   const p = getProfile();
-  return COLLECTIBLE.filter((c) => p.collection[c.id] && matches(c, builder.query)).sort(sortCards).map((c) => {
+  return COLLECTIBLE.filter((c) => p.collection[c.id] && costMatch(c, builder.cost) && matches(c, builder.query)).sort(sortCards).map((c) => {
     const left = Math.min(p.collection[c.id], maxCopies(c)) - (inDeck[c.id] || 0);
     return cardFace(c, { count: left, foil: p.foils.includes(c.id), locked: left <= 0, attrs: `data-add="${c.id}"` });
   }).join('') || '<p class="sub">Ninguna carta coincide.</p>';
@@ -138,7 +141,7 @@ export function showDeckBuilder() {
       <p class="sub">Toca una carta del mazo para quitarla y una de abajo para añadirla.</p>
       <div class="deck-list">${deckRows || '<p class="sub">Mazo vacío</p>'}</div>
       <h3>Tus cartas</h3>
-      ${searchBox(builder.query)}
+      <div class="filters">${searchBox(builder.query)}<div>${costChips(builder)}</div></div>
       <div class="grid">${poolGrid(inDeck)}</div>
       ${changed ? '<button class="btn ghost small" data-act="reset">Descartar cambios</button>' : ''}
     </section>`;
@@ -147,7 +150,9 @@ export function showDeckBuilder() {
     const rm = el.closest('[data-remove]');
     const add = el.closest('[data-add]');
     const act = el.closest('[data-act]')?.dataset.act;
-    if (rm) draft.splice(draft.indexOf(rm.dataset.remove), 1);
+    const f = el.closest('[data-filter]');
+    if (f) builder.cost = f.dataset.filter.split(':')[1];
+    else if (rm) draft.splice(draft.indexOf(rm.dataset.remove), 1);
     else if (add) {
       const id = add.dataset.add;
       const c = CARD_BY_ID[id];
