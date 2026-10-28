@@ -49,7 +49,7 @@ function showRules() {
         <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
         <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ❄️ no ataca en su siguiente turno.</li>
-        <li>Una criatura <b>silenciada</b> 🔇 pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar.</li>
+        <li>Una criatura <b>silenciada</b> 🔇 pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>
         <li>Gana monedas 🪙 jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos 💠 para fabricar las que quieras.</li>
       </ul>
       <button class="btn" data-act="close">¡Entendido!</button>
