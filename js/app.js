@@ -1,11 +1,12 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { GAME_NAME, ECONOMY } from './core/config.js';
+import { ECONOMY } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
-import { app, getProfile, setProfile, register, go, onTap, topBar, missionBadge } from './ui/store.js';
+import { app, getProfile, setProfile, register, onTap, topBar, missionBadge } from './ui/store.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
+import { startApp, showAuth, accountPanel, accountAction } from './ui/account.js';
 
 // ---------- Menú ----------
 function showMenu() {
@@ -13,7 +14,7 @@ function showMenu() {
   app.innerHTML = `
     <section class="screen">
       ${topBar()}
-      <h1 class="logo">${GAME_NAME.split(':')[0]}<span>ARENA</span></h1>
+      <h1 class="logo">DUSK<span>FORGE</span></h1>
       <div class="profile">
         <div class="profile-row"><span>Nivel ${levelOf(p.xp)}</span><span class="sub">${p.wins} V · ${p.losses} D</span></div>
         <div class="xpbar" title="Experiencia"><div style="width:${(xpIntoLevel(p.xp) / ECONOMY.xpPerLevel) * 100}%"></div></div>
@@ -93,13 +94,12 @@ function showSettings() {
         ${toggle('reducedMotion', 'Animaciones reducidas', 'Menos movimiento en pantalla.')}
         ${toggle('fastAi', 'Rival rápido', 'El rival juega sus cartas más deprisa.')}
       </div>
-      <div class="panel sub">
-        <p>El progreso se guarda solo en este dispositivo. Si borras los datos del navegador o desinstalas la app, se pierde.
-          La sincronización en la nube llegará más adelante.</p>
-        <p>Sonido: todavía no disponible.</p>
-      </div>
+      ${accountPanel()}
+      <p class="sub">Sonido: todavía no disponible.</p>
     </section>`;
   onTap((el) => {
+    const act = el.closest('[data-act]')?.dataset.act;
+    if (act) return accountAction(act);
     const input = el.closest('[data-setting]');
     if (!input) return;
     const p = getProfile();
@@ -115,5 +115,6 @@ register('deck', () => { resetDeckDraft(); showDeckBuilder(); });
 register('shop', showShop);
 register('missions', showMissions);
 register('settings', showSettings);
+register('auth', showAuth);
 
-setTimeout(() => go('menu'), 600); // pantalla de carga breve
+startApp();

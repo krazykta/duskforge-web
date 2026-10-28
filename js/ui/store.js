@@ -4,12 +4,14 @@ import { newProfile, sanitizeProfile, levelOf } from '../core/progression.js';
 import { refreshMissions, claimableCount } from '../core/missions.js';
 import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
+import { pushProfile } from '../cloud.js';
 
 export const app = document.getElementById('app');
-const STORAGE_KEY = 'cardclash.profile';
+const STORAGE_KEY = 'duskforge.profile';
+const OLD_KEY = 'cardclash.profile'; // nombre anterior del juego: se lee una vez para no perder el progreso
 
 function load() {
-  try { return sanitizeProfile(JSON.parse(localStorage.getItem(STORAGE_KEY))); } catch { return newProfile(); }
+  try { return sanitizeProfile(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(OLD_KEY))); } catch { return newProfile(); }
 }
 let profile = load();
 
@@ -19,7 +21,25 @@ export function setProfile(next) {
   profile = next;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch { /* sin almacenamiento: se juega igual */ }
   document.body.classList.toggle('reduced-motion', profile.settings.reducedMotion);
+  if (cloudUser) {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(flushCloud, 1500); // agrupa cambios seguidos en un solo envío
+  }
 }
+
+// ---------- Guardado en la nube ----------
+let cloudUser = null;
+let pushTimer = null;
+export const getCloudUser = () => cloudUser;
+export const setCloudUser = (user) => (cloudUser = user);
+// shortcut: si el envío falla, se reintenta en el siguiente cambio; no hay cola persistente.
+export async function flushCloud() {
+  clearTimeout(pushTimer);
+  if (cloudUser) await pushProfile(cloudUser.id, profile);
+}
+document.addEventListener('visibilitychange', () => document.hidden && flushCloud());
+// Sustituye el perfil (al cargar el de la nube o al cerrar sesión).
+export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitizeProfile(raw) : newProfile()));
 setProfile(refreshMissions(profile));
 
 // ---------- Navegación ----------

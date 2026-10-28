@@ -1,6 +1,6 @@
 // Todos los números de equilibrio en un solo sitio. Son hipótesis iniciales:
 // cámbialos aquí y no en el código de reglas.
-export const GAME_NAME = 'CARD CLASH: ARENA';
+export const GAME_NAME = 'DUSKFORGE';
 
 export const RULES = {
   startHp: 20,

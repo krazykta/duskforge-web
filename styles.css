@@ -290,3 +290,16 @@ body {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+
+/* ---------- Cuenta ---------- */
+.auth { gap: 14px; }
+.auth-form { display: flex; flex-direction: column; gap: 10px; max-width: 380px; }
+.auth-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+.auth-form input { font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--violet-soft);
+  border-radius: 10px; padding: 12px; }
+.auth-form input:focus-visible { outline: 3px solid var(--blue); outline-offset: 1px; }
+.auth-form .warn:empty { display: none; }
+.auth-links { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.link { background: none; border: 0; color: var(--blue); font: inherit; font-size: 15px; padding: 8px; cursor: pointer; text-decoration: underline; }
+.small-print { max-width: 380px; text-align: center; }
+.btn.danger { background: linear-gradient(180deg, #e11d48, #9f1239); box-shadow: 0 4px 0 #4c0519; }
