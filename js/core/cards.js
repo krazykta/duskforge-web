@@ -1598,6 +1598,17 @@ export const CARDS = [
   { id: 'wolf_pup', name: 'Cachorro de Lobo', type: 'unit', rarity: 'common', cost: 0, atk: 2, hp: 2, art: '🐺', token: true },
 ];
 
+// Expansiones: nombre y primera carta de cada una, en el orden del catálogo.
+export const SETS = [
+  ['Básica'], ['Forja y Mareas', 'forge_apprentice'], ['Sangre y Tormenta', 'blood_thrall'],
+  ['Desierto y Alquimia', 'sand_scarab'], ['Piratas y Enanos', 'deckhand'], ['Bosque Feérico', 'scarecrow'],
+  ['Carnaval y Relojería', 'jester'], ['Trasgos y Dragones', 'goblin_scrapper'], ['Clanes del Norte', 'clan_youth'],
+  ['Jungla y Ladrones', 'dart_frog'], ['Academia y Estepa', 'academy_student'], ['Sueños y Laberinto', 'sleepwalker'],
+  ['Micelio y Estrellas', 'puffball'], ['Cosecha y Rosa Negra', 'harvest_crow'], ['Máscaras y Zorros', 'masked_servant'],
+];
+let set = 0;
+for (const c of CARDS) { if (SETS[set + 1]?.[1] === c.id) set++; c.set = set; }
+
 export const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
 
 export const KEYWORD_TEXT = {

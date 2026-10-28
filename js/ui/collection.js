@@ -1,6 +1,6 @@
 // Colección (con filtros y detalle de carta) y constructor de mazos.
 import { RULES, COLLECTION } from '../core/config.js';
-import { CARD_BY_ID, cardText } from '../core/cards.js';
+import { CARD_BY_ID, SETS, cardText } from '../core/cards.js';
 import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors, craftCard, upgradeFoil } from '../core/collection.js';
 import { app, getProfile, setProfile, onTap, topBar, cardFace, toast } from './store.js';
 
@@ -18,7 +18,7 @@ function bindSearch(state, repaint) {
 }
 
 // ---------- Colección ----------
-const filters = { rarity: 'all', type: 'all', cost: 'all', owned: 'all', query: '' };
+const filters = { set: 'all', rarity: 'all', type: 'all', cost: 'all', owned: 'all', query: '' };
 
 function chip(group, value, label, state = filters) {
   return `<button class="chip ${state[group] === value ? 'on' : ''}" data-filter="${group}:${value}">${label}</button>`;
@@ -30,6 +30,7 @@ const costChips = (state) => chip('cost', 'all', 'Todo coste', state) + ['0', '1
 function collectionGrid() {
   const p = getProfile();
   const cards = COLLECTIBLE.filter((c) =>
+    (filters.set === 'all' || c.set === Number(filters.set)) &&
     (filters.rarity === 'all' || c.rarity === filters.rarity) &&
     (filters.type === 'all' || c.type === filters.type) &&
     costMatch(c, filters.cost) &&
@@ -53,6 +54,7 @@ export function showCollection() {
       <div class="filters">
         ${searchBox(filters.query)}
         <div>${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
+        <div>${chip('set', 'all', 'Toda expansión')}${SETS.map(([name], i) => chip('set', String(i), name)).join('')}</div>
         <div>${chip('rarity', 'all', 'Toda rareza')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
         <div>${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}</div>
         <div>${costChips(filters)}</div>
@@ -60,6 +62,7 @@ export function showCollection() {
       <div class="grid">${collectionGrid()}</div>
     </section>`;
   bindSearch(filters, () => (app.querySelector('.grid').innerHTML = collectionGrid()));
+  app.querySelector('.chip.on[data-filter^="set:"]').scrollIntoView({ block: 'nearest', inline: 'center' });
   onTap((el) => {
     const f = el.closest('[data-filter]');
     if (f) {
@@ -85,6 +88,7 @@ function showCardDetail(id) {
   bg.innerHTML = `
     <div class="modal detail-modal" role="dialog" aria-label="${card.name}">
       ${cardFace(card, { big: true, foil: isFoil, locked: !owned })}
+      <p class="sub">Expansión: ${SETS[card.set][0]}</p>
       <p>Tienes <b>${owned} / ${max}</b> copias.</p>
       <div class="modal-actions">
         <button class="btn small" data-act="craft" ${owned >= max || p.fragments < craft ? 'disabled' : ''}>Fabricar · ${craft} 💠</button>
