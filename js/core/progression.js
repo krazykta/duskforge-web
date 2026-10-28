@@ -16,7 +16,9 @@ export function newProfile() {
     coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
     lastFirstWinDay: null, tutorialSeen: false, claimedMatches: [],
     collection: countCards(STARTER_DECK),
-    deck: [...STARTER_DECK],
+    deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
+    decks: [[...STARTER_DECK], [], []], // huecos de mazo guardados ([] = vacío)
+    activeDeck: 0,
     foils: [],
     achievements: [], // logros ya reclamados (core/achievements.js)
     packHistory: [],
@@ -54,6 +56,13 @@ export function sanitizeProfile(raw) {
     }
   }
   const deck = strList(raw.deck);
+  const decks = [0, 1, 2].map((i) => {
+    const d = strList(Array.isArray(raw.decks) ? raw.decks[i] : null);
+    return deckErrors(d, collection).length === 0 ? d : [];
+  });
+  const activeDeck = int(raw.activeDeck, decks.length - 1);
+  // Perfiles de antes de los huecos (o hueco activo dañado): el mazo suelto pasa al hueco activo.
+  if (!decks[activeDeck].length) decks[activeDeck] = deckErrors(deck, collection).length === 0 ? deck : [...STARTER_DECK];
   const m = raw.missions;
   const daily = isObj(m) && sanitizeMissionList(m.daily);
   const weekly = isObj(m) && sanitizeMissionList(m.weekly);
@@ -66,7 +75,7 @@ export function sanitizeProfile(raw) {
     tutorialSeen: raw.tutorialSeen === true,
     claimedMatches: strList(raw.claimedMatches).slice(-MAX_REMEMBERED_MATCHES),
     collection,
-    deck: deckErrors(deck, collection).length === 0 ? deck : [...STARTER_DECK],
+    deck: decks[activeDeck], decks, activeDeck,
     foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],
     achievements: [...new Set(strList(raw.achievements).filter((id) => ACHIEVEMENTS.some((a) => a.id === id)))],
     packHistory: Array.isArray(raw.packHistory)

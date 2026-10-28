@@ -110,6 +110,7 @@ function showCardDetail(id) {
 
 // ---------- Constructor de mazos ----------
 let draft = null; // mazo en edición (sin guardar)
+let slot = null; // hueco de mazo que se está editando
 const builder = { query: '', cost: 'all' };
 
 function poolGrid(inDeck) {
@@ -122,17 +123,20 @@ function poolGrid(inDeck) {
 
 export function showDeckBuilder() {
   const p = getProfile();
-  if (!draft) draft = [...p.deck];
+  slot ??= p.activeDeck;
+  if (!draft) draft = [...p.decks[slot]];
   const inDeck = countCards(draft);
   const errors = deckErrors(draft, p.collection);
-  const changed = draft.slice().sort().join() !== p.deck.slice().sort().join();
+  const changed = draft.slice().sort().join() !== p.decks[slot].slice().sort().join();
   const deckRows = Object.keys(inDeck).map((id) => CARD_BY_ID[id]).sort(sortCards).map((c) => `
     <button class="deck-row r-${c.rarity}" data-remove="${c.id}" aria-label="Quitar ${c.name}">
       <span class="cost">${c.cost}</span><span>${c.art} ${c.name}</span><span class="n">x${inDeck[c.id]}</span>
     </button>`).join('');
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Mazo')}
+      ${topBar('Mazos')}
+      <div class="deck-tabs">${p.decks.map((d, i) => `<button class="chip ${i === slot ? 'on' : ''}" data-slot="${i}">Mazo ${i + 1}${i === p.activeDeck ? ' ⚔️' : d.length ? '' : ' (vacío)'}</button>`).join('')}</div>
+      ${slot === p.activeDeck ? '<p class="sub">⚔️ Este es el mazo con el que juegas.</p>' : p.decks[slot].length ? '<button class="btn small" data-act="use">Usar en combate</button>' : ''}
       <div class="deck-head">
         <b class="${draft.length === RULES.deckSize ? 'ok' : 'warn'}">${draft.length} / ${RULES.deckSize} cartas</b>
         <button class="btn small gold" data-act="save" ${errors.length || !changed ? 'disabled' : ''}>Guardar</button>
@@ -151,7 +155,11 @@ export function showDeckBuilder() {
     const add = el.closest('[data-add]');
     const act = el.closest('[data-act]')?.dataset.act;
     const f = el.closest('[data-filter]');
-    if (f) builder.cost = f.dataset.filter.split(':')[1];
+    const tab = el.closest('[data-slot]');
+    if (tab) {
+      slot = Number(tab.dataset.slot);
+      draft = [...p.decks[slot]]; // cambiar de hueco descarta lo no guardado
+    } else if (f) builder.cost = f.dataset.filter.split(':')[1];
     else if (rm) draft.splice(draft.indexOf(rm.dataset.remove), 1);
     else if (add) {
       const id = add.dataset.add;
@@ -160,13 +168,18 @@ export function showDeckBuilder() {
       if ((inDeck[id] || 0) >= Math.min(p.collection[id], maxCopies(c))) return toast(`No puedes añadir más copias de ${c.name}`);
       draft.push(id);
     } else if (act === 'save') {
-      setProfile({ ...getProfile(), deck: [...draft] });
+      const q = getProfile();
+      const decks = q.decks.map((d, i) => (i === slot ? [...draft] : d));
+      setProfile({ ...q, decks, deck: decks[q.activeDeck] });
       toast('Mazo guardado');
-    } else if (act === 'reset') draft = [...p.deck];
+    } else if (act === 'use') {
+      setProfile({ ...p, activeDeck: slot, deck: [...p.decks[slot]] });
+      toast(`Jugarás con el Mazo ${slot + 1}`);
+    } else if (act === 'reset') draft = [...p.decks[slot]];
     else return;
     showDeckBuilder();
   });
 }
 
 // Al salir del constructor sin guardar, se descartan los cambios.
-export const resetDeckDraft = () => (draft = null);
+export const resetDeckDraft = () => (draft = slot = null);
