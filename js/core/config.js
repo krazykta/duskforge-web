@@ -100,4 +100,12 @@ export const AI_DECKS = [
     'blood_thrall', 'blood_thrall', 'bat_swarm', 'bloodlust', 'night_leech', 'skeleton_legionary',
     'forest_spirit', 'hungry_shade', 'mercenary', 'soul_siphon', 'vampire_noble', 'giant_wasp',
   ],
+  [ // Piratas: abordaje rápido y cañonazos al héroe
+    'deckhand', 'pirate_parrot', 'cannoneer', 'powder_monkey', 'buccaneer', 'boarding',
+    'cannon_shot', 'old_rum', 'powder_keg', 'low_tide', 'mountain_goat', 'dusk_fisher',
+  ],
+  [ // Montaña: enanos que aguantan y se curan
+    'dwarf_miner', 'dwarf_miner', 'anvil_guard', 'dwarf_brewer', 'low_tide', 'hammer_blow',
+    'old_rum', 'moon_acolyte', 'powder_keg', 'powder_keg', 'moonlight', 'dwarf_mason',
+  ],
 ];
