@@ -42,8 +42,13 @@ function chooseCardTarget(state, p, card, targets) {
 // ¿Merece la pena jugarla ahora? Evita desperdiciar curaciones y barridos.
 function isUseful(state, p, card) {
   const e = card.effect;
-  if (!e || card.type === 'unit') return true;
   const me = state.players[p];
+  const pain = e && [e, e.then].find((x) => x?.kind === 'hurtSelf');
+  if (pain && me.hp <= pain.amount + 3) return false; // un pacto no debe matarte
+  if (!e || card.type === 'unit') return true;
+  if (e.kind === 'bounce' && e.target === 'allyUnit') return false; // shortcut: la IA no sabe cuándo conviene retirar
+  if (e.kind === 'transform') return state.players[other(p)].board.some((u) => u.atk >= 3 || u.guard);
+  if (e.kind === 'draw') return me.deck.length >= e.amount && me.hand.length + e.amount <= state.rules.maxHand; // sin fatiga ni cartas quemadas
   if (e.kind === 'heal') return me.maxHp - me.hp >= Math.min(3, e.amount);
   const foeBoard = state.players[other(p)].board;
   if (e.kind === 'damageAllEnemies') return foeBoard.length > 0;

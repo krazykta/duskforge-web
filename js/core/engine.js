@@ -238,6 +238,16 @@ function applyEffect(state, p, effect, target, source) {
       break;
     }
     case 'energy': state.players[p].energy += a; break;
+    case 'hurtSelf': damage(state, { player: p, uid: HERO }, a); break;
+    case 'transform': {
+      const owner = target && state.players[target.player];
+      const u = target && findUnit(state, target.player, target.uid);
+      if (!u) break;
+      const nu = makeUnit(state, effect.token);
+      owner.board[owner.board.indexOf(u)] = nu;
+      emit(state, { type: 'transform', ...target, uid: nu.uid, card: effect.token });
+      break;
+    }
     case 'damageHeal': if (target) heal(state, p, damage(state, target, a)); break;
     case 'bounce': {
       const owner = target && state.players[target.player];
@@ -258,6 +268,7 @@ function applyEffect(state, p, effect, target, source) {
       break;
     default: throw new Error(`Efecto desconocido: ${effect.kind}`);
   }
+  if (effect.then) applyEffect(state, p, effect.then, target, source);
 }
 
 function silence(state, p, u) {
