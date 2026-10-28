@@ -74,7 +74,8 @@ export const ACHIEVEMENTS = [
   { id: 'a_col100', text: 'Consigue 100 cartas distintas', stat: 'unique', goal: 100, coins: 200, fragments: 50 },
   { id: 'a_col200', text: 'Consigue 200 cartas distintas', stat: 'unique', goal: 200, coins: 400, fragments: 100 },
   { id: 'a_col300', text: 'Consigue 300 cartas distintas', stat: 'unique', goal: 300, coins: 600, fragments: 200 },
-  { id: 'a_col400', text: 'Consigue 400 cartas distintas', stat: 'unique', goal: 400, coins: 1000, fragments: 500 },
+  { id: 'a_col400', text: 'Consigue 400 cartas distintas', stat: 'unique', goal: 400, coins: 800, fragments: 300 },
+  { id: 'a_col500', text: 'Consigue 500 cartas distintas', stat: 'unique', goal: 500, coins: 1000, fragments: 500 },
   { id: 'a_leg1', text: 'Consigue una carta legendaria', stat: 'legendaries', goal: 1, coins: 100 },
   { id: 'a_leg10', text: 'Consigue 10 legendarias distintas', stat: 'legendaries', goal: 10, coins: 300, fragments: 100 },
   { id: 'a_foil1', text: 'Mejora una carta a brillante', stat: 'foils', goal: 1, coins: 50 },
@@ -141,9 +142,13 @@ export const AI_DECKS = [
     'goblin_scrapper', 'goblin_scrapper', 'goblin_miner', 'goblin_sapper', 'goblin_thief', 'goblin_horde',
     'goblin_grenade', 'goblin_chief', 'bell_ringer', 'holy_water', 'prayer', 'old_rum',
   ],
+  [ // Norte: saqueadores con hachas y escaldos
+    'clan_youth', 'clan_youth', 'raider', 'axe_thrower', 'skald', 'troll_hunter',
+    'frost_axe', 'pearl', 'riptide', 'merfolk_priestess', 'will_o_wisp', 'war_horn',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro'];
