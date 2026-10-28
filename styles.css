@@ -1,15 +1,23 @@
+/* Tipografías incluidas en la app (licencia OFL, ver www/fonts/LICENSE-*.txt) */
+@font-face { font-family: 'Cinzel'; src: url('fonts/cinzel.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('fonts/inter.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+
+/* Paleta «Ocaso y forja»: violeta del anochecer + metal al rojo */
 :root {
-  --bg: #0b0f1e;
-  --bg-2: #141a33;
-  --panel: rgba(20, 26, 51, 0.85);
-  --violet: #7c3aed;
+  --bg: #0d0a18;
+  --bg-2: #1b1430;
+  --panel: rgba(27, 20, 48, 0.88);
+  --violet: #6d28d9;
   --violet-soft: #a78bfa;
-  --blue: #38bdf8;
-  --gold: #f5c542;
+  --ember: #f97316;
+  --ember-soft: #fdba74;
+  --blue: #38bdf8; /* energía y fragmentos */
+  --gold: #fbbf24;
+  --display: 'Cinzel', Georgia, serif;
   --red: #f43f5e;
   --green: #34d399;
-  --text: #e8e9f3;
-  --muted: #9aa0c3;
+  --text: #ede9f6;
+  --muted: #a39cbf;
   --common: #9ca3af;
   --rare: #38bdf8;
   --epic: #a855f7;
@@ -21,12 +29,12 @@
 html, body { margin: 0; height: 100%; }
 body {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.25), transparent 60%),
-    radial-gradient(ellipse at 50% 100%, rgba(56, 189, 248, 0.12), transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(109, 40, 217, 0.32), transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(249, 115, 22, 0.12), transparent 60%),
     repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 8px),
     var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
   user-select: none;
 }
@@ -40,32 +48,34 @@ body {
 }
 @keyframes fade { from { opacity: 0; } }
 
-.logo { margin: 0; text-align: center; font-size: 42px; font-weight: 900; letter-spacing: 2px;
+/* DUSK en tonos de anochecer, FORGE en metal fundido */
+.logo { margin: 0; text-align: center; font-family: var(--display); font-size: clamp(32px, 11vw, 48px); font-weight: 900; letter-spacing: 1px;
   background: linear-gradient(180deg, #fff, var(--violet-soft)); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 0 18px rgba(124, 58, 237, 0.6)); }
-.logo span { display: block; font-size: 20px; letter-spacing: 12px; color: var(--gold); -webkit-text-fill-color: var(--gold); }
+  filter: drop-shadow(0 0 18px rgba(109, 40, 217, 0.6)); }
+.logo span { background: linear-gradient(180deg, #fde68a, var(--gold) 45%, var(--ember)); -webkit-background-clip: text; background-clip: text; }
+h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 .loading { color: var(--muted); }
 
 .btn {
   font: inherit; font-weight: 800; font-size: 18px; letter-spacing: 1px;
   color: #fff; border: 0; border-radius: var(--radius); padding: 14px 28px; min-width: 220px; min-height: 48px;
-  background: linear-gradient(180deg, #8b5cf6, #5b21b6);
-  box-shadow: 0 4px 0 #3b1580, 0 8px 20px rgba(124, 58, 237, 0.4);
+  background: linear-gradient(180deg, #fb923c, #c2410c);
+  box-shadow: 0 4px 0 #7c2d12, 0 8px 20px rgba(249, 115, 22, 0.35);
   cursor: pointer; transition: transform 0.08s, box-shadow 0.08s, filter 0.2s;
 }
-.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #3b1580; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #7c2d12; }
 .btn:disabled { filter: grayscale(1) brightness(0.6); cursor: default; }
 .btn.gold { background: linear-gradient(180deg, #fcd34d, #b8860b); color: #2a1a00; box-shadow: 0 4px 0 #7a5800, 0 8px 20px rgba(245, 197, 66, 0.35); }
 .btn.ghost { background: transparent; border: 2px solid var(--violet-soft); box-shadow: none; }
 .btn.small { min-width: 0; padding: 10px 16px; font-size: 15px; }
-.btn:focus-visible, .card:focus-visible, .unit:focus-visible, .hero:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.btn:focus-visible, .card:focus-visible, .unit:focus-visible, .hero:focus-visible { outline: 3px solid var(--ember-soft); outline-offset: 2px; }
 
 /* --- Menú --- */
 .profile { width: 100%; background: var(--panel); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius); padding: 12px 16px; }
 .profile-row { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
 .coins { color: var(--gold); }
 .xpbar { height: 10px; border-radius: 5px; background: #0006; margin-top: 8px; overflow: hidden; }
-.xpbar > div { height: 100%; background: linear-gradient(90deg, var(--blue), var(--violet)); transition: width 0.6s ease; }
+.xpbar > div { height: 100%; background: linear-gradient(90deg, var(--violet), var(--ember)); transition: width 0.6s ease; }
 .stats { color: var(--muted); font-size: 14px; margin-top: 6px; }
 .menu-buttons { display: flex; flex-direction: column; gap: 14px; align-items: center; }
 
@@ -164,7 +174,7 @@ body {
 .rewards { background: var(--panel); border-radius: var(--radius); padding: 16px 24px; min-width: 260px; display: flex; flex-direction: column; gap: 8px; font-size: 18px; }
 .rewards div { display: flex; justify-content: space-between; gap: 20px; }
 .rewards .bonus { color: var(--gold); font-size: 15px; }
-.levelup { color: var(--blue); font-weight: 800; text-align: center; animation: zoom 0.5s 0.3s both; }
+.levelup { color: var(--ember-soft); font-weight: 800; text-align: center; animation: zoom 0.5s 0.3s both; }
 
 /* --- Estructura común de pantallas de menú --- */
 .screen.top { justify-content: flex-start; overflow-y: auto; gap: 12px; }
@@ -297,9 +307,9 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
 .auth-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 .auth-form input { font: inherit; font-size: 16px; color: var(--text); background: var(--bg); border: 1px solid var(--violet-soft);
   border-radius: 10px; padding: 12px; }
-.auth-form input:focus-visible { outline: 3px solid var(--blue); outline-offset: 1px; }
+.auth-form input:focus-visible { outline: 3px solid var(--ember-soft); outline-offset: 1px; }
 .auth-form .warn:empty { display: none; }
 .auth-links { display: flex; flex-direction: column; gap: 6px; align-items: center; }
-.link { background: none; border: 0; color: var(--blue); font: inherit; font-size: 15px; padding: 8px; cursor: pointer; text-decoration: underline; }
+.link { background: none; border: 0; color: var(--ember-soft); font: inherit; font-size: 15px; padding: 8px; cursor: pointer; text-decoration: underline; }
 .small-print { max-width: 380px; text-align: center; }
 .btn.danger { background: linear-gradient(180deg, #e11d48, #9f1239); box-shadow: 0 4px 0 #4c0519; }
