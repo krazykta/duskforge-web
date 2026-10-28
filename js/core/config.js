@@ -199,9 +199,13 @@ export const AI_DECKS = [
     'tomb_scarab', 'temple_cat', 'young_explorer', 'embalmer', 'tomb_robber', 'trapmaker',
     'sun_priest', 'jackal_guard', 'sand_mummy', 'treasure_map', 'pit_trap', 'curse_of_tomb',
   ],
+  [ // Castillo: vampiros, gárgolas y asedio
+    'fledgling', 'ghoul', 'castle_servant', 'gargoyle_whelp', 'sapper', 'ballista_crew',
+    'siege_volley', 'crumbling_wall', 'castle_gate', 'garlic', 'stone_skin', 'life_sip',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista', 'El Gran Embalsamador'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista', 'El Gran Embalsamador', 'La Condesa del Castillo'];
