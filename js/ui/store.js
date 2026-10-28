@@ -5,6 +5,7 @@ import { refreshMissions, claimableCount } from '../core/missions.js';
 import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
 import { pushProfile } from '../cloud.js';
+import { CARD_ART } from './card-art.js';
 
 export const app = document.getElementById('app');
 const STORAGE_KEY = 'duskforge.profile';
@@ -82,6 +83,10 @@ export const missionBadge = () => {
   return n ? `<span class="badge">${n}</span>` : '';
 };
 
+// Ilustración de la carta, o su emoji si todavía no tiene.
+export const artHtml = (card) =>
+  CARD_ART.has(card.id) ? `<img src="img/cards/${card.id}.webp" alt="" draggable="false">` : card.art;
+
 // Cara completa de una carta (colección, sobres, detalle).
 export function cardFace(card, { count = null, foil = false, locked = false, big = false, attrs = '' } = {}) {
   const cls = ['face', `r-${card.rarity}`, foil && 'foil', locked && 'locked', big && 'big'].filter(Boolean).join(' ');
@@ -90,7 +95,7 @@ export function cardFace(card, { count = null, foil = false, locked = false, big
     <div class="${cls}" ${attrs} role="button" aria-label="${card.name}${locked ? ' (no la tienes)' : ''}">
       <span class="cost">${card.cost}</span>
       ${count !== null ? `<span class="count">x${count}</span>` : ''}
-      <span class="art">${card.art}</span>
+      <span class="art">${artHtml(card)}</span>
       <span class="name">${card.name}</span>
       <span class="type">${card.type === 'unit' ? 'Criatura' : 'Hechizo'} · ${RARITY_TEXT[card.rarity]}</span>
       <span class="text">${cardText(card)}</span>

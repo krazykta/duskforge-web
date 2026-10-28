@@ -5,7 +5,7 @@ import { createMatch, playCard, playError, cardTargets, attack, attackTargets, e
 import { nextAction } from '../core/ai.js';
 import { claimMatchRewards } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
-import { app, getProfile, setProfile, go, onTap, wait } from './store.js';
+import { app, getProfile, setProfile, go, onTap, wait, artHtml } from './store.js';
 
 const ME = 0;
 const FOE = 1;
@@ -70,7 +70,7 @@ function unitHtml(u, p, targetSet) {
   const kw = [u.swift && '⚡', u.drain && '🩸'].filter(Boolean).join('');
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-t="${k}" role="button" aria-label="${c.name} ${u.atk}/${u.hp}">
-      ${c.art}<span class="kw">${kw}</span>
+      ${artHtml(c)}<span class="kw">${kw}</span>
       <span class="stat atk">${u.atk}</span><span class="stat hp ${u.hp < u.maxHp ? 'hurt' : ''}">${u.hp}</span>
     </div>`;
 }
@@ -86,7 +86,7 @@ function cardHtml(id, i) {
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-hand="${i}" role="button" aria-label="${c.name}, coste ${c.cost}">
       <span class="cost">${c.cost}</span>
-      <span class="art">${c.art}</span>
+      <span class="art">${artHtml(c)}</span>
       <span class="name">${c.name}</span>
       <span class="type">${stats}</span>
     </div>`;

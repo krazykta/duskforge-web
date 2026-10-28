@@ -1,0 +1,2 @@
+// Generado por scripts/generate-art.js: cartas que ya tienen ilustración en www/img/cards/.
+export const CARD_ART = new Set(["aegis","arcane_librarian","arcane_vision","archmage_velkar","ash_bat","ash_storm","bronze_sentinel","dark_blessing","doom_herald","dusk_recruit","eclipse_dragon","ember_queen","flame_acolyte","hive_matron","larva","lightning_lance","lightning_rider","moon_potion","night_leech","obsidian_colossus","pack_lord","rune_squire","spark","spectral_knight","storm_apprentice"]);

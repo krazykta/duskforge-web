@@ -313,3 +313,9 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
 .link { background: none; border: 0; color: var(--ember-soft); font: inherit; font-size: 15px; padding: 8px; cursor: pointer; text-decoration: underline; }
 .small-print { max-width: 380px; text-align: center; }
 .btn.danger { background: linear-gradient(180deg, #e11d48, #9f1239); box-shadow: 0 4px 0 #4c0519; }
+
+/* ---------- Ilustraciones de cartas ---------- */
+.face .art:has(img), .card .art:has(img) { width: 100%; margin-top: 0; }
+.face .art img, .card .art img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; }
+.face.big .art img { aspect-ratio: 1; }
+.unit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
