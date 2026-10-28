@@ -207,9 +207,17 @@ export const AI_DECKS = [
     'orc_grunt', 'lizard_scout', 'tavern_brawler', 'barmaid', 'dice_gambler', 'swamp_naga',
     'war_boar', 'innkeeper', 'lucky_dice', 'bar_fight', 'swamp_gas', 'thrown_axe',
   ],
+  [ // Bosque Lunar: elfos arqueros, ciervos y sauces
+    'elf_novice', 'moon_moth', 'fawn_keeper', 'lunar_archer', 'willow_sprite', 'elf_warden',
+    'young_hippogriff', 'elf_herbalist', 'moon_arrow', 'elven_grace', 'sapling_grove', 'moonwell',
+  ],
+  [ // Niebla: ronin, oni y grullas de papel
+    'ronin_youth', 'paper_folder', 'kappa', 'mist_scout', 'lantern_bearer', 'oni_brute',
+    'wandering_swordsman', 'tea_master', 'quick_draw', 'paper_charm', 'sake_offering', 'paper_flock',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista', 'El Gran Embalsamador', 'La Condesa del Castillo', 'El Posadero del Cruce'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista', 'El Gran Embalsamador', 'La Condesa del Castillo', 'El Posadero del Cruce', 'La Reina del Bosque Lunar', 'El Ronin de la Niebla'];
