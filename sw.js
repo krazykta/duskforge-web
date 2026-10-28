@@ -1,6 +1,6 @@
 // Service worker de la PWA: sirve lo ya visto desde caché y lo actualiza en segundo plano.
 // shortcut: sin lista de precarga, la primera visita necesita internet; precargar si se quiere jugar offline desde el primer día.
-const CACHE = 'duskforge-v2';
+const CACHE = 'duskforge-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(
