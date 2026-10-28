@@ -137,9 +137,13 @@ export const AI_DECKS = [
     'jester', 'jester', 'cog_mouse', 'fortune_teller', 'acrobat', 'puppeteer',
     'juggling', 'oil_gears', 'healing_spring', 'cursed_clown', 'fire_breather', 'old_rum',
   ],
+  [ // Trasgos: muchos y pequeños, con granadas
+    'goblin_scrapper', 'goblin_scrapper', 'goblin_miner', 'goblin_sapper', 'goblin_thief', 'goblin_horde',
+    'goblin_grenade', 'goblin_chief', 'bell_ringer', 'holy_water', 'prayer', 'old_rum',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo'];
