@@ -173,9 +173,13 @@ export const AI_DECKS = [
     'glowcap', 'puffball', 'rot_beetle', 'mushroom_picker', 'drummer', 'stargazer',
     'toadstool_sentry', 'falling_star', 'spore_cloud', 'dissonance', 'mycelium_net', 'heroic_ballad',
   ],
+  [ // Cosecha: calabazas, segadores y almas del río
+    'pumpkin_head', 'farmhand', 'harvest_crow', 'pumpkin_farmer', 'straw_golem', 'scythe_peasant',
+    'mourner', 'soul_oarsman', 'river_wraith', 'pumpkin_patch', 'rose_oath', 'reaping',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros'];
