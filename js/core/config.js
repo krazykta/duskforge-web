@@ -88,6 +88,7 @@ export const ACHIEVEMENTS = [
   { id: 'a_col500', text: 'Consigue 500 cartas distintas', stat: 'unique', goal: 500, coins: 1000, fragments: 500 },
   { id: 'a_col600', text: 'Consigue 600 cartas distintas', stat: 'unique', goal: 600, coins: 1500, fragments: 800 },
   { id: 'a_col750', text: 'Consigue 750 cartas distintas', stat: 'unique', goal: 750, coins: 2000, fragments: 1000 },
+  { id: 'a_col1000', text: 'Consigue 1000 cartas distintas', stat: 'unique', goal: 1000, coins: 3000, fragments: 1500 },
   { id: 'a_leg1', text: 'Consigue una carta legendaria', stat: 'legendaries', goal: 1, coins: 100 },
   { id: 'a_leg10', text: 'Consigue 10 legendarias distintas', stat: 'legendaries', goal: 10, coins: 300, fragments: 100 },
   { id: 'a_foil1', text: 'Mejora una carta a brillante', stat: 'foils', goal: 1, coins: 50 },
@@ -194,9 +195,13 @@ export const AI_DECKS = [
     'young_gladiator', 'road_bandit', 'net_fighter', 'highwayman', 'sunken_priest', 'pearl_diver',
     'highway_toll', 'triton_guard', 'bandit_archer', 'sand_in_eyes', 'stolen_purse', 'crowd_cheer',
   ],
+  [ // Tumbas: momias, trampas y gatos del templo
+    'tomb_scarab', 'temple_cat', 'young_explorer', 'embalmer', 'tomb_robber', 'trapmaker',
+    'sun_priest', 'jackal_guard', 'sand_mummy', 'treasure_map', 'pit_trap', 'curse_of_tomb',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis', 'El Mariscal del Torneo', 'La Lanista', 'El Gran Embalsamador'];
