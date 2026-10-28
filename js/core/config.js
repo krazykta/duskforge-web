@@ -108,8 +108,12 @@ export const AI_DECKS = [
     'dwarf_miner', 'dwarf_miner', 'anvil_guard', 'dwarf_brewer', 'low_tide', 'hammer_blow',
     'old_rum', 'moon_acolyte', 'powder_keg', 'powder_keg', 'moonlight', 'dwarf_mason',
   ],
+  [ // Bosque: setas y retoños que tapan el paso
+    'mushroom_folk', 'mushroom_folk', 'dryad', 'wise_owl', 'forest_hermit', 'brambles',
+    'healing_spring', 'fairy_dust', 'mischief_fairy', 'white_stag', 'mounted_lancer', 'light_lance',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
-  'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña'];
+  'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque'];
