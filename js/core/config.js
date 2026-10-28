@@ -109,3 +109,7 @@ export const AI_DECKS = [
     'old_rum', 'moon_acolyte', 'powder_keg', 'powder_keg', 'moonlight', 'dwarf_mason',
   ],
 ];
+
+// Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
+export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
+  'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña'];

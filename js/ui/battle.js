@@ -1,5 +1,5 @@
 // Pantalla de combate: dibuja el estado del motor y traduce toques en acciones.
-import { AI_DECKS } from '../core/config.js';
+import { AI_DECKS, AI_NAMES } from '../core/config.js';
 import { CARD_BY_ID, cardText } from '../core/cards.js';
 import { createMatch, playCard, playError, cardTargets, attack, attackTargets, endTurn, concede, takeEvents, findUnit, HERO } from '../core/engine.js';
 import { nextAction } from '../core/ai.js';
@@ -14,10 +14,12 @@ const aiDelay = () => (getProfile().settings.fastAi ? 300 : 650);
 let battle = null;
 
 export function startBattle() {
-  const state = createMatch({ decks: [getProfile().deck, AI_DECKS[Math.floor(Math.random() * AI_DECKS.length)]], seed: Date.now(), firstPlayer: Math.random() < 0.5 ? ME : FOE });
+  const rival = Math.floor(Math.random() * AI_DECKS.length);
+  const state = createMatch({ decks: [getProfile().deck, AI_DECKS[rival]], seed: Date.now(), firstPlayer: Math.random() < 0.5 ? ME : FOE });
   takeEvents(state);
   battle = {
     state,
+    rivalName: AI_NAMES[rival],
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
     sel: null, // { kind: 'hand', index } | { kind: 'unit', uid }
     inspect: null, // { player, uid } criatura que se está mirando
@@ -53,7 +55,7 @@ function heroHtml(p, targetSet) {
     <div class="hero ${targetSet.has(k) ? 'targetable' : ''}" data-t="${k}" role="button" aria-label="${p === ME ? 'Tu héroe' : 'Héroe rival'}, ${pl.hp} de vida">
       <img class="portrait" src="img/ui/${p === ME ? 'hero_player' : 'hero_foe'}.webp" alt="">
       <div class="hp">❤ ${pl.hp}</div>
-      <div><b>${p === ME ? 'Tú' : 'Señor del Abismo'}</b></div>
+      <div><b>${p === ME ? 'Tú' : battle.rivalName}</b></div>
       <div class="meta"><div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}">${gems}</div>🂠 ${pl.hand.length} · 📚 ${pl.deck.length}</div>
     </div>`;
 }
