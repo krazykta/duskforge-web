@@ -1107,7 +1107,7 @@ export const CARDS = [
   { id: 'bola_thrower', name: 'Lanzador de Boleadoras', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 2, art: '🪢',
     effect: { trigger: 'play', kind: 'freeze', target: 'enemyUnit' } },
   { id: 'archivist', name: 'Archivero', type: 'unit', rarity: 'common', cost: 3, atk: 1, hp: 5, keywords: ['guard'], art: '📜' },
-  { id: 'centaur_archer', name: 'Arquera Centauro', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 3, keywords: ['swift'], art: '🏹',
+  { id: 'centaur_archer', name: 'Arquero Centauro', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 3, keywords: ['swift'], art: '🏹',
     effect: { trigger: 'play', kind: 'damage', amount: 1, target: 'enemy' } },
   { id: 'nomad_elder', name: 'Anciana Nómada', type: 'unit', rarity: 'common', cost: 3, atk: 1, hp: 4, art: '👵',
     effect: { trigger: 'turnEnd', kind: 'heal', amount: 2 } },
