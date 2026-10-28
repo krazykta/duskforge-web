@@ -87,6 +87,7 @@ export const ACHIEVEMENTS = [
   { id: 'a_col400', text: 'Consigue 400 cartas distintas', stat: 'unique', goal: 400, coins: 800, fragments: 300 },
   { id: 'a_col500', text: 'Consigue 500 cartas distintas', stat: 'unique', goal: 500, coins: 1000, fragments: 500 },
   { id: 'a_col600', text: 'Consigue 600 cartas distintas', stat: 'unique', goal: 600, coins: 1500, fragments: 800 },
+  { id: 'a_col750', text: 'Consigue 750 cartas distintas', stat: 'unique', goal: 750, coins: 2000, fragments: 1000 },
   { id: 'a_leg1', text: 'Consigue una carta legendaria', stat: 'legendaries', goal: 1, coins: 100 },
   { id: 'a_leg10', text: 'Consigue 10 legendarias distintas', stat: 'legendaries', goal: 10, coins: 300, fragments: 100 },
   { id: 'a_foil1', text: 'Mejora una carta a brillante', stat: 'foils', goal: 1, coins: 50 },
