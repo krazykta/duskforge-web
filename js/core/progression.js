@@ -21,7 +21,7 @@ export function newProfile() {
     achievements: [], // logros ya reclamados (core/achievements.js)
     packHistory: [],
     missions: null, // se generan al consultarlas (core/missions.js)
-    settings: { reducedMotion: false, fastAi: false },
+    settings: { reducedMotion: false, fastAi: false, sound: true },
   };
 }
 
@@ -74,7 +74,7 @@ export function sanitizeProfile(raw) {
         .map((h) => ({ at: h.at, cards: strList(h.cards) })).slice(-COLLECTION.historySize)
       : [],
     missions: daily && weekly && typeof m.day === 'string' && typeof m.week === 'string' ? { day: m.day, daily, week: m.week, weekly } : null,
-    settings: { reducedMotion: settings.reducedMotion === true, fastAi: settings.fastAi === true },
+    settings: { reducedMotion: settings.reducedMotion === true, fastAi: settings.fastAi === true, sound: settings.sound !== false },
   };
 }
 

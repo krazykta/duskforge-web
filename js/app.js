@@ -96,9 +96,9 @@ function showSettings() {
       <div class="panel">
         ${toggle('reducedMotion', 'Animaciones reducidas', 'Menos movimiento en pantalla.')}
         ${toggle('fastAi', 'Rival rápido', 'El rival juega sus cartas más deprisa.')}
+        ${toggle('sound', 'Sonido', 'Efectos al jugar cartas, golpear y ganar.')}
       </div>
       ${accountPanel()}
-      <p class="sub">Sonido: todavía no disponible.</p>
     </section>`;
   onTap((el) => {
     const act = el.closest('[data-act]')?.dataset.act;

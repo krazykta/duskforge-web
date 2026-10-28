@@ -6,6 +6,7 @@ import { nextAction } from '../core/ai.js';
 import { claimMatchRewards } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
 import { app, getProfile, setProfile, go, onTap, wait, artHtml } from './store.js';
+import { sfx, eventSound } from './sound.js';
 
 const ME = 0;
 const FOE = 1;
@@ -175,6 +176,7 @@ async function afterAction() {
   battle.log.push(...events);
   renderBattle();
   animateEvents(events);
+  eventSound(events);
   if (battle.state.winner !== null) {
     battle.finishing = true;
     battle.busy = true;
@@ -281,6 +283,7 @@ function onBattleTap(el) {
 
 function finishMatch() {
   const won = battle.state.winner === ME;
+  sfx(won ? 'win' : 'lose');
   const claim = claimMatchRewards(getProfile(), battle.matchId, won, new Date(), matchStats(battle.log, won, ME));
   setProfile(claim.profile);
   const draw = battle.state.winner === 'draw';
