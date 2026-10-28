@@ -818,6 +818,9 @@ const TARGET_TEXT = { enemy: 'a un enemigo', enemyUnit: 'a una criatura enemiga'
 const TRIGGER_TEXT = { play: 'Al jugarla: ', death: 'Al morir: ', spell: 'Cuando lanzas un hechizo: ', turnEnd: 'Al final de tu turno: ', attack: 'Al atacar: ' };
 
 // Texto de reglas legible, generado a partir de los datos (una sola fuente de verdad).
+// Plural de la primera palabra («Autómatas de Bronce», «Murciélagos Vampiro»); basta para los nombres de fichas.
+const plural = (name = '') => name.replace(/^(\S+)/, (w) => (/[aeiouáéó]$/i.test(w) ? w + 's' : w + 'es'));
+
 function effectBody(card, e, t) {
   return {
     damage: `inflige ${e.amount} de daño ${t}`,
@@ -827,7 +830,7 @@ function effectBody(card, e, t) {
     draw: `roba ${e.amount} carta${e.amount > 1 ? 's' : ''}`,
     shield: `da Escudo ${t}`,
     buff: `da +${e.amount}/+${e.amount} ${t}`,
-    summon: `invoca ${e.amount} ${CARD_BY_ID[e.token]?.name ?? e.token} ${CARD_BY_ID[e.token]?.atk}/${CARD_BY_ID[e.token]?.hp}${CARD_BY_ID[e.token]?.keywords ? ` (${CARD_BY_ID[e.token].keywords.map((k) => KEYWORD_TEXT[k]).join(', ')})` : ''}`,
+    summon: `invoca ${e.amount} ${e.amount > 1 ? plural(CARD_BY_ID[e.token]?.name ?? e.token) : CARD_BY_ID[e.token]?.name ?? e.token} ${CARD_BY_ID[e.token]?.atk}/${CARD_BY_ID[e.token]?.hp}${CARD_BY_ID[e.token]?.keywords ? ` (${CARD_BY_ID[e.token].keywords.map((k) => KEYWORD_TEXT[k]).join(', ')})` : ''}`,
     growPerAlly: `gana +${e.amount}/+${e.amount} por cada otra criatura aliada`,
     buffSelf: `gana +${e.amount} de ataque`,
     damageAll: `inflige ${e.amount} de daño a TODAS las criaturas`,
