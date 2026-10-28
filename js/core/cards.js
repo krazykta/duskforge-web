@@ -1023,7 +1023,7 @@ export const CARDS = [
     effect: { kind: 'grant', keyword: 'stealth', target: 'allyUnit', then: { kind: 'draw', amount: 1 } } },
   { id: 'lockpick', name: 'Ganzúa', type: 'spell', rarity: 'common', cost: 2, art: '🗝️',
     effect: { kind: 'silence', target: 'enemyUnit', then: { kind: 'draw', amount: 1 } } },
-  { id: 'silver_bolt', name: 'Virote de Plata', type: 'spell', rarity: 'common', cost: 2, art: '➶',
+  { id: 'silver_bolt', name: 'Virote de Plata', type: 'spell', rarity: 'common', cost: 2, art: '🎯',
     effect: { kind: 'damage', amount: 3, target: 'enemyUnit' } },
   { id: 'jade_offering', name: 'Ofrenda de Jade', type: 'spell', rarity: 'common', cost: 2, art: '💚',
     effect: { kind: 'buff', amount: 2, target: 'allyUnit' } },
