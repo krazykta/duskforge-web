@@ -9,7 +9,7 @@ const sortCards = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
 // Búsqueda por nombre o habilidad, sin distinguir mayúsculas ni tildes.
 const fold = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const SEARCH_TEXT = Object.fromEntries(COLLECTIBLE.map((c) => [c.id, fold(`${c.name} ${cardText(c)}`)]));
-const matches = (c, query) => !query || fold(query).split(/s+/).every((w) => SEARCH_TEXT[c.id].includes(w));
+const matches = (c, query) => !query || fold(query).trim().split(/\s+/).every((w) => SEARCH_TEXT[c.id].includes(w));
 const searchBox = (value) => `<input class="search" type="search" placeholder="Buscar nombre o habilidad…" aria-label="Buscar cartas" value="${value.replace(/"/g, '&quot;')}">`;
 
 // Repinta solo la rejilla al escribir, para no perder el foco del buscador.
@@ -43,6 +43,10 @@ export function showCollection() {
     <section class="screen top">
       ${topBar('Colección')}
       <p class="sub">${owned} / ${COLLECTIBLE.length} cartas descubiertas</p>
+      <p class="sub">${RARITIES.map((r) => {
+        const all = COLLECTIBLE.filter((c) => c.rarity === r);
+        return `<span style="color: var(--${r})">${RARITY_TEXT[r]} ${all.filter((c) => p.collection[c.id]).length}/${all.length}</span>`;
+      }).join(' · ')}</p>
       <div class="filters">
         ${searchBox(filters.query)}
         <div>${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
