@@ -182,9 +182,13 @@ export const AI_DECKS = [
     'masked_servant', 'sly_fox', 'night_owl', 'masked_guest', 'illusionist', 'ball_butler',
     'masquerade_dancer', 'toast', 'false_face', 'poisoned_wine', 'fox_trick', 'quagmire',
   ],
+  [ // Mitos: héroes griegos, genios del desierto y gnomos
+    'satyr', 'spring_nymph', 'gnome_lookout', 'dervish', 'first_wish', 'amazon_archer',
+    'dune_viper', 'oasis_merchant', 'caravan_camel', 'gorgon_acolyte', 'javelin', 'hoplite',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada', 'La Pitonisa del Oasis'];
