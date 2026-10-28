@@ -726,7 +726,7 @@ function effectBody(card, e, t) {
     draw: `roba ${e.amount} carta${e.amount > 1 ? 's' : ''}`,
     shield: `da Escudo ${t}`,
     buff: `da +${e.amount}/+${e.amount} ${t}`,
-    summon: `invoca ${e.amount} ${CARD_BY_ID[e.token]?.name ?? e.token} ${CARD_BY_ID[e.token]?.atk}/${CARD_BY_ID[e.token]?.hp}`,
+    summon: `invoca ${e.amount} ${CARD_BY_ID[e.token]?.name ?? e.token} ${CARD_BY_ID[e.token]?.atk}/${CARD_BY_ID[e.token]?.hp}${CARD_BY_ID[e.token]?.keywords ? ` (${CARD_BY_ID[e.token].keywords.map((k) => KEYWORD_TEXT[k]).join(', ')})` : ''}`,
     growPerAlly: `gana +${e.amount}/+${e.amount} por cada otra criatura aliada`,
     buffSelf: `gana +${e.amount} de ataque`,
     damageAll: `inflige ${e.amount} de daño a TODAS las criaturas`,
