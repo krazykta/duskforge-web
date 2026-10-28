@@ -383,6 +383,8 @@ export const CARDS = [
     effect: { trigger: 'play', kind: 'damageAllEnemies', amount: 1 } },
 
   // --- Fichas (no coleccionables) ---
+  { id: 'ember', name: 'Ascua', type: 'spell', rarity: 'common', cost: 0, art: '🔥', token: true,
+    effect: { kind: 'energy', amount: 1 } },
   { id: 'vampire_bat', name: 'Murciélago Vampiro', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, keywords: ['drain'], art: '🦇', token: true },
   { id: 'spiderling', name: 'Arañita', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, keywords: ['poison'], art: '🕷️', token: true },
   { id: 'imp', name: 'Diablillo', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, keywords: ['swift'], art: '😈', token: true },

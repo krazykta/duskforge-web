@@ -7,6 +7,7 @@ export const RULES = {
   deckSize: 12,
   startHand: 3,
   secondPlayerExtraCards: 1, // compensa al jugador que empieza segundo
+  secondPlayerBonus: 'ember', // y además recibe esta carta (Ascua: +1 de energía un turno)
   maxHand: 7, // si robas con la mano llena, la carta se quema
   startEnergy: 1,
   maxEnergy: 5,
@@ -61,7 +62,7 @@ export const MISSIONS = {
 
 export const STARTER_DECK = [
   'dusk_recruit', 'dusk_recruit', 'ash_bat', 'rune_squire', 'flame_acolyte', 'bronze_sentinel',
-  'arcane_librarian', 'night_leech', 'spark', 'spark', 'moon_potion', 'lightning_lance',
+  'arcane_librarian', 'night_leech', 'spark', 'spark', 'mire_toad', 'lightning_lance',
 ];
 
 export const AI_DECK = [

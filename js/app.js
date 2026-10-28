@@ -44,7 +44,7 @@ function showRules() {
       <h2>Cómo jugar</h2>
       <ul>
         <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20.</li>
-        <li>Cada turno ganas <b>energía 💎</b> (hasta 5). Las cartas cuestan energía.</li>
+        <li>Cada turno ganas <b>energía 💎</b> (hasta 5). Las cartas cuestan energía. Quien empieza segundo roba una carta más y recibe un <b>Ascua</b> (+1 de energía un turno).</li>
         <li>Toca una carta para verla y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo.</li>
         <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>

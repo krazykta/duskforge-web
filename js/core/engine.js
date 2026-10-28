@@ -43,6 +43,7 @@ export function createMatch({ decks, seed = Date.now(), firstPlayer = 0, rules =
   state.players.forEach((pl, i) => (pl.deck = shuffle(state, [...decks[i]])));
   for (let i = 0; i < rules.startHand; i++) state.players.forEach((_, p) => draw(state, p));
   for (let i = 0; i < rules.secondPlayerExtraCards; i++) draw(state, other(firstPlayer));
+  if (rules.secondPlayerBonus) state.players[other(firstPlayer)].hand.push(rules.secondPlayerBonus);
   startTurn(state, firstPlayer, false);
   return state;
 }
