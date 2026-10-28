@@ -1,39 +1,58 @@
 // Colección (con filtros y detalle de carta) y constructor de mazos.
 import { RULES, COLLECTION } from '../core/config.js';
-import { CARD_BY_ID } from '../core/cards.js';
+import { CARD_BY_ID, cardText } from '../core/cards.js';
 import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors, craftCard, upgradeFoil } from '../core/collection.js';
 import { app, getProfile, setProfile, onTap, topBar, cardFace, toast } from './store.js';
 
 const sortCards = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
 
+// Búsqueda por nombre o habilidad, sin distinguir mayúsculas ni tildes.
+const fold = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const SEARCH_TEXT = Object.fromEntries(COLLECTIBLE.map((c) => [c.id, fold(`${c.name} ${cardText(c)}`)]));
+const matches = (c, query) => !query || fold(query).split(/s+/).every((w) => SEARCH_TEXT[c.id].includes(w));
+const searchBox = (value) => `<input class="search" type="search" placeholder="Buscar nombre o habilidad…" aria-label="Buscar cartas" value="${value.replace(/"/g, '&quot;')}">`;
+
+// Repinta solo la rejilla al escribir, para no perder el foco del buscador.
+function bindSearch(state, repaint) {
+  app.querySelector('.search').addEventListener('input', (ev) => { state.query = ev.target.value; repaint(); });
+}
+
 // ---------- Colección ----------
-const filters = { rarity: 'all', type: 'all', cost: 'all' };
+const filters = { rarity: 'all', type: 'all', cost: 'all', owned: 'all', query: '' };
 
 function chip(group, value, label) {
   return `<button class="chip ${filters[group] === value ? 'on' : ''}" data-filter="${group}:${value}">${label}</button>`;
 }
 
-export function showCollection() {
+function collectionGrid() {
   const p = getProfile();
   const cards = COLLECTIBLE.filter((c) =>
     (filters.rarity === 'all' || c.rarity === filters.rarity) &&
     (filters.type === 'all' || c.type === filters.type) &&
-    (filters.cost === 'all' || (filters.cost === '4' ? c.cost >= 4 : c.cost === Number(filters.cost)))).sort(sortCards);
+    (filters.cost === 'all' || (filters.cost === '4' ? c.cost >= 4 : c.cost === Number(filters.cost))) &&
+    (filters.owned === 'all' || !!p.collection[c.id] === (filters.owned === 'yes')) &&
+    matches(c, filters.query)).sort(sortCards);
+  return cards.map((c) => cardFace(c, { count: p.collection[c.id] || 0, foil: p.foils.includes(c.id), locked: !p.collection[c.id], attrs: `data-card="${c.id}"` })).join('')
+    || '<p class="sub">Ninguna carta con estos filtros.</p>';
+}
+
+export function showCollection() {
+  const p = getProfile();
   const owned = COLLECTIBLE.filter((c) => p.collection[c.id]).length;
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Colección')}
       <p class="sub">${owned} / ${COLLECTIBLE.length} cartas descubiertas</p>
       <div class="filters">
-        <div>${chip('rarity', 'all', 'Todas')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
+        ${searchBox(filters.query)}
+        <div>${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
+        <div>${chip('rarity', 'all', 'Toda rareza')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
         <div>${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}
           ${chip('cost', 'all', 'Coste')}${['1', '2', '3'].map((c) => chip('cost', c, `${c}💎`)).join('')}${chip('cost', '4', '4+💎')}</div>
       </div>
-      <div class="grid">
-        ${cards.map((c) => cardFace(c, { count: p.collection[c.id] || 0, foil: p.foils.includes(c.id), locked: !p.collection[c.id], attrs: `data-card="${c.id}"` })).join('')
-          || '<p class="sub">Ninguna carta con estos filtros.</p>'}
-      </div>
+      <div class="grid">${collectionGrid()}</div>
     </section>`;
+  bindSearch(filters, () => (app.querySelector('.grid').innerHTML = collectionGrid()));
   onTap((el) => {
     const f = el.closest('[data-filter]');
     if (f) {
@@ -84,6 +103,15 @@ function showCardDetail(id) {
 
 // ---------- Constructor de mazos ----------
 let draft = null; // mazo en edición (sin guardar)
+const builder = { query: '' };
+
+function poolGrid(inDeck) {
+  const p = getProfile();
+  return COLLECTIBLE.filter((c) => p.collection[c.id] && matches(c, builder.query)).sort(sortCards).map((c) => {
+    const left = Math.min(p.collection[c.id], maxCopies(c)) - (inDeck[c.id] || 0);
+    return cardFace(c, { count: left, foil: p.foils.includes(c.id), locked: left <= 0, attrs: `data-add="${c.id}"` });
+  }).join('') || '<p class="sub">Ninguna carta coincide.</p>';
+}
 
 export function showDeckBuilder() {
   const p = getProfile();
@@ -95,7 +123,6 @@ export function showDeckBuilder() {
     <button class="deck-row r-${c.rarity}" data-remove="${c.id}" aria-label="Quitar ${c.name}">
       <span class="cost">${c.cost}</span><span>${c.art} ${c.name}</span><span class="n">x${inDeck[c.id]}</span>
     </button>`).join('');
-  const pool = COLLECTIBLE.filter((c) => p.collection[c.id]).sort(sortCards);
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Mazo')}
@@ -107,14 +134,11 @@ export function showDeckBuilder() {
       <p class="sub">Toca una carta del mazo para quitarla y una de abajo para añadirla.</p>
       <div class="deck-list">${deckRows || '<p class="sub">Mazo vacío</p>'}</div>
       <h3>Tus cartas</h3>
-      <div class="grid">
-        ${pool.map((c) => {
-          const left = Math.min(p.collection[c.id], maxCopies(c)) - (inDeck[c.id] || 0);
-          return cardFace(c, { count: left, foil: p.foils.includes(c.id), locked: left <= 0, attrs: `data-add="${c.id}"` });
-        }).join('')}
-      </div>
+      ${searchBox(builder.query)}
+      <div class="grid">${poolGrid(inDeck)}</div>
       ${changed ? '<button class="btn ghost small" data-act="reset">Descartar cambios</button>' : ''}
     </section>`;
+  bindSearch(builder, () => (app.querySelector('.grid').innerHTML = poolGrid(inDeck)));
   onTap((el) => {
     const rm = el.closest('[data-remove]');
     const add = el.closest('[data-add]');
