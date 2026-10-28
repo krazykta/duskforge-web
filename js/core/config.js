@@ -156,9 +156,13 @@ export const AI_DECKS = [
     'clan_youth', 'clan_youth', 'raider', 'axe_thrower', 'skald', 'troll_hunter',
     'frost_axe', 'pearl', 'riptide', 'merfolk_priestess', 'will_o_wisp', 'war_horn',
   ],
+  [ // Jungla: serpientes venenosas y jaguares al acecho
+    'hunter_apprentice', 'toucan', 'pickpocket', 'jungle_shaman', 'jaguar', 'ruins_explorer',
+    'temple_guard', 'fence', 'jade_offering', 'smoke_bomb', 'river_crocodile', 'lockpick',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade'];
