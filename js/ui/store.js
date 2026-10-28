@@ -2,6 +2,7 @@
 // toques y piezas visuales reutilizables.
 import { newProfile, sanitizeProfile, levelOf } from '../core/progression.js';
 import { refreshMissions, claimableCount } from '../core/missions.js';
+import { claimableAchievements } from '../core/achievements.js';
 import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
 import { pushProfile } from '../cloud.js';
@@ -79,7 +80,7 @@ export function topBar(title) {
 }
 
 export const missionBadge = () => {
-  const n = claimableCount(refreshMissions(profile));
+  const n = claimableCount(refreshMissions(profile)) + claimableAchievements(profile);
   return n ? `<span class="badge">${n}</span>` : '';
 };
 

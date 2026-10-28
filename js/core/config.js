@@ -60,6 +60,27 @@ export const MISSIONS = {
   ],
 };
 
+// Logros permanentes: se cumplen con el estado del perfil y se reclaman una sola vez (ver core/achievements.js).
+// stat: wins, level, unique (cartas distintas), legendaries (legendarias distintas), foils (brillantes).
+export const ACHIEVEMENTS = [
+  { id: 'a_win1', text: 'Gana tu primera partida', stat: 'wins', goal: 1, coins: 50 },
+  { id: 'a_win10', text: 'Gana 10 partidas', stat: 'wins', goal: 10, coins: 150 },
+  { id: 'a_win50', text: 'Gana 50 partidas', stat: 'wins', goal: 50, coins: 300, fragments: 100 },
+  { id: 'a_win100', text: 'Gana 100 partidas', stat: 'wins', goal: 100, coins: 500, fragments: 200 },
+  { id: 'a_lvl5', text: 'Llega a nivel 5', stat: 'level', goal: 5, coins: 100 },
+  { id: 'a_lvl10', text: 'Llega a nivel 10', stat: 'level', goal: 10, coins: 200, fragments: 50 },
+  { id: 'a_lvl25', text: 'Llega a nivel 25', stat: 'level', goal: 25, coins: 500, fragments: 150 },
+  { id: 'a_col50', text: 'Consigue 50 cartas distintas', stat: 'unique', goal: 50, coins: 100 },
+  { id: 'a_col100', text: 'Consigue 100 cartas distintas', stat: 'unique', goal: 100, coins: 200, fragments: 50 },
+  { id: 'a_col200', text: 'Consigue 200 cartas distintas', stat: 'unique', goal: 200, coins: 400, fragments: 100 },
+  { id: 'a_col300', text: 'Consigue 300 cartas distintas', stat: 'unique', goal: 300, coins: 600, fragments: 200 },
+  { id: 'a_col400', text: 'Consigue 400 cartas distintas', stat: 'unique', goal: 400, coins: 1000, fragments: 500 },
+  { id: 'a_leg1', text: 'Consigue una carta legendaria', stat: 'legendaries', goal: 1, coins: 100 },
+  { id: 'a_leg10', text: 'Consigue 10 legendarias distintas', stat: 'legendaries', goal: 10, coins: 300, fragments: 100 },
+  { id: 'a_foil1', text: 'Mejora una carta a brillante', stat: 'foils', goal: 1, coins: 50 },
+  { id: 'a_foil10', text: 'Ten 10 cartas brillantes', stat: 'foils', goal: 10, coins: 200, fragments: 50 },
+];
+
 export const STARTER_DECK = [
   'dusk_recruit', 'dusk_recruit', 'ash_bat', 'rune_squire', 'flame_acolyte', 'bronze_sentinel',
   'arcane_librarian', 'night_leech', 'spark', 'spark', 'mire_toad', 'lightning_lance',

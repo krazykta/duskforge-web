@@ -1,7 +1,7 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // shortcut: el perfil vive en el dispositivo y se puede manipular; en la fase de backend
 // las recompensas se validarán en servidor.
-import { ECONOMY, COLLECTION, STARTER_DECK } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
@@ -18,6 +18,7 @@ export function newProfile() {
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK],
     foils: [],
+    achievements: [], // logros ya reclamados (core/achievements.js)
     packHistory: [],
     missions: null, // se generan al consultarlas (core/missions.js)
     settings: { reducedMotion: false, fastAi: false },
@@ -67,6 +68,7 @@ export function sanitizeProfile(raw) {
     collection,
     deck: deckErrors(deck, collection).length === 0 ? deck : [...STARTER_DECK],
     foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],
+    achievements: [...new Set(strList(raw.achievements).filter((id) => ACHIEVEMENTS.some((a) => a.id === id)))],
     packHistory: Array.isArray(raw.packHistory)
       ? raw.packHistory.filter((h) => isObj(h) && Number.isFinite(h.at) && strList(h.cards).every((id) => CARD_BY_ID[id]))
         .map((h) => ({ at: h.at, cards: strList(h.cards) })).slice(-COLLECTION.historySize)
