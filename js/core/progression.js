@@ -1,38 +1,88 @@
-// Progresión y recompensas locales. Funciones puras: reciben el perfil y devuelven uno nuevo.
+// Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // shortcut: el perfil vive en el dispositivo y se puede manipular; en la fase de backend
 // las recompensas se validarán en servidor.
-import { ECONOMY } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK } from './config.js';
+import { CARD_BY_ID } from './cards.js';
+import { countCards, deckErrors, maxCopies } from './collection.js';
+import { addProgress, localDay, missionDef } from './missions.js';
 
-export const PROFILE_VERSION = 1;
+export { localDay };
+export const PROFILE_VERSION = 2;
 const MAX_REMEMBERED_MATCHES = 50;
 
 export function newProfile() {
-  return { version: PROFILE_VERSION, coins: 0, xp: 0, wins: 0, losses: 0, lastFirstWinDay: null, tutorialSeen: false, claimedMatches: [] };
+  return {
+    version: PROFILE_VERSION,
+    coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
+    lastFirstWinDay: null, tutorialSeen: false, claimedMatches: [],
+    collection: countCards(STARTER_DECK),
+    deck: [...STARTER_DECK],
+    foils: [],
+    packHistory: [],
+    missions: null, // se generan al consultarlas (core/missions.js)
+    settings: { reducedMotion: false, fastAi: false },
+  };
 }
 
 export const levelOf = (xp, eco = ECONOMY) => Math.floor(xp / eco.xpPerLevel) + 1;
 export const xpIntoLevel = (xp, eco = ECONOMY) => xp % eco.xpPerLevel;
 
-// Valida un perfil cargado del almacenamiento; si está corrupto o es de otra versión, empieza de cero.
+const int = (v, max = Number.MAX_SAFE_INTEGER) => (Number.isFinite(v) && v >= 0 ? Math.min(Math.floor(v), max) : 0);
+const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+const strList = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+
+function sanitizeMissionList(list) {
+  if (!Array.isArray(list)) return null;
+  const clean = list.filter((m) => isObj(m) && missionDef(m.id)).map((m) => ({
+    id: m.id, progress: int(m.progress, missionDef(m.id).goal), claimed: m.claimed === true,
+  }));
+  return clean.length === list.length ? clean : null;
+}
+
+// Valida un perfil cargado del almacenamiento. Migra la versión 1 y descarta datos corruptos
+// campo a campo, sin perder el resto del progreso.
 export function sanitizeProfile(raw) {
   const base = newProfile();
-  if (!raw || typeof raw !== 'object' || raw.version !== PROFILE_VERSION) return base;
-  const n = (v) => (Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+  if (!isObj(raw) || (raw.version !== 1 && raw.version !== PROFILE_VERSION)) return base;
+
+  const collection = { ...base.collection }; // la colección inicial siempre está garantizada
+  if (isObj(raw.collection)) {
+    for (const [id, n] of Object.entries(raw.collection)) {
+      const c = CARD_BY_ID[id];
+      if (c && !c.token) collection[id] = Math.max(collection[id] || 0, int(n, maxCopies(c)));
+    }
+  }
+  const deck = strList(raw.deck);
+  const m = raw.missions;
+  const daily = isObj(m) && sanitizeMissionList(m.daily);
+  const weekly = isObj(m) && sanitizeMissionList(m.weekly);
+  const settings = isObj(raw.settings) ? raw.settings : {};
+
   return {
     ...base,
-    coins: n(raw.coins), xp: n(raw.xp), wins: n(raw.wins), losses: n(raw.losses),
+    coins: int(raw.coins), fragments: int(raw.fragments), xp: int(raw.xp), wins: int(raw.wins), losses: int(raw.losses),
     lastFirstWinDay: typeof raw.lastFirstWinDay === 'string' ? raw.lastFirstWinDay : null,
     tutorialSeen: raw.tutorialSeen === true,
-    claimedMatches: Array.isArray(raw.claimedMatches) ? raw.claimedMatches.filter((x) => typeof x === 'string').slice(-MAX_REMEMBERED_MATCHES) : [],
+    claimedMatches: strList(raw.claimedMatches).slice(-MAX_REMEMBERED_MATCHES),
+    collection,
+    deck: deckErrors(deck, collection).length === 0 ? deck : [...STARTER_DECK],
+    foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],
+    packHistory: Array.isArray(raw.packHistory)
+      ? raw.packHistory.filter((h) => isObj(h) && Number.isFinite(h.at) && strList(h.cards).every((id) => CARD_BY_ID[id]))
+        .map((h) => ({ at: h.at, cards: strList(h.cards) })).slice(-COLLECTION.historySize)
+      : [],
+    missions: daily && weekly && typeof m.day === 'string' && typeof m.week === 'string' ? { day: m.day, daily, week: m.week, weekly } : null,
+    settings: { reducedMotion: settings.reducedMotion === true, fastAi: settings.fastAi === true },
   };
 }
 
-// won: true/false. today: 'AAAA-MM-DD' en hora local. Idempotente por matchId:
-// reclamar dos veces la misma partida no concede nada la segunda vez.
-export function claimMatchRewards(profile, matchId, won, today, eco = ECONOMY) {
+// Idempotente por matchId: reclamar dos veces la misma partida no concede nada la segunda vez.
+// stats (opcional) hace avanzar las misiones; ver matchStats en core/missions.js.
+export function claimMatchRewards(profile, matchId, won, now = new Date(), stats = null, eco = ECONOMY) {
   if (profile.claimedMatches.includes(matchId)) {
     return { profile, rewards: null };
   }
+  const today = localDay(now);
   const firstWin = won && profile.lastFirstWinDay !== today;
   const rewards = {
     coins: (won ? eco.winCoins : eco.lossCoins) + (firstWin ? eco.firstWinOfDayCoins : 0),
@@ -40,7 +90,7 @@ export function claimMatchRewards(profile, matchId, won, today, eco = ECONOMY) {
     firstWinBonus: firstWin ? eco.firstWinOfDayCoins : 0,
     levelBefore: levelOf(profile.xp, eco),
   };
-  const next = {
+  let next = {
     ...profile,
     coins: profile.coins + rewards.coins,
     xp: profile.xp + rewards.xp,
@@ -49,11 +99,7 @@ export function claimMatchRewards(profile, matchId, won, today, eco = ECONOMY) {
     lastFirstWinDay: firstWin ? today : profile.lastFirstWinDay,
     claimedMatches: [...profile.claimedMatches, matchId].slice(-MAX_REMEMBERED_MATCHES),
   };
+  if (stats) next = addProgress(next, stats, now);
   rewards.levelAfter = levelOf(next.xp, eco);
   return { profile: next, rewards };
-}
-
-export function localDay(date = new Date()) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }

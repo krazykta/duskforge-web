@@ -274,6 +274,13 @@ export function endTurn(state, p) {
   return { ok: true };
 }
 
+export function concede(state, p) {
+  if (state.winner !== null) return { ok: false, error: 'La partida ha terminado' };
+  state.winner = other(p);
+  emit(state, { type: 'gameOver', winner: state.winner, conceded: true });
+  return { ok: true };
+}
+
 // La interfaz llama a esto para recoger y vaciar los eventos pendientes.
 export function takeEvents(state) {
   return state.events.splice(0);
