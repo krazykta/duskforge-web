@@ -33,7 +33,7 @@ function rollRarity(rng, odds) {
   for (const rarity of RARITIES) {
     if ((r -= odds[rarity]) < 0) return rarity;
   }
-  return 'common'; // por redondeo de decimales
+  return RARITIES.findLast((x) => odds[x] > 0); // por redondeo de decimales
 }
 
 // Añade una carta: si ya tienes el máximo, se convierte en fragmentos.
@@ -52,7 +52,7 @@ export function openPack(profile, { rng = Math.random, now = new Date(), pack = 
   let p = { ...profile, coins: profile.coins - pack.price };
   const results = [];
   for (let i = 0; i < pack.cards; i++) {
-    const rarity = rollRarity(rng, pack.odds);
+    const rarity = rollRarity(rng, i === pack.cards - 1 && pack.lastOdds ? pack.lastOdds : pack.odds);
     const pool = COLLECTIBLE.filter((c) => c.rarity === rarity);
     const id = pool[Math.floor(rng() * pool.length)].id;
     const g = grantCard(p, id, cfg);

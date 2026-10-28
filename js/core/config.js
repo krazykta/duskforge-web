@@ -42,6 +42,16 @@ export const PACK = {
   odds: { common: 0.7, rare: 0.22, epic: 0.065, legendary: 0.015 },
 };
 
+// Más cartas por sobre y la última siempre rara o mejor: ayuda a completar una colección grande.
+export const BIG_PACK = {
+  name: 'Sobre grande',
+  price: 180,
+  cards: 5,
+  odds: PACK.odds,
+  lastOdds: { common: 0, rare: 0.75, epic: 0.2, legendary: 0.05 },
+};
+export const PACKS = [PACK, BIG_PACK];
+
 // Misiones: "stat" es la estadística que las hace avanzar (ver core/missions.js).
 export const MISSIONS = {
   dailyCount: 3,
