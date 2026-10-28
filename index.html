@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#0d0a18">
   <title>DUSKFORGE</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="img/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -17,5 +20,6 @@
   <noscript>Este juego necesita JavaScript.</noscript>
   <script src="vendor/supabase.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script>if ('serviceWorker' in navigator && location.hostname !== 'localhost') navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
