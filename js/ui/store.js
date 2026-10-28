@@ -86,7 +86,7 @@ export const missionBadge = () => {
 
 // Ilustración de la carta, o su emoji si todavía no tiene.
 export const artHtml = (card) =>
-  CARD_ART.has(card.id) ? `<img src="img/cards/${card.id}.webp" alt="" draggable="false">` : card.art;
+  CARD_ART.has(card.id) ? `<img src="img/cards/${card.id}.webp" alt="" draggable="false" loading="lazy">` : card.art;
 
 // Cara completa de una carta (colección, sobres, detalle).
 export function cardFace(card, { count = null, foil = false, locked = false, big = false, attrs = '' } = {}) {
