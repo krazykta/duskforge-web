@@ -52,7 +52,7 @@ const FIELD = {
 export function showAuth(mode = 'login') {
   const f = FORMS[mode];
   app.innerHTML = `
-    <section class="screen auth">
+    <section class="screen auth scenic">
       <h1 class="logo">DUSK<span>FORGE</span></h1>
       <form class="panel auth-form" novalidate>
         <h3>${f.title}</h3>
@@ -125,7 +125,7 @@ async function submit(mode, v) {
 
 function info(title, html) {
   app.innerHTML = `
-    <section class="screen auth">
+    <section class="screen auth scenic">
       <h1 class="logo">DUSK<span>FORGE</span></h1>
       <div class="panel"><h3>${title}</h3><p>${html}</p></div>
       <button class="btn ghost" data-go="auth">Volver</button>

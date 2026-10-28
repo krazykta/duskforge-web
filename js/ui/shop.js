@@ -13,7 +13,7 @@ export function showShop() {
     <section class="screen top">
       ${topBar('Tienda')}
       <div class="pack-offer">
-        <div class="pack-art" aria-hidden="true">🎴</div>
+        <img class="pack-art" src="img/ui/pack.webp" alt="">
         <div>
           <h3>${PACK.name}</h3>
           <p>${PACK.cards} cartas · <b class="coins">${PACK.price} 🪙</b></p>
@@ -53,7 +53,7 @@ async function buyPack() {
       <div class="reveal">
         ${r.results.map((x, i) => `
           <div class="flip" data-i="${i}" role="button" aria-label="Carta oculta ${i + 1}">
-            <div class="back r-${CARD_BY_ID[x.id].rarity}-glow">🂠</div>
+            <div class="back r-${CARD_BY_ID[x.id].rarity}-glow"></div>
             <div class="front">
               ${cardFace(CARD_BY_ID[x.id], { foil: getProfile().foils.includes(x.id) })}
               <span class="tag ${x.isNew ? 'new' : x.fragments ? 'dupe' : ''}">${x.isNew ? '¡Nueva!' : x.fragments ? `+${x.fragments} 💠` : 'Copia +1'}</span>

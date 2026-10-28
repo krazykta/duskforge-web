@@ -12,7 +12,7 @@ import { startApp, showAuth, accountPanel, accountAction } from './ui/account.js
 function showMenu() {
   const p = getProfile();
   app.innerHTML = `
-    <section class="screen">
+    <section class="screen scenic">
       ${topBar()}
       <h1 class="logo">DUSK<span>FORGE</span></h1>
       <div class="profile">
@@ -22,12 +22,12 @@ function showMenu() {
       </div>
       <button class="btn gold big-play" data-go="battle">⚔️ Jugar</button>
       <nav class="tiles">
-        <button class="tile" data-go="collection"><span>📖</span>Colección</button>
-        <button class="tile" data-go="deck"><span>🃏</span>Mazo</button>
-        <button class="tile" data-go="shop"><span>🎴</span>Tienda</button>
-        <button class="tile" data-go="missions"><span>📜</span>Misiones${missionBadge()}</button>
-        <button class="tile" data-go="settings"><span>⚙️</span>Ajustes</button>
-        <button class="tile" data-act="rules"><span>❔</span>Cómo jugar</button>
+        <button class="tile" data-go="collection"><img src="img/ui/icon_collection.webp" alt="">Colección</button>
+        <button class="tile" data-go="deck"><img src="img/ui/icon_deck.webp" alt="">Mazo</button>
+        <button class="tile" data-go="shop"><img src="img/ui/icon_shop.webp" alt="">Tienda</button>
+        <button class="tile" data-go="missions"><img src="img/ui/icon_missions.webp" alt="">Misiones${missionBadge()}</button>
+        <button class="tile" data-go="settings"><img src="img/ui/icon_settings.webp" alt="">Ajustes</button>
+        <button class="tile" data-act="rules"><img src="img/ui/icon_rules.webp" alt="">Cómo jugar</button>
       </nav>
     </section>`;
   onTap((el) => {
@@ -48,6 +48,7 @@ function showRules() {
         <li>Toca una carta para verla y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo.</li>
         <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
+        <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ❄️ no ataca en su siguiente turno.</li>
         <li>Gana monedas 🪙 jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos 💠 para fabricar las que quieras.</li>
       </ul>
       <button class="btn" data-act="close">¡Entendido!</button>
@@ -66,6 +67,7 @@ function showResult(won, rewards, draw) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   app.innerHTML = `
     <section class="screen">
+      ${draw ? '' : `<img class="result-art" src="img/ui/${won ? 'victory' : 'defeat'}.webp" alt="">`}
       <h1 class="result-title ${won ? 'win' : 'lose'}">${won ? '¡VICTORIA!' : draw ? 'EMPATE' : 'DERROTA'}</h1>
       ${rewards ? `
       <div class="rewards">
