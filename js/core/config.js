@@ -178,9 +178,13 @@ export const AI_DECKS = [
     'pumpkin_head', 'farmhand', 'harvest_crow', 'pumpkin_farmer', 'straw_golem', 'scythe_peasant',
     'mourner', 'soul_oarsman', 'river_wraith', 'pumpkin_patch', 'rose_oath', 'reaping',
   ],
+  [ // Mascarada: enmascarados, venenos y trucos de salón
+    'masked_servant', 'sly_fox', 'night_owl', 'masked_guest', 'illusionist', 'ball_butler',
+    'masquerade_dancer', 'toast', 'false_face', 'poisoned_wine', 'fox_trick', 'quagmire',
+  ],
 ];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',
   'La Tejedora', 'Cazadora de la Manada', 'Conde Sangriento', 'Capitán Sal', 'Thane de la Montaña', 'La Dama del Bosque',
-  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros'];
+  'El Maestro de Pista', 'Gran Jefe Trasgo', 'La Jarl de Hierro', 'El Sacerdote de Jade', 'El Kan del Viento', 'El Guardián del Laberinto', 'La Druida de las Setas', 'El Espantapájaros', 'La Dama Enmascarada'];
