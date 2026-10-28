@@ -27,7 +27,12 @@ function chooseCardTarget(state, p, card, targets) {
     const ready = targets.filter((t) => !unitOf(state, t).frozen);
     return (ready.length ? ready : targets).sort(byAtkDesc(state))[0];
   }
-  return targets.sort(byAtkDesc(state))[0]; // buff, destruir o devolver: la más fuerte
+  if (e.kind === 'silence') {
+    // Lo que más estorba: guardianes, escudos, veneno y efectos que siguen actuando.
+    const worth = (u) => (u.guard ? 3 : 0) + (u.shield ? 2 : 0) + (u.poison || u.fury || u.drain ? 2 : 0) + (CARD_BY_ID[u.id].effect && !u.silenced ? 1 : 0) + u.atk / 10;
+    return targets.filter((t) => !unitOf(state, t).silenced).sort((a, b) => worth(unitOf(state, b)) - worth(unitOf(state, a)))[0] || null;
+  }
+  return targets.sort(byAtkDesc(state))[0]; // buff, debilitar, destruir o devolver: la más fuerte
 }
 
 // ¿Merece la pena jugarla ahora? Evita desperdiciar curaciones y barridos.
@@ -40,6 +45,9 @@ function isUseful(state, p, card) {
   if (e.kind === 'damageAllEnemies') return foeBoard.length > 0;
   if (e.kind === 'damageAll') return foeBoard.length > me.board.length; // solo si sale ganando
   if (e.kind === 'buffAll') return me.board.length >= 2;
+  if (e.kind === 'silence') return foeBoard.some((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.drain || CARD_BY_ID[u.id].effect));
+  if (e.kind === 'silenceAll') return foeBoard.filter((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.stealth || CARD_BY_ID[u.id].effect)).length >= 2;
+  if (e.kind === 'weaken') return foeBoard.some((u) => u.atk >= 2);
   if (e.kind === 'summon') return me.board.length < state.rules.boardSize;
   if (e.kind === 'energy') {
     // Solo si la energía extra permite jugar algo que ahora no cabe.

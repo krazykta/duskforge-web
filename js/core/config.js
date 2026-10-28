@@ -84,4 +84,12 @@ export const AI_DECKS = [
     'shadow_cutpurse', 'shadow_cutpurse', 'ember_hound', 'ember_hound', 'phantom_thief', 'twin_blade',
     'ash_bat', 'wolf_rider', 'magic_missiles', 'magic_missiles', 'blood_pact', 'storm_crow',
   ],
+  [ // Forja: escudos, guardianes y criaturas que crecen
+    'forge_apprentice', 'forge_apprentice', 'scrap_golem', 'anvil_guard', 'bellows_imp', 'mire_toad',
+    'master_smith', 'sharpen_steel', 'dusk_recruit', 'dwarf_crossbow', 'ash_crawler', 'quick_study',
+  ],
+  [ // Telaraña: arañas, silencio y debilitar
+    'spider_weaver', 'spider_weaver', 'night_moth', 'mire_toad', 'sea_hag', 'silent_monk',
+    'blinding_ash', 'vow_of_silence', 'ash_crawler', 'raven_messenger', 'raven_messenger', 'crypt_lamplighter',
+  ],
 ];

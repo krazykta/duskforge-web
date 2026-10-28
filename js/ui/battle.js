@@ -67,8 +67,8 @@ function unitHtml(u, p, targetSet) {
   battle.seenUnits.add(u.uid);
   const foil = p === ME && getProfile().foils.includes(u.id);
   const cls = ['unit', `r-${c.rarity}`, foil && 'foil', isNew && 'new', u.guard && 'guard', u.shield && 'shield', u.stealth && 'stealth',
-    u.frozen && 'frozen', canAttack && 'ready', sel && 'selected', targetSet.has(k) && 'targetable'];
-  const kw = [u.swift && '⚡', u.drain && '🩸', u.poison && '☠️', u.fury && '⚔️', u.frozen && '❄️'].filter(Boolean).join('');
+    u.frozen && 'frozen', u.silenced && 'silenced', canAttack && 'ready', sel && 'selected', targetSet.has(k) && 'targetable'];
+  const kw = [u.swift && '⚡', u.drain && '🩸', u.poison && '☠️', u.fury && '⚔️', u.frozen && '❄️', u.silenced && '🔇'].filter(Boolean).join('');
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-t="${k}" role="button" aria-label="${c.name} ${u.atk}/${u.hp}">
       ${artHtml(c)}<span class="kw">${kw}</span>
@@ -104,7 +104,7 @@ function detailHtml() {
   } else {
     const ref = (sel && sel.kind === 'unit' && { player: ME, uid: sel.uid }) || inspect;
     const u = ref && findUnit(state, ref.player, ref.uid);
-    if (u) { card = CARD_BY_ID[u.id]; extra = ` · ${u.atk}/${u.hp}`; }
+    if (u) { card = CARD_BY_ID[u.id]; extra = ` · ${u.atk}/${u.hp}${u.silenced ? " · 🔇 silenciada: sin habilidad" : ""}`; }
   }
   if (!card) return `<div class="detail">Toca una carta o criatura para ver qué hace.</div>`;
   const base = card.type === 'unit' ? `${card.atk}/${card.hp}` : 'Hechizo';
@@ -143,13 +143,14 @@ function animateEvents(events) {
   for (const e of events) {
     if (e.type === 'burn') battle.message = 'Mano llena: carta quemada';
     if (e.type === 'fatigue') battle.message = '¡Mazo vacío! Recibes daño de fatiga';
-    if (!['damage', 'heal', 'shieldBreak'].includes(e.type)) continue;
+    if (!['damage', 'heal', 'shieldBreak', 'silence', 'weaken', 'freeze'].includes(e.type)) continue;
     const el = app.querySelector(`[data-t="${tKey(e)}"]`);
     if (!el) continue;
     const r = el.getBoundingClientRect();
     const f = document.createElement('div');
     f.className = `float ${e.type === 'damage' ? 'dmg' : e.type === 'heal' ? 'heal' : 'info'}`;
-    f.textContent = e.type === 'damage' ? `-${e.amount}` : e.type === 'heal' ? `+${e.amount}` : '¡Escudo!';
+    f.textContent = e.type === 'damage' ? `-${e.amount}` : e.type === 'heal' ? `+${e.amount}`
+      : { shieldBreak: '¡Escudo!', silence: 'Silencio', weaken: 'Debilitada', freeze: 'Congelada' }[e.type];
     f.style.left = `${r.left + r.width / 2 - 14}px`;
     f.style.top = `${r.top + r.height / 3}px`;
     f.style.animationDelay = `${delay}ms`;

@@ -8,6 +8,7 @@
 //            stealth= Sigilo (no se puede atacar ni elegir como objetivo hasta que ataque)
 //            fury   = Furia (puede atacar dos veces por turno)
 // effect.trigger: play (al jugarla) | death (al morir) | spell (cuando lanzas un hechizo) | turnEnd (al final de tu turno)
+//                 | attack (después de atacar, si sobrevive)
 // effect.target:  enemy (unidad o héroe enemigo) | enemyUnit | allyUnit | (sin objetivo)
 // Solo "play" y los hechizos pueden llevar objetivo; los demás disparadores usan efectos sin objetivo.
 
@@ -184,7 +185,104 @@ export const CARDS = [
     effect: { trigger: 'turnEnd', kind: 'heal', amount: 3 } },
   { id: 'shadow_archon', name: 'Arconte de la Sombra', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 4, keywords: ['poison', 'fury', 'drain'], art: '😈' },
 
+  // === Ampliación 2: La Forja, el Pantano, las Mareas y el Silencio ===
+  // --- Comunes ---
+  { id: 'forge_apprentice', name: 'Aprendiz de la Forja', type: 'unit', rarity: 'common', cost: 1, atk: 1, hp: 1, art: '🔨',
+    effect: { trigger: 'play', kind: 'buff', amount: 1, target: 'allyUnit' } },
+  { id: 'ash_crawler', name: 'Reptador de Ceniza', type: 'unit', rarity: 'common', cost: 1, atk: 2, hp: 1, art: '🦎' },
+  { id: 'mire_toad', name: 'Sapo del Fango', type: 'unit', rarity: 'common', cost: 1, atk: 0, hp: 3, keywords: ['guard'], art: '🐸' },
+  { id: 'night_moth', name: 'Polilla Nocturna', type: 'unit', rarity: 'common', cost: 1, atk: 1, hp: 1, keywords: ['stealth'], art: '🦋' },
+  { id: 'spider_weaver', name: 'Araña Tejedora', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 2, art: '🕷️',
+    effect: { trigger: 'death', kind: 'summon', amount: 1, token: 'spiderling' } },
+  { id: 'drowned_sailor', name: 'Marinero Ahogado', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 3, art: '🌊' },
+  { id: 'scrap_golem', name: 'Gólem de Chatarra', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 1, keywords: ['shield'], art: '🔩' },
+  { id: 'bellows_imp', name: 'Diablillo del Fuelle', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 2, art: '😈',
+    effect: { trigger: 'attack', kind: 'damageHero', amount: 1 } },
+  { id: 'crypt_lamplighter', name: 'Farolera de la Cripta', type: 'unit', rarity: 'common', cost: 2, atk: 2, hp: 2, art: '🏮',
+    effect: { trigger: 'death', kind: 'addCard', card: 'spark' } },
+  { id: 'raven_messenger', name: 'Cuervo Mensajero', type: 'unit', rarity: 'common', cost: 2, atk: 1, hp: 2, art: '🐦',
+    effect: { trigger: 'death', kind: 'draw', amount: 1 } },
+  { id: 'anvil_guard', name: 'Guardia del Yunque', type: 'unit', rarity: 'common', cost: 3, atk: 3, hp: 2, keywords: ['guard'], art: '⚒️' },
+  { id: 'grave_hound', name: 'Sabueso de Fosa', type: 'unit', rarity: 'common', cost: 3, atk: 3, hp: 3, art: '🐕',
+    effect: { trigger: 'attack', kind: 'buffSelf', amount: 1 } },
+  { id: 'sea_hag', name: 'Bruja del Mar', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 3, art: '🐚',
+    effect: { trigger: 'play', kind: 'weaken', amount: 2, target: 'enemyUnit' } },
+  { id: 'silent_monk', name: 'Monje del Silencio', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 3, art: '🤫',
+    effect: { trigger: 'play', kind: 'silence', target: 'enemyUnit' } },
+  { id: 'dwarf_crossbow', name: 'Ballestero Enano', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 2, art: '🏹',
+    effect: { trigger: 'play', kind: 'damage', amount: 2, target: 'enemy' } },
+  { id: 'marsh_herbalist', name: 'Herbolaria del Pantano', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 3, art: '🌿',
+    effect: { trigger: 'turnEnd', kind: 'heal', amount: 2 } },
+  { id: 'armored_beetle', name: 'Escarabajo Acorazado', type: 'unit', rarity: 'common', cost: 3, atk: 2, hp: 4, keywords: ['shield'], art: '🪲' },
+  { id: 'carrion_vulture', name: 'Buitre Carroñero', type: 'unit', rarity: 'common', cost: 3, atk: 3, hp: 2, keywords: ['swift'], art: '🦅' },
+  { id: 'thornback', name: 'Espinadorso', type: 'unit', rarity: 'common', cost: 4, atk: 3, hp: 5, keywords: ['guard'], art: '🦔' },
+  { id: 'cursed_woodcutter', name: 'Leñador Maldito', type: 'unit', rarity: 'common', cost: 4, atk: 5, hp: 4, art: '🪓' },
+  { id: 'lighthouse_ghost', name: 'Fantasma del Faro', type: 'unit', rarity: 'common', cost: 4, atk: 4, hp: 3, keywords: ['stealth'], art: '🗼' },
+  { id: 'dusk_lancer', name: 'Lancero del Ocaso', type: 'unit', rarity: 'common', cost: 4, atk: 3, hp: 4, keywords: ['swift'], art: '🐎' },
+  { id: 'sharpen_steel', name: 'Afilar Acero', type: 'spell', rarity: 'common', cost: 1, art: '⚔️',
+    effect: { kind: 'buff', amount: 1, target: 'allyUnit' } },
+  { id: 'blinding_ash', name: 'Ceniza Cegadora', type: 'spell', rarity: 'common', cost: 1, art: '🌫️',
+    effect: { kind: 'weaken', amount: 2, target: 'enemyUnit' } },
+  { id: 'vow_of_silence', name: 'Voto de Silencio', type: 'spell', rarity: 'common', cost: 1, art: '🤐',
+    effect: { kind: 'silence', target: 'enemyUnit' } },
+  { id: 'call_of_the_pack', name: 'Llamada de la Manada', type: 'spell', rarity: 'common', cost: 3, art: '🐺',
+    effect: { kind: 'summon', amount: 2, token: 'wolf_pup' } },
+  { id: 'forge_fire', name: 'Fuego de Fragua', type: 'spell', rarity: 'common', cost: 4, art: '🔥',
+    effect: { kind: 'damage', amount: 5, target: 'enemy' } },
+
+  // --- Raras ---
+  { id: 'witch_hunter', name: 'Cazadora de Brujas', type: 'unit', rarity: 'rare', cost: 2, atk: 2, hp: 2, art: '🎯',
+    effect: { trigger: 'play', kind: 'silence', target: 'enemyUnit' } },
+  { id: 'master_smith', name: 'Maestro Herrero', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 3, art: '🔨',
+    effect: { trigger: 'play', kind: 'shield', target: 'allyUnit' } },
+  { id: 'abyss_siren', name: 'Sirena del Abismo', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 3, keywords: ['stealth'], art: '🧜',
+    effect: { trigger: 'play', kind: 'weaken', amount: 3, target: 'enemyUnit' } },
+  { id: 'mad_alchemist', name: 'Alquimista Loco', type: 'unit', rarity: 'rare', cost: 3, atk: 3, hp: 2, art: '⚗️',
+    effect: { trigger: 'play', kind: 'addCard', card: 'spark' } },
+  { id: 'imp_caller', name: 'Invocadora de Diablillos', type: 'unit', rarity: 'rare', cost: 3, atk: 2, hp: 2, art: '😈',
+    effect: { trigger: 'play', kind: 'summon', amount: 2, token: 'imp' } },
+  { id: 'spider_queen', name: 'Reina Araña', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 4, art: '🕷️',
+    effect: { trigger: 'play', kind: 'summon', amount: 2, token: 'spiderling' } },
+  { id: 'inquisitor', name: 'Inquisidora Silente', type: 'unit', rarity: 'rare', cost: 4, atk: 4, hp: 4, art: '⚖️',
+    effect: { trigger: 'play', kind: 'silence', target: 'enemyUnit' } },
+  { id: 'chained_gladiator', name: 'Gladiadora Encadenada', type: 'unit', rarity: 'rare', cost: 4, atk: 4, hp: 4, art: '⛓️',
+    effect: { trigger: 'attack', kind: 'buffSelf', amount: 1 } },
+  { id: 'forge_drake', name: 'Draco de la Forja', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '🐉',
+    effect: { trigger: 'play', kind: 'damageAllEnemies', amount: 1 } },
+  { id: 'withered_treant', name: 'Ent Marchito', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 6, keywords: ['guard'], art: '🌳' },
+  { id: 'spymaster', name: 'Maestro de Espías', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, keywords: ['stealth'], art: '🕵️',
+    effect: { trigger: 'play', kind: 'draw', amount: 1 } },
+  { id: 'drowned_captain', name: 'Capitán Ahogado', type: 'unit', rarity: 'rare', cost: 4, atk: 3, hp: 3, art: '⚓',
+    effect: { trigger: 'death', kind: 'summon', amount: 2, token: 'skeleton' } },
+  { id: 'transfusion', name: 'Transfusión', type: 'spell', rarity: 'rare', cost: 2, art: '🩸',
+    effect: { kind: 'damageHeal', amount: 3, target: 'enemyUnit' } },
+
+  // --- Épicas ---
+  { id: 'forge_lord', name: 'Señor de la Forja', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 6, keywords: ['guard', 'shield'], art: '⚒️' },
+  { id: 'dusk_kraken', name: 'Kraken del Ocaso', type: 'unit', rarity: 'epic', cost: 5, atk: 5, hp: 5, art: '🐙',
+    effect: { trigger: 'play', kind: 'bounce', target: 'enemyUnit' } },
+  { id: 'ash_hydra', name: 'Hidra de Ceniza', type: 'unit', rarity: 'epic', cost: 5, atk: 3, hp: 5, keywords: ['fury'], art: '🐍',
+    effect: { trigger: 'attack', kind: 'buffSelf', amount: 1 } },
+  { id: 'chained_lich', name: 'Liche Encadenado', type: 'unit', rarity: 'epic', cost: 5, atk: 3, hp: 5, art: '💀',
+    effect: { trigger: 'turnEnd', kind: 'damageHero', amount: 2 } },
+  { id: 'sacred_purge', name: 'Purga Sagrada', type: 'spell', rarity: 'epic', cost: 3, art: '🔔',
+    effect: { kind: 'silenceAll' } },
+  { id: 'soul_forge', name: 'Forja del Alma', type: 'spell', rarity: 'epic', cost: 3, art: '💠',
+    effect: { kind: 'buff', amount: 3, target: 'allyUnit' } },
+
+  // --- Legendarias ---
+  { id: 'web_mother', name: 'Madre de las Telarañas', type: 'unit', rarity: 'legendary', cost: 5, atk: 4, hp: 5, art: '🕸️',
+    effect: { trigger: 'turnEnd', kind: 'summon', amount: 1, token: 'spiderling' } },
+  { id: 'dusk_forgemaster', name: 'Forjador del Ocaso', type: 'unit', rarity: 'legendary', cost: 4, atk: 3, hp: 5, art: '🔥',
+    effect: { trigger: 'spell', kind: 'buffAll', amount: 1 } },
+  { id: 'drowned_leviathan', name: 'Leviatán Ahogado', type: 'unit', rarity: 'legendary', cost: 5, atk: 6, hp: 7, art: '🐋',
+    effect: { trigger: 'play', kind: 'damageAll', amount: 2 } },
+  { id: 'voice_of_silence', name: 'La Voz del Silencio', type: 'unit', rarity: 'legendary', cost: 5, atk: 5, hp: 5, keywords: ['stealth'], art: '🌫️',
+    effect: { trigger: 'play', kind: 'silenceAll' } },
+
   // --- Fichas (no coleccionables) ---
+  { id: 'spiderling', name: 'Arañita', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, keywords: ['poison'], art: '🕷️', token: true },
+  { id: 'imp', name: 'Diablillo', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, keywords: ['swift'], art: '😈', token: true },
   { id: 'larva', name: 'Larva', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, art: '🐛', token: true },
   { id: 'skeleton', name: 'Esqueleto', type: 'unit', rarity: 'common', cost: 0, atk: 1, hp: 1, art: '💀', token: true },
   { id: 'wolf_pup', name: 'Cachorro de Lobo', type: 'unit', rarity: 'common', cost: 0, atk: 2, hp: 2, art: '🐺', token: true },
@@ -203,7 +301,7 @@ export const KEYWORD_TEXT = {
 };
 
 const TARGET_TEXT = { enemy: 'a un enemigo', enemyUnit: 'a una criatura enemiga', allyUnit: 'a una criatura aliada' };
-const TRIGGER_TEXT = { play: 'Al jugarla: ', death: 'Al morir: ', spell: 'Cuando lanzas un hechizo: ', turnEnd: 'Al final de tu turno: ' };
+const TRIGGER_TEXT = { play: 'Al jugarla: ', death: 'Al morir: ', spell: 'Cuando lanzas un hechizo: ', turnEnd: 'Al final de tu turno: ', attack: 'Al atacar: ' };
 
 // Texto de reglas legible, generado a partir de los datos (una sola fuente de verdad).
 export function cardText(card) {
@@ -229,6 +327,10 @@ export function cardText(card) {
       energy: `ganas ${e.amount} de energía este turno`,
       damageHeal: `inflige ${e.amount} de daño ${t} y cura ${e.amount} a tu héroe`,
       bounce: `devuelve ${t} a la mano de su dueño`,
+      silence: `silencia ${t} (pierde sus palabras clave y su efecto)`,
+      silenceAll: 'silencia a todas las criaturas enemigas',
+      weaken: `quita ${e.amount} de ataque ${t}`,
+      addCard: `añade ${e.amount > 1 ? e.amount + ' ' : 'una '}${CARD_BY_ID[e.card]?.name} a tu mano`,
       missiles: `lanza ${e.amount} proyectiles de 1 de daño contra enemigos al azar`,
     }[e.kind];
     const text = (TRIGGER_TEXT[e.trigger] || '') + body;

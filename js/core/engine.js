@@ -22,6 +22,8 @@ function shuffle(state, list) {
 export const HERO = null; // uid de un objetivo que es el héroe
 export const other = (p) => 1 - p;
 const emit = (state, event) => state.events.push(event);
+// Una criatura silenciada pierde su efecto impreso.
+const unitEffect = (u) => (u.silenced ? null : CARD_BY_ID[u.id].effect);
 
 export function createMatch({ decks, seed = Date.now(), firstPlayer = 0, rules = RULES }) {
   const state = {
@@ -81,7 +83,7 @@ function makeUnit(state, id) {
     uid: state.nextUid++, id, atk: c.atk, hp: c.hp, maxHp: c.hp,
     guard: kw.includes('guard'), swift: kw.includes('swift'), shield: kw.includes('shield'), drain: kw.includes('drain'),
     poison: kw.includes('poison'), stealth: kw.includes('stealth'), fury: kw.includes('fury'),
-    ready: kw.includes('swift'), frozen: false, furyUsed: false,
+    ready: kw.includes('swift'), frozen: false, furyUsed: false, silenced: false,
   };
 }
 
@@ -124,7 +126,7 @@ function resolveDeaths(state) {
     if (dead.length === 0) break;
     for (const { p, u } of dead) {
       emit(state, { type: 'death', player: p, uid: u.uid, card: u.id });
-      const e = CARD_BY_ID[u.id].effect;
+      const e = unitEffect(u);
       if (e && e.trigger === 'death') applyEffect(state, p, e, null, null);
     }
   }
@@ -197,6 +199,25 @@ function applyEffect(state, p, effect, target, source) {
         emit(state, { type: 'buff', player: p, uid: u.uid });
       }
       break;
+    case 'silence': {
+      const u = target && findUnit(state, target.player, target.uid);
+      if (u) silence(state, target.player, u);
+      break;
+    }
+    case 'silenceAll': [...state.players[foe].board].forEach((u) => silence(state, foe, u)); break;
+    case 'weaken': {
+      const u = target && findUnit(state, target.player, target.uid);
+      if (u) { u.atk = Math.max(0, u.atk - a); emit(state, { type: 'weaken', ...target }); }
+      break;
+    }
+    case 'addCard': {
+      const pl = state.players[p];
+      for (let i = 0; i < (a || 1); i++) {
+        if (pl.hand.length >= state.rules.maxHand) emit(state, { type: 'burn', player: p, card: effect.card });
+        else { pl.hand.push(effect.card); emit(state, { type: 'draw', player: p }); }
+      }
+      break;
+    }
     case 'energy': state.players[p].energy += a; break;
     case 'damageHeal': if (target) heal(state, p, damage(state, target, a)); break;
     case 'bounce': {
@@ -218,6 +239,12 @@ function applyEffect(state, p, effect, target, source) {
       break;
     default: throw new Error(`Efecto desconocido: ${effect.kind}`);
   }
+}
+
+function silence(state, p, u) {
+  for (const k of ['guard', 'swift', 'shield', 'drain', 'poison', 'stealth', 'fury']) u[k] = false;
+  u.silenced = true;
+  emit(state, { type: 'silence', player: p, uid: u.uid });
 }
 
 // Objetivos válidos para un tipo de objetivo de efecto ("enemy", "enemyUnit", "allyUnit").
@@ -278,7 +305,7 @@ export function playCard(state, p, handIndex, target = null) {
     applyEffect(state, p, card.effect, target, null);
     // Sinergia: criaturas que reaccionan a tus hechizos.
     for (const u of [...pl.board]) {
-      const e = CARD_BY_ID[u.id].effect;
+      const e = unitEffect(u);
       if (e && e.trigger === 'spell' && u.hp > 0) applyEffect(state, p, e, null, u);
     }
   }
@@ -308,6 +335,8 @@ export function attack(state, p, uid, target) {
   const dealt = damage(state, target, u.atk, u);
   if (defender) damage(state, { player: p, uid }, defender.atk, defender); // contraataque simultáneo
   if (u.drain) heal(state, p, dealt);
+  const e = unitEffect(u);
+  if (e && e.trigger === 'attack' && u.hp > 0) applyEffect(state, p, e, null, u);
   resolveDeaths(state);
   return { ok: true };
 }
@@ -315,7 +344,7 @@ export function attack(state, p, uid, target) {
 export function endTurn(state, p) {
   if (state.winner !== null || state.turn !== p) return { ok: false, error: 'No es tu turno' };
   for (const u of [...state.players[p].board]) {
-    const e = CARD_BY_ID[u.id].effect;
+    const e = unitEffect(u);
     if (e && e.trigger === 'turnEnd' && u.hp > 0) applyEffect(state, p, e, null, u);
   }
   resolveDeaths(state);
