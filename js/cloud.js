@@ -15,6 +15,8 @@ const ERRORS = {
   over_email_send_rate_limit: 'Se han enviado demasiados correos. Prueba dentro de un rato.',
   email_address_not_authorized: 'Ahora mismo solo se pueden enviar correos a direcciones autorizadas (modo pruebas).',
   same_password: 'La nueva contraseña debe ser distinta de la anterior.',
+  DF400: 'El mensaje debe tener entre 1 y 2000 caracteres.', // códigos propios de supabase/migrations/0002_support.sql
+  DF429: 'Ya has enviado 5 mensajes hoy. Te responderemos lo antes posible.',
 };
 const message = (error) => ERRORS[error.code] || 'No se pudo completar. Comprueba tu conexión e inténtalo de nuevo.';
 
@@ -35,6 +37,10 @@ export const signOut = () => call(sb?.auth.signOut());
 export const sendReset = (email) => call(sb?.auth.resetPasswordForEmail(email));
 export const setPassword = (password) => call(sb?.auth.updateUser({ password }));
 export const deleteAccount = () => call(sb?.rpc('delete_my_account'));
+// Soporte: los mensajes se guardan cifrados y solo se leen con estas funciones (ver docs/soporte.md).
+export const sendSupport = (message) => call(sb?.rpc('send_support_message', { message }));
+export const mySupport = () => call(sb?.rpc('my_support_messages'));
+export const markSupportSeen = () => call(sb?.rpc('mark_support_seen'));
 
 export async function pullProfile(userId) {
   const r = await call(sb?.from('profiles').select('data').eq('id', userId).maybeSingle());

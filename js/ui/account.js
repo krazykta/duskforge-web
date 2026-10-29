@@ -1,6 +1,6 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
-import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, pullProfile, pushProfile } from '../cloud.js';
-import { app, getProfile, go, toast, setCloudUser, getCloudUser, flushCloud, replaceProfile } from './store.js';
+import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, pullProfile, pushProfile, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
+import { app, getProfile, go, toast, topBar, setCloudUser, getCloudUser, flushCloud, replaceProfile } from './store.js';
 
 const GUEST_KEY = 'duskforge.guest';
 const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } };
@@ -30,6 +30,7 @@ async function enterWithUser(user) {
     if (r.data) replaceProfile(r.data);
     else await pushProfile(user.id, getProfile());
     setCloudUser(user);
+    mySupport().then((s) => s.data?.some((m) => m.reply && !m.reply_seen) && toast('Te hemos respondido: míralo en Ajustes → Contacto'));
   }
   setGuest(false);
   if (recovering) go('auth', 'newPassword');
@@ -133,6 +134,60 @@ function info(title, html) {
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// ---------- Contacto: el jugador escribe y lee aquí la respuesta (la damos desde Supabase, docs/soporte.md) ----------
+export function showSupport() {
+  const user = getCloudUser();
+  app.innerHTML = `
+    <section class="screen top">
+      ${topBar('Contacto')}
+      ${user ? `
+      <form class="panel auth-form" novalidate>
+        <h3>Contacta con nosotros</h3>
+        <label>Tu mensaje<textarea name="message" rows="5" maxlength="2000" required></textarea></label>
+        <p class="sub">Te responderemos aquí mismo. El mensaje se guarda cifrado.</p>
+        <p class="warn" role="alert" id="support-msg"></p>
+        <button class="btn gold" type="submit">Enviar</button>
+      </form>
+      <div class="support-list" aria-live="polite"><p class="sub">Cargando tus mensajes…</p></div>` : `
+      <div class="panel"><h3>Contacta con nosotros</h3>
+        <p class="sub">Para escribirnos y recibir la respuesta en el juego necesitas una cuenta.</p>
+        <button class="btn small gold" data-go="auth">Entrar o crear cuenta</button></div>`}
+    </section>`;
+  if (!user) return;
+  const form = app.querySelector('form');
+  const list = app.querySelector('.support-list');
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const text = form.message.value.trim();
+    const msg = app.querySelector('#support-msg');
+    if (!text) return (msg.textContent = 'Escribe tu mensaje.');
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    const r = await sendSupport(text);
+    button.disabled = false;
+    msg.textContent = r.error ?? '';
+    if (r.error) return;
+    form.reset();
+    toast('Mensaje enviado');
+    loadSupport(list);
+  });
+  loadSupport(list);
+}
+
+async function loadSupport(list) {
+  const r = await mySupport();
+  if (!list.isConnected) return;
+  if (r.error) return (list.innerHTML = `<p class="warn">${r.error}</p>`);
+  const when = (t) => new Date(t).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+  list.innerHTML = r.data.length ? r.data.map((m) => `
+    <div class="panel">
+      <span class="sub">Tú · ${when(m.created_at)}</span><p>${escapeHtml(m.message)}</p>
+      ${m.reply ? `<div class="reply"><span class="sub">DUSKFORGE · ${when(m.replied_at)}</span><p>${escapeHtml(m.reply)}</p></div>`
+        : '<p class="sub">Aún sin respuesta.</p>'}
+    </div>`).join('') : '<p class="sub">Aún no nos has escrito.</p>';
+  if (r.data.some((m) => m.reply && !m.reply_seen)) markSupportSeen();
+}
 
 // ---------- Panel de cuenta en Ajustes ----------
 export function accountPanel() {

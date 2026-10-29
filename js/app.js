@@ -6,7 +6,7 @@ import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
-import { startApp, showAuth, accountPanel, accountAction } from './ui/account.js';
+import { startApp, showAuth, showSupport, accountPanel, accountAction } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
 
 // ---------- Menú ----------
@@ -101,6 +101,9 @@ function showSettings() {
         ${toggle('music', 'Música', 'Música de fondo en los menús y en combate.')}
       </div>
       ${accountPanel()}
+      <div class="panel"><h3>Contacto</h3>
+        <p class="sub">¿Dudas, errores o ideas? Escríbenos y te responderemos dentro del juego.</p>
+        <button class="btn small" data-go="support">Contacta con nosotros</button></div>
     </section>`;
   onTap((el) => {
     const act = el.closest('[data-act]')?.dataset.act;
@@ -122,5 +125,6 @@ register('shop', showShop);
 register('missions', showMissions);
 register('settings', showSettings);
 register('auth', showAuth);
+register('support', showSupport);
 
 startApp();
