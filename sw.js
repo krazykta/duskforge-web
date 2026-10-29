@@ -1,4 +1,5 @@
 // Service worker de la PWA: sirve lo ya visto desde caché y lo actualiza en segundo plano.
+// Las respuestas parciales (206, la música pide rangos) no se guardan: cache.put las rechaza.
 // shortcut: sin lista de precarga, la primera visita necesita internet; precargar si se quiere jugar offline desde el primer día.
 const CACHE = 'duskforge-v6';
 
@@ -12,7 +13,7 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // Supabase y demás van siempre a la red
   e.respondWith(caches.open(CACHE).then(async (cache) => {
     const cached = await cache.match(e.request);
-    const fresh = fetch(e.request).then((res) => { if (res.ok) cache.put(e.request, res.clone()); return res; });
+    const fresh = fetch(e.request).then((res) => { if (res.status === 200) cache.put(e.request, res.clone()); return res; });
     if (cached) { fresh.catch(() => {}); return cached; }
     return fresh;
   }));

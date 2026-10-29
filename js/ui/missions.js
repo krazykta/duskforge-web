@@ -3,6 +3,7 @@ import { refreshMissions, claimMission, missionDef } from '../core/missions.js';
 import { achievementList, claimAchievement } from '../core/achievements.js';
 import { ACHIEVEMENTS } from '../core/config.js';
 import { app, getProfile, setProfile, onTap, topBar, toast } from './store.js';
+import { sfx } from './sound.js';
 
 function timeLeft(to) {
   const ms = to - Date.now();
@@ -55,6 +56,7 @@ export function showMissions() {
     const r = id.startsWith('a_') ? claimAchievement(getProfile(), id) : claimMission(getProfile(), id);
     if (r.error) return toast(r.error);
     setProfile(r.profile);
+    sfx('coins');
     toast(`+${r.reward.coins} 🪙${r.reward.fragments ? ` +${r.reward.fragments} 💠` : ''}`);
     const y = app.querySelector('.screen').scrollTop; // no saltar arriba al reclamar un logro del final
     showMissions();

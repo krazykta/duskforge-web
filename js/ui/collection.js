@@ -3,6 +3,7 @@ import { RULES, COLLECTION } from '../core/config.js';
 import { CARD_BY_ID, SETS, cardText } from '../core/cards.js';
 import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors, craftCard, upgradeFoil } from '../core/collection.js';
 import { app, getProfile, setProfile, onTap, topBar, cardFace, toast } from './store.js';
+import { sfx } from './sound.js';
 
 const sortCards = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
 
@@ -106,6 +107,7 @@ function showCardDetail(id) {
     if (!r) return;
     if (r.error) return toast(r.error);
     setProfile(r.profile);
+    sfx('forge');
     toast(act === 'craft' ? `¡${card.name} fabricada!` : `¡${card.name} ahora es brillante!`);
     showCollection();
     showCardDetail(id);

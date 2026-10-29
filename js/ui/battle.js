@@ -31,6 +31,7 @@ export function startBattle() {
     log: [], // todos los eventos, para las estadísticas de misiones
   };
   onTap(onBattleTap);
+  sfx('shuffle');
   renderBattle();
   if (state.turn === FOE) runAiTurn();
 }
@@ -176,7 +177,7 @@ async function afterAction() {
   battle.log.push(...events);
   renderBattle();
   animateEvents(events);
-  eventSound(events);
+  eventSound(events, ME);
   if (battle.state.winner !== null) {
     battle.finishing = true;
     battle.busy = true;
@@ -192,6 +193,7 @@ async function playerPlay(index, target) {
   battle.sel = null;
   const r = playCard(battle.state, ME, index, target);
   battle.message = r.ok ? '' : r.error;
+  if (!r.ok) sfx('error');
   await afterAction();
 }
 

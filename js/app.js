@@ -7,6 +7,7 @@ import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection
 import { showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
 import { startApp, showAuth, accountPanel, accountAction } from './ui/account.js';
+import { updateMusic } from './ui/sound.js';
 
 // ---------- Menú ----------
 function showMenu() {
@@ -96,7 +97,8 @@ function showSettings() {
       <div class="panel">
         ${toggle('reducedMotion', 'Animaciones reducidas', 'Menos movimiento en pantalla.')}
         ${toggle('fastAi', 'Rival rápido', 'El rival juega sus cartas más deprisa.')}
-        ${toggle('sound', 'Sonido', 'Efectos al jugar cartas, golpear y ganar.')}
+        ${toggle('sound', 'Efectos de sonido', 'Cartas, golpes, monedas y botones.')}
+        ${toggle('music', 'Música', 'Música de fondo en los menús y en combate.')}
       </div>
       ${accountPanel()}
     </section>`;
@@ -107,6 +109,7 @@ function showSettings() {
     if (!input) return;
     const p = getProfile();
     setProfile({ ...p, settings: { ...p.settings, [input.dataset.setting]: input.checked } });
+    updateMusic();
   });
 }
 

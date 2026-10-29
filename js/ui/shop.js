@@ -3,6 +3,7 @@ import { PACKS, BIG_PACK, COLLECTION } from '../core/config.js';
 import { CARD_BY_ID } from '../core/cards.js';
 import { openPack, RARITIES, RARITY_TEXT, COLLECTIBLE } from '../core/collection.js';
 import { app, getProfile, setProfile, onTap, topBar, cardFace, toast, wait } from './store.js';
+import { sfx } from './sound.js';
 
 const pct = (x) => `${(x * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
 
@@ -50,6 +51,7 @@ async function buyPack(pack) {
   const r = openPack(getProfile(), { pack });
   if (r.error) return toast(r.error);
   setProfile(r.profile); // se guarda antes de la animación: cerrar la app no pierde el sobre
+  sfx('packOpen');
   app.innerHTML = `
     <section class="screen">
       <h2 class="opening-title">¡Toca las cartas para revelarlas!</h2>
@@ -74,6 +76,7 @@ async function buyPack(pack) {
     if (revealed.has(i) || !root.isConnected) return;
     revealed.add(i);
     root.querySelector(`.flip[data-i="${i}"]`).classList.add('open');
+    sfx(`reveal-${CARD_BY_ID[r.results[i].id].rarity}`);
     if (revealed.size === r.results.length) root.querySelector('#after-pack').classList.remove('hidden');
   };
   onTap(async (el) => {

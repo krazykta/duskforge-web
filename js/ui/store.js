@@ -7,6 +7,7 @@ import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
 import { pushProfile } from '../cloud.js';
 import { CARD_ART } from './card-art.js';
+import { music } from './sound.js';
 
 export const app = document.getElementById('app');
 const STORAGE_KEY = 'duskforge.profile';
@@ -50,6 +51,7 @@ let tapHandler = null;
 export const register = (name, fn) => (screens[name] = fn);
 export function go(name, ...args) {
   tapHandler = null;
+  music(name === 'battle' ? 'battle' : name === 'result' ? null : 'menu'); // el resultado deja sonar solo la fanfarria
   screens[name](...args);
 }
 // Cada pantalla registra su manejador de toques; data-go="pantalla" navega sin código extra.
