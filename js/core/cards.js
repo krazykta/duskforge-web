@@ -366,7 +366,6 @@ export const CARDS = [
   { id: 'war_mammoth', name: 'Mamut de Guerra', type: 'unit', rarity: 'epic', cost: 5, atk: 6, hp: 6, keywords: ['guard'], art: '🦣' },
   { id: 'forest_matriarch', name: 'Matriarca del Bosque', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 6, art: '🌳',
     effect: { trigger: 'play', kind: 'shieldAll' } },
-  { id: 'chimera', name: 'Quimera', type: 'unit', rarity: 'epic', cost: 5, atk: 4, hp: 4, keywords: ['swift', 'fury'], art: '🦁' },
   { id: 'raven_lady', name: 'Señora de los Cuervos', type: 'unit', rarity: 'epic', cost: 4, atk: 4, hp: 5, art: '🐦',
     effect: { trigger: 'death', kind: 'draw', amount: 2 } },
   { id: 'eternal_legion', name: 'Legión Eterna', type: 'spell', rarity: 'epic', cost: 4, art: '⚔️',
