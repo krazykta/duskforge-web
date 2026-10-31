@@ -1,7 +1,7 @@
 // Service worker de la PWA: sirve lo ya visto desde caché y lo actualiza en segundo plano.
 // Las respuestas parciales (206, la música pide rangos) no se guardan: cache.put las rechaza.
 // shortcut: sin lista de precarga, la primera visita necesita internet; precargar si se quiere jugar offline desde el primer día.
-const CACHE = 'duskforge-v8';
+const CACHE = 'duskforge-v9';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(
