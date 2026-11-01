@@ -1,12 +1,18 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
 import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
-import { app, go, toast, topBar, connectCloud, disconnectCloud, getCloudUser, cloudText, flushCloud } from './store.js';
+import { app, go, toast, ask, topBar, connectCloud, disconnectCloud, getCloudUser, getCloudState, cloudText, flushCloud } from './store.js';
 
 const GUEST_KEY = 'duskforge.guest';
 const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } };
 const setGuest = (on) => { try { on ? localStorage.setItem(GUEST_KEY, '1') : localStorage.removeItem(GUEST_KEY); } catch { /* sin almacenamiento */ } };
 
 let recovering = false; // se ha abierto el enlace de "recuperar contraseña" del correo
+
+document.addEventListener('cloudstate', () => {
+  document.body.dataset.cloud = getCloudState(); // el engranaje del inicio avisa si la partida no ha llegado a la nube
+  const line = document.querySelector('.cloud-line');
+  if (line) line.textContent = cloudText();
+});
 
 // Arranque: entra con la sesión guardada, o pide cuenta (salvo que ya eligiera jugar sin cuenta).
 export async function startApp() {
@@ -144,7 +150,7 @@ export function showSupport() {
   const user = getCloudUser();
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Contacto')}
+      ${topBar('Contacto', 'settings')}
       ${user ? `
       <form class="panel auth-form" novalidate>
         <h3>Contacta con nosotros</h3>
@@ -212,10 +218,10 @@ export async function accountAction(act) {
   if (act === 'password') return go('auth', 'newPassword');
   if (act === 'logout') {
     const safe = await flushCloud();
-    if (!safe && !confirm('Tu última partida aún no está en la nube y se perderá al cerrar sesión. ¿Cerrar igualmente?')) return;
+    if (!safe && !(await ask('Tu última partida aún no está en la nube y se perderá al cerrar sesión. ¿Cerrar igualmente?', { yes: 'Cerrar sesión', danger: true }))) return;
     await signOut();
   } else if (act === 'delete-account') {
-    if (!confirm('¿Borrar tu cuenta y tu partida de la nube para siempre? No se puede deshacer.')) return;
+    if (!(await ask('¿Borrar tu cuenta y tu partida de la nube para siempre? No se puede deshacer.', { yes: 'Borrar cuenta', danger: true }))) return;
     const r = await deleteAccount();
     if (r.error) return toast(r.error);
     await signOut();

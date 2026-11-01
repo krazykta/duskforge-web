@@ -1,0 +1,30 @@
+// Iconos de la interfaz en SVG: los emojis cambian de aspecto según el móvil.
+const PATHS = {
+  coin: '<circle cx="12" cy="12" r="10" fill="#f0a63a"/><circle cx="12" cy="12" r="10" fill="none" stroke="#ffe0a3" stroke-width="1.2" opacity=".7"/><circle cx="12" cy="12" r="6.6" fill="#ffd27a" stroke="#b8681f" stroke-width="1.2"/><path d="m12 8 1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2l-2.5 1.4.6-2.8L8 10.9l2.8-.3z" fill="#b8681f"/>',
+  shard: '<path d="M12 2 20 9l-8 13L4 9z" fill="#38bdf8"/><path d="M12 2v7H4z" fill="#a5e8ff"/><path d="M12 2v7h8z" fill="#5fd0fb"/><path d="M4 9h8v13z" fill="#1d8fce"/><path d="M12 9h8l-8 13z" fill="#0f6ca3"/>',
+  gem: '<path d="M6 3h12l4 6-10 13L2 9z" fill="#38bdf8"/><path d="M6 3h12l-2 6H8z" fill="#a5e8ff"/><path d="M8 9h8l-4 13z" fill="#5fd0fb"/>',
+  back: '<path d="m15 5-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  gear: '<path fill="currentColor" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 3-2 1.7a7 7 0 0 1 0 2l2 1.7-1.7 3-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.7-.9l-2.5.9-1.7-3 2-1.7a7 7 0 0 1 0-2l-2-1.7 1.7-3 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z" transform="translate(0 1.5)"/>',
+  help: '<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.3 9.4a2.8 2.8 0 1 1 4.3 2.4c-1 .6-1.6 1.2-1.6 2.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.3" fill="currentColor"/>',
+  swords: '<path fill="currentColor" d="M3 2.5 12 11l-2 2L1.5 4zm18 0L22.5 4 14 13l-2-2zM4.5 15.5l3-3 4 4-3 3-1-1-2.5 2.5-1.5-1.5 2.5-2.5zm15 0 1 1 1-1 1.5 1.5-1 1 1 1-1.5 1.5-2.5-2.5-1 1-1.5-1.5z"/><path fill="currentColor" d="M21 2.5 22.5 4 12.5 14.5l-2-2z"/>',
+  flag: '<path d="M6 2.5V22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M6 3.5h12l-3 4.5 3 4.5H6z" fill="currentColor"/>',
+  scroll: '<path d="M6 3h11a2 2 0 0 1 2 2v13a3 3 0 0 1-3 3H7a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8h4M12 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 3a3 3 0 0 0-3 3v1h5" fill="none" stroke="currentColor" stroke-width="2"/>',
+  heart: '<path fill="currentColor" d="M12 21S2.5 15 2.5 8.5A5 5 0 0 1 12 6.2a5 5 0 0 1 9.5 2.3C21.5 15 12 21 12 21z"/>',
+  hand: '<rect x="4" y="5" width="11" height="16" rx="2" fill="currentColor" opacity=".55" transform="rotate(-9 9 13)"/><rect x="9" y="3" width="11" height="16" rx="2" fill="currentColor" transform="rotate(7 15 11)"/>',
+  deck: '<rect x="6" y="2.5" width="13" height="17" rx="2" fill="currentColor" opacity=".45"/><rect x="4" y="5" width="13" height="17" rx="2" fill="currentColor"/>',
+  check: '<path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  filter: '<path d="M3 5h18M7 12h10M10.5 19h3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  skull: '<path fill="#f8f4ea" d="M12 2.5c-5 0-8.5 3.3-8.5 8 0 2.7 1.3 4.7 3 6v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3c1.7-1.3 3-3.3 3-6 0-4.7-3.5-8-8.5-8z"/><circle cx="8.7" cy="11" r="2.3" fill="#1a1020"/><circle cx="15.3" cy="11" r="2.3" fill="#1a1020"/><path d="m12 14 1.3 2.3h-2.6z" fill="#1a1020"/>',
+  warn: '<path d="M12 2.5 23 21.5H1z" fill="#f8b84a"/><path d="M12 9v6" stroke="#2a1400" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="#2a1400"/>',
+  sleep: '<path d="M5 5h7l-7 8h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12h5l-5 6h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  bolt: '<path fill="currentColor" d="M13.5 1.5 4 13.5h6.5L9 22.5 20 9.5h-7z"/>',
+  drop: '<path fill="currentColor" d="M12 2s7 7.5 7 12.5a7 7 0 0 1-14 0C5 9.5 12 2 12 2z"/>',
+  snow: '<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M12 6 9.5 3.5M12 6l2.5-2.5M12 18l-2.5 2.5M12 18l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+  mute: '<path fill="currentColor" d="M3 9v6h4l5 4.5v-15L7 9z"/><path d="m15.5 9 5.5 6M21 9l-5.5 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  shield: '<path fill="currentColor" d="M12 2 4 5v6.5c0 5 3.4 8.8 8 10.5 4.6-1.7 8-5.5 8-10.5V5z"/>',
+  fog: '<path d="M4 8h13M7 12h13M4 16h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  spark: '<path fill="currentColor" d="M12 1.5 14 10l8.5 2-8.5 2-2 8.5-2-8.5-8.5-2L10 10z"/>',
+  up: '<path d="m5 13 7-7 7 7M12 7v13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+
+export const icon = (name) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${PATHS[name]}</svg>`;

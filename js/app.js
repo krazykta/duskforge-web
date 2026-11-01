@@ -1,7 +1,9 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
 import { ECONOMY } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
-import { app, getProfile, setProfile, register, onTap, topBar, missionBadge, toast } from './ui/store.js';
+import { refreshMissions, missionDef } from './core/missions.js';
+import { app, getProfile, setProfile, register, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showShop } from './ui/shop.js';
@@ -23,26 +25,39 @@ addEventListener('error', (ev) => onCrash(ev.error ?? ev.message));
 addEventListener('unhandledrejection', (ev) => onCrash(ev.reason));
 
 // ---------- Menú ----------
+// La misión de hoy que queda más cerca, para tener siempre un motivo para la siguiente partida.
+function nextGoal(p) {
+  const left = refreshMissions(p).missions.daily.filter((m) => !m.claimed);
+  if (!left.length) return '<span class="sub">Misiones de hoy completadas</span>';
+  const ratio = (m) => m.progress / missionDef(m.id).goal;
+  const m = left.reduce((a, b) => (ratio(b) > ratio(a) ? b : a));
+  const d = missionDef(m.id);
+  return `<span class="sub">${m.progress >= d.goal ? '¡Recompensa lista!' : `${d.text} · ${m.progress} / ${d.goal}`}</span>`;
+}
+
 function showMenu() {
   const p = getProfile();
+  const into = xpIntoLevel(p.xp);
   app.innerHTML = `
-    <section class="screen scenic">
-      ${topBar()}
+    <section class="screen scenic home">
+      <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
+      <header class="topbar">
+        ${resources()}
+        <button class="icon-btn" data-act="rules" aria-label="Cómo jugar">${icon('help')}</button>
+        <button class="icon-btn gear" data-go="settings" aria-label="Ajustes">${icon('gear')}</button>
+      </header>
       <h1 class="logo"><img src="img/ui/logo.webp" alt="DUSKFORGE"></h1>
-      <div class="profile">
-        <div class="profile-row"><span>Nivel ${levelOf(p.xp)}</span><span class="sub">${p.wins} V · ${p.losses} D</span></div>
-        <div class="xpbar" title="Experiencia"><div style="width:${(xpIntoLevel(p.xp) / ECONOMY.xpPerLevel) * 100}%"></div></div>
-        <div class="stats">${xpIntoLevel(p.xp)} / ${ECONOMY.xpPerLevel} XP para el siguiente nivel</div>
+      <div class="home-foot stagger">
+        <button class="panel summary" data-go="missions">
+          <span class="lvl"><b>${levelOf(p.xp)}</b></span>
+          <span class="summary-text">
+            <span class="row"><b>Nivel ${levelOf(p.xp)}</b><span class="sub">${p.wins} V · ${p.losses} D</span></span>
+            <span class="xpbar" title="${into} / ${ECONOMY.xpPerLevel} XP"><span style="width:${(into / ECONOMY.xpPerLevel) * 100}%"></span></span>
+            ${nextGoal(p)}
+          </span>
+        </button>
+        <button class="btn gold big-play" data-go="battle">${icon('swords')}<span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
       </div>
-      <button class="btn gold big-play" data-go="battle">⚔️ Jugar</button>
-      <nav class="tiles">
-        <button class="tile" data-go="collection"><img src="img/ui/icon_collection.webp" alt="">Colección</button>
-        <button class="tile" data-go="deck"><img src="img/ui/icon_deck.webp" alt="">Mazos</button>
-        <button class="tile" data-go="shop"><img src="img/ui/icon_shop.webp" alt="">Tienda</button>
-        <button class="tile" data-go="missions"><img src="img/ui/icon_missions.webp" alt="">Misiones${missionBadge()}</button>
-        <button class="tile" data-go="settings"><img src="img/ui/icon_settings.webp" alt="">Ajustes</button>
-        <button class="tile" data-act="rules"><img src="img/ui/icon_rules.webp" alt="">Cómo jugar</button>
-      </nav>
     </section>`;
   onTap((el) => {
     if (el.closest('[data-act="rules"]')) showRules();
@@ -59,15 +74,15 @@ function showRules() {
       <ul>
         <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20, pero curarte puede llevarte por encima: la vida no tiene tope.</li>
         <li>Los mazos tienen <b>24 cartas</b> y cada jugador puede tener hasta <b>10 criaturas</b> en la mesa.</li>
-        <li>Cada turno ganas <b>energía 💎</b> (hasta 5). Las cartas cuestan energía. Quien empieza segundo roba una carta más y recibe un <b>Ascua</b> (+1 de energía un turno).</li>
+        <li>Cada turno ganas <b>energía</b> ${icon('gem')} (hasta 5). Las cartas cuestan energía. Quien empieza segundo roba una carta más y recibe un <b>Ascua</b> (+1 de energía un turno).</li>
         <li>Toca una carta para verla en grande y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo. Las criaturas del rival también se pueden ampliar.</li>
-        <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo. 💀 significa que el objetivo caerá y ⚠️ que caerá tu atacante. 💤 es que esa criatura ya no puede atacar este turno.</li>
+        <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo. ${icon('skull')} significa que el objetivo caerá y ${icon('warn')} que caerá tu atacante. ${icon('sleep')} es que esa criatura ya no puede atacar este turno.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
-        <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ❄️ no ataca en su siguiente turno.</li>
-        <li>Una criatura <b>silenciada</b> 🔇 pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>
-        <li>Gana monedas 🪙 jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos 💠 para fabricar las que quieras.</li>
+        <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ${icon('snow')} no ataca en su siguiente turno.</li>
+        <li>Una criatura <b>silenciada</b> ${icon('mute')} pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>
+        <li>Gana monedas ${icon('coin')} jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos ${icon('shard')} para fabricar las que quieras.</li>
       </ul>
-      <button class="btn" data-act="close">¡Entendido!</button>
+      <button class="btn gold" data-act="close">¡Entendido!</button>
     </div>`;
   app.appendChild(bg);
   bg.addEventListener('click', (ev) => {
@@ -82,33 +97,36 @@ function showRules() {
 function showResult(won, rewards, draw) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   app.innerHTML = `
-    <section class="screen">
+    <section class="screen result ${won ? 'won' : ''}">
+      <div class="rays" aria-hidden="true"></div>
       ${draw ? '' : `<img class="result-art" src="img/ui/${won ? 'victory' : 'defeat'}.webp" alt="">`}
       <h1 class="result-title ${won ? 'win' : 'lose'}">${won ? '¡VICTORIA!' : draw ? 'EMPATE' : 'DERROTA'}</h1>
       ${rewards ? `
-      <div class="rewards">
-        <div><span>Monedas</span><b class="coins">+${rewards.coins} 🪙</b></div>
-        ${rewards.firstWinBonus ? `<div class="bonus"><span>Primera victoria del día</span><span>(incluye +${rewards.firstWinBonus})</span></div>` : ''}
-        <div><span>Experiencia</span><b>+${rewards.xp} XP</b></div>
-      </div>` : ''}
-      ${levelUp ? `<div class="levelup">⬆ ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
+      <div class="panel rewards">
+        <div><span>Monedas</span><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
+        ${rewards.firstWinBonus ? `<div class="bonus"><span>Primera victoria del día</span><span>incluye +${rewards.firstWinBonus}</span></div>` : ''}
+        <div><span>Experiencia</span><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
+      </div>` : '<p class="sub">Terminó demasiado pronto: no cuenta como partida ni da recompensa.</p>'}
+      ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       <div class="menu-buttons">
         <button class="btn gold" data-go="battle">Jugar otra vez</button>
-        <button class="btn ghost" data-go="menu">Menú${missionBadge()}</button>
+        <button class="btn ghost" data-go="menu">Volver al inicio</button>
       </div>
     </section>`;
+  app.querySelectorAll('[data-count]').forEach((el) => countUp(el, Number(el.dataset.count), '+'));
 }
 
 // ---------- Ajustes ----------
 function showSettings() {
   const s = getProfile().settings;
   const toggle = (key, label, hint) => `
-    <label class="setting"><span><b>${label}</b><br><span class="sub">${hint}</span></span>
-      <input type="checkbox" data-setting="${key}" ${s[key] ? 'checked' : ''}></label>`;
+    <label class="setting"><span><b>${label}</b><span class="sub">${hint}</span></span>
+      <input type="checkbox" role="switch" data-setting="${key}" ${s[key] ? 'checked' : ''}></label>`;
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Ajustes')}
+      ${topBar('Ajustes', 'menu')}
       <div class="panel">
+        <h3>Juego</h3>
         ${toggle('reducedMotion', 'Animaciones reducidas', 'Menos movimiento en pantalla.')}
         ${toggle('fastAi', 'Rival rápido', 'El rival juega sus cartas más deprisa.')}
         ${toggle('sound', 'Efectos de sonido', 'Cartas, golpes, monedas y botones.')}
@@ -117,7 +135,7 @@ function showSettings() {
       ${accountPanel()}
       <div class="panel"><h3>Contacto</h3>
         <p class="sub">¿Dudas, errores o ideas? Escríbenos y te responderemos dentro del juego.</p>
-        <button class="btn small" data-go="support">Contacta con nosotros</button></div>
+        <button class="btn small ghost" data-go="support">Contacta con nosotros</button></div>
     </section>`;
   onTap((el) => {
     const act = el.closest('[data-act]')?.dataset.act;

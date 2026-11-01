@@ -1,6 +1,6 @@
 // Estado compartido de la interfaz: perfil guardado, navegación entre pantallas,
 // toques y piezas visuales reutilizables.
-import { newProfile, sanitizeProfile, levelOf, PROFILE_VERSION } from '../core/progression.js';
+import { newProfile, sanitizeProfile, PROFILE_VERSION } from '../core/progression.js';
 import { mergeProfiles } from '../core/sync.js';
 import { refreshMissions, claimableCount } from '../core/missions.js';
 import { claimableAchievements } from '../core/achievements.js';
@@ -9,6 +9,7 @@ import { RARITY_TEXT } from '../core/collection.js';
 import { pullProfile, saveProfile } from '../cloud.js';
 import { CARD_ART } from './card-art.js';
 import { music } from './sound.js';
+import { icon } from './icons.js';
 
 export const app = document.getElementById('app');
 // 100dvh puede medir más que lo visible en la PWA de Android y esconder la mano tras la barra del sistema.
@@ -31,6 +32,7 @@ export function setProfile(next) {
   profile = next;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch { /* sin almacenamiento: se juega igual */ }
   document.body.classList.toggle('reduced-motion', profile.settings.reducedMotion);
+  paintTabs();
   if (cloudUser) {
     clearTimeout(pushTimer);
     pushTimer = setTimeout(flushCloud, 1500); // agrupa cambios seguidos en un solo envío
@@ -155,19 +157,103 @@ document.addEventListener('visibilitychange', () => {
 addEventListener('online', () => flushCloud());
 // Sustituye el perfil (al cargar el de la nube o al cerrar sesión).
 export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitizeProfile(raw) : newProfile()));
-setProfile(refreshMissions(profile));
 
 // ---------- Navegación ----------
 const screens = {};
+const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
+const tabOf = (name) => TABS.findIndex(([id]) => id === name);
+const PARENT = { settings: 'menu', support: 'settings', auth: 'menu' }; // pantallas que se abren encima de otra
 let screen = null;
+let cameFrom = null;
 let tapHandler = null;
 export const register = (name, fn) => (screens[name] = fn);
+
+const tabbar = document.createElement('nav');
+tabbar.id = 'tabbar';
+tabbar.setAttribute('aria-label', 'Secciones');
+tabbar.innerHTML = `<span class="ink"></span>${TABS.map(([id, label, art]) => `
+  <button class="tab ${art ? '' : 'main'}" data-tab="${id}">
+    ${art ? `<img src="img/ui/icon_${art}.webp" alt="">` : `<span class="play-dot">${icon('swords')}</span>`}<span>${label}</span>
+  </button>`).join('')}`;
+document.body.appendChild(tabbar);
+tabbar.addEventListener('click', (ev) => {
+  const tab = ev.target.closest('[data-tab]')?.dataset.tab;
+  if (tab && tab !== screen) go(tab);
+});
+
+function paintTabs() {
+  const i = tabOf(screen);
+  document.body.classList.toggle('tabs-on', i >= 0);
+  if (i < 0) return;
+  tabbar.style.setProperty('--tab', i);
+  tabbar.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === screen));
+  const count = claimableCount(refreshMissions(profile)) + claimableAchievements(profile);
+  const tab = tabbar.querySelector('[data-tab="missions"]');
+  tab.querySelector('.badge')?.remove();
+  if (count) tab.insertAdjacentHTML('beforeend', `<span class="badge">${count}</span>`);
+}
+setProfile(refreshMissions(profile));
+
+// Cómo se pasa de una pantalla a otra: las pestañas se deslizan hacia su lado y lo demás se apila encima.
+function motionFor(from, to) {
+  if (from === to) return null;
+  if (!from) return 'fade';
+  if (to === 'battle' || from === 'battle') return 'zoom';
+  const a = tabOf(from);
+  const b = tabOf(to);
+  if (a >= 0 && b >= 0) return a < b ? 'next' : 'prev';
+  if (PARENT[to] === from || (b < 0 && a >= 0)) return 'push';
+  if (PARENT[from] === to || (a < 0 && b >= 0)) return 'pop';
+  return 'fade';
+}
+
 export function go(name, ...args) {
+  const motion = motionFor(screen, name);
   tapHandler = null;
+  cameFrom = screen;
   screen = name;
   music(name === 'battle' ? 'battle' : name === 'result' ? null : 'menu'); // el resultado deja sonar solo la fanfarria
-  screens[name](...args);
+  const render = () => {
+    screens[name](...args);
+    app.querySelector('.screen')?.classList.add('enter'); // solo al llegar: repintar la misma pantalla no reanima nada
+    paintTabs();
+  };
+  const calm = profile.settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!motion || calm || document.hidden || !document.startViewTransition) return render();
+  document.documentElement.dataset.motion = motion;
+  const change = document.startViewTransition(render);
+  change.ready.catch(() => {}); // sin soporte o interrumpida: la pantalla nueva ya está puesta
+  change.finished.catch(() => {}).finally(() => delete document.documentElement.dataset.motion);
 }
+
+// Deslizar el dedo cambia de pestaña. Los carriles de filtros, los campos y las ventanas conservan su gesto.
+let swipe = null;
+addEventListener('touchstart', (ev) => {
+  const t = ev.touches[0];
+  swipe = tabOf(screen) < 0 || ev.touches.length > 1 || ev.target.closest?.('.rail, input, textarea, .modal-bg, [data-noswipe]') ? null : { x: t.clientX, y: t.clientY, at: Date.now() };
+}, { passive: true });
+addEventListener('touchend', (ev) => {
+  if (!swipe) return;
+  const t = ev.changedTouches[0];
+  const dx = t.clientX - swipe.x;
+  const dy = t.clientY - swipe.y;
+  const quick = Date.now() - swipe.at < 500;
+  swipe = null;
+  if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < 2 * Math.abs(dy)) return;
+  const next = TABS[tabOf(screen) + (dx < 0 ? 1 : -1)];
+  if (next) go(next[0]);
+});
+
+// El botón Atrás de Android cierra la ventana abierta o vuelve atrás; en el menú sale de la app.
+history.replaceState({ df: 'root' }, '');
+history.pushState({ df: 'app' }, '');
+addEventListener('popstate', () => {
+  const modal = document.querySelector('.modal-bg');
+  if ((screen === 'menu' || (screen === 'auth' && !cameFrom)) && !modal) return history.back();
+  history.pushState({ df: 'app' }, '');
+  if (modal) modal.querySelector('[data-act="close"], [data-no]')?.click();
+  else if (screen !== 'battle') go(screen === 'auth' ? cameFrom : PARENT[screen] ?? 'menu');
+});
 // Cada pantalla registra su manejador de toques; data-go="pantalla" navega sin código extra.
 export const onTap = (fn) => (tapHandler = fn);
 app.addEventListener('click', (ev) => {
@@ -179,26 +265,67 @@ app.addEventListener('click', (ev) => {
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function toast(text) {
+  document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = 'toast';
   t.textContent = text;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2200);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// Pregunta dentro del juego, con su aspecto, en vez del aviso del navegador.
+export function ask(text, { yes = 'Aceptar', no = 'Cancelar', danger = false } = {}) {
+  return new Promise((done) => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg ask-bg';
+    bg.innerHTML = `
+      <div class="modal" role="alertdialog" aria-label="${text}">
+        <p>${text}</p>
+        <div class="modal-actions">
+          <button class="btn small ghost" data-no>${no}</button>
+          <button class="btn small ${danger ? 'danger' : 'gold'}" data-yes>${yes}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(bg);
+    bg.addEventListener('click', (ev) => {
+      const answer = ev.target.closest('[data-yes]') ? true : ev.target.closest('[data-no]') || ev.target === bg ? false : null;
+      if (answer === null) return;
+      bg.remove();
+      done(answer);
+    });
+  });
+}
+
+// Cuenta hasta el valor: las recompensas se notan más que un número que ya está puesto.
+export function countUp(el, to, prefix = '') {
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / 700);
+    el.textContent = `${prefix}${Math.round(to * (1 - (1 - t) ** 3))}`;
+    if (t < 1 && el.isConnected) requestAnimationFrame(step);
+  };
+  if (profile.settings.reducedMotion) el.textContent = `${prefix}${to}`;
+  else requestAnimationFrame(step);
 }
 
 // ---------- Piezas visuales ----------
-export function topBar(title) {
+const amount = (n) => n.toLocaleString('es-ES');
+
+export const resources = () => `
+  <span class="res">
+    <span class="pill coins" title="Monedas">${icon('coin')}<b>${amount(profile.coins)}</b></span>
+    <span class="pill frags" title="Fragmentos">${icon('shard')}<b>${amount(profile.fragments)}</b></span>
+  </span>`;
+
+// back: pantalla a la que vuelve la flecha. Las pestañas no la necesitan.
+export function topBar(title, back) {
   return `
     <header class="topbar">
-      ${title ? `<button class="icon-btn" data-go="menu" aria-label="Volver al menú">‹</button><h2>${title}</h2>` : `<span class="lvl">Nivel ${levelOf(profile.xp)}</span>`}
-      <span class="res"><span class="coins" title="Monedas">🪙 ${profile.coins}</span><span class="frags" title="Fragmentos">💠 ${profile.fragments}</span></span>
+      ${back ? `<button class="icon-btn" data-go="${back}" aria-label="Volver">${icon('back')}</button>` : ''}
+      <h2>${title}</h2>
+      ${resources()}
     </header>`;
 }
-
-export const missionBadge = () => {
-  const n = claimableCount(refreshMissions(profile)) + claimableAchievements(profile);
-  return n ? `<span class="badge">${n}</span>` : '';
-};
 
 // Ilustración de la carta, o su emoji si todavía no tiene.
 export const artHtml = (card) =>

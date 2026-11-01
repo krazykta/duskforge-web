@@ -6,7 +6,8 @@ import { createMatch, playCard, playError, cardTargets, attack, attackTargets, e
 import { nextAction } from '../core/ai.js';
 import { claimMatchRewards } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
-import { app, getProfile, setProfile, go, onTap, wait, artHtml, cardFace } from './store.js';
+import { app, getProfile, setProfile, go, onTap, wait, ask, artHtml, cardFace } from './store.js';
+import { icon } from './icons.js';
 import { sfx, eventSound } from './sound.js';
 import { motionOn, strikeFx, shootFx, castFx, healFx, auraFx, deathFx, landFx, shake } from './fx.js';
 
@@ -58,19 +59,19 @@ function currentTargets() {
 
 const dies = (u, amount, source) => amount > 0 && !u.shield && (u.hp <= amount || source?.poison);
 
-// Qué va a pasar si se elige ese objetivo: 💀 cae él, ⚠️ cae tu atacante.
+// Qué va a pasar si se elige ese objetivo: calavera, cae él; aviso, cae tu atacante.
 function previewOf(t) {
   const { state, sel } = battle;
   const unit = t.uid === HERO ? null : findUnit(state, t.player, t.uid);
   if (sel.kind === 'unit') {
     const a = findUnit(state, ME, sel.uid);
     const kills = unit ? dies(unit, a.atk, a) : state.players[t.player].hp <= a.atk;
-    return `${kills ? '💀' : ''}${unit && dies(a, unit.atk, unit) ? '⚠️' : ''}`;
+    return `${kills ? icon('skull') : ''}${unit && dies(a, unit.atk, unit) ? icon('warn') : ''}`;
   }
   const e = CARD_BY_ID[state.players[ME].hand[sel.index]].effect;
-  if (e?.kind === 'destroy') return unit ? '💀' : '';
+  if (e?.kind === 'destroy') return unit ? icon('skull') : '';
   if (e?.kind !== 'damage' && e?.kind !== 'damageHeal') return '';
-  return (unit ? dies(unit, e.amount) : state.players[t.player].hp <= e.amount) ? '💀' : '';
+  return (unit ? dies(unit, e.amount) : state.players[t.player].hp <= e.amount) ? icon('skull') : '';
 }
 
 const previewHtml = (text) => (text ? `<span class="preview">${text}</span>` : '');
@@ -83,9 +84,11 @@ function heroHtml(p, targets) {
   return `
     <div class="hero ${targets.has(k) ? 'targetable' : ''}" data-t="${k}" role="button" aria-label="${p === ME ? 'Tu héroe' : 'Héroe rival'}, ${pl.hp} de vida">
       <img class="portrait" src="img/ui/${p === ME ? 'hero_player' : 'hero_foe'}.webp" alt="">
-      <div class="hp ${life}">❤ ${pl.hp}</div>
-      <div><b>${p === ME ? 'Tú' : battle.rivalName}</b></div>
-      <div class="meta"><div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}"><b>${pl.energy}/${pl.maxEnergy}</b>${gems}</div>🂠 ${pl.hand.length} · 📚 ${pl.deck.length}</div>
+      <div class="who"><b>${p === ME ? 'Tú' : battle.rivalName}</b><div class="hp ${life}">${icon('heart')}${pl.hp}</div></div>
+      <div class="meta">
+        <div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}"><b>${pl.energy}/${pl.maxEnergy}</b>${gems}</div>
+        <div class="piles"><span title="Cartas en la mano">${icon('hand')}${pl.hand.length}</span><span title="Cartas en el mazo">${icon('deck')}${pl.deck.length}</span></div>
+      </div>
       ${previewHtml(targets.get(k))}
     </div>`;
 }
@@ -101,6 +104,8 @@ function foeHandHtml() {
   return `<div class="foe-hand" aria-hidden="true">${cards.join('')}</div>`;
 }
 
+const KEYWORDS = [['swift', 'bolt'], ['drain', 'drop'], ['poison', 'skull'], ['fury', 'swords'], ['frozen', 'snow'], ['silenced', 'mute']];
+
 function unitHtml(u, p, targets) {
   const c = CARD_BY_ID[u.id];
   const k = tKey({ player: p, uid: u.uid });
@@ -112,8 +117,7 @@ function unitHtml(u, p, targets) {
   const foil = p === ME && getProfile().foils.includes(u.id);
   const cls = ['unit', `r-${c.rarity}`, foil && 'foil', isNew && 'new', u.guard && 'guard', u.shield && 'shield', u.stealth && 'stealth',
     u.frozen && 'frozen', u.silenced && 'silenced', canAttack && 'ready', sel && 'selected', targets.has(k) && 'targetable'];
-  const kw = [u.swift && '⚡', u.drain && '🩸', u.poison && '☠️', u.fury && '⚔️', u.frozen && '❄️', u.silenced && '🔇',
-    myTurn && !u.ready && !u.frozen && '💤'].filter(Boolean).join('');
+  const kw = KEYWORDS.filter(([k]) => u[k]).map(([k, name]) => `<i class="k-${k}">${icon(name)}</i>`).join('') + (myTurn && !u.ready && !u.frozen ? icon('sleep') : '');
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-t="${k}" role="button" aria-label="${c.name} ${u.atk}/${u.hp}">
       ${artHtml(c)}<span class="kw">${kw}</span>
@@ -141,8 +145,8 @@ function cardHtml(id, i) {
     </div>`;
 }
 
-const STATUS = [['guard', '🛡️ Guardián'], ['shield', '✨ Escudo'], ['swift', '⚡ Ímpetu'], ['drain', '🩸 Vampírico'], ['poison', '☠️ Letal'],
-  ['fury', '⚔️ Furia'], ['stealth', '🌫️ Sigilo'], ['frozen', '❄️ Congelada'], ['silenced', '🔇 Silenciada']];
+const STATUS = [['guard', 'shield', 'Guardián'], ['shield', 'spark', 'Escudo'], ['swift', 'bolt', 'Ímpetu'], ['drain', 'drop', 'Vampírico'], ['poison', 'skull', 'Letal'],
+  ['fury', 'swords', 'Furia'], ['stealth', 'fog', 'Sigilo'], ['frozen', 'snow', 'Congelada'], ['silenced', 'mute', 'Silenciada']];
 
 // Zoom de la carta tocada. No recibe toques (salvo su botón): debajo se puede seguir eligiendo.
 function zoomHtml() {
@@ -161,8 +165,8 @@ function zoomHtml() {
   const ref = sel?.kind === 'unit' ? { player: ME, uid: sel.uid } : inspect;
   const u = ref && findUnit(state, ref.player, ref.uid);
   if (!u) return '';
-  const legend = sel?.kind === 'unit' ? '<span class="z-note">💀 cae el objetivo<br>⚠️ cae el tuyo</span>' : '';
-  const chips = legend + STATUS.filter(([k]) => u[k]).map(([, text]) => `<span class="z-note">${text}</span>`).join('');
+  const legend = sel?.kind === 'unit' ? `<span class="z-note">${icon('skull')} cae el objetivo<br>${icon('warn')} cae el tuyo</span>` : '';
+  const chips = legend + STATUS.filter(([k]) => u[k]).map(([, name, text]) => `<span class="z-note">${icon(name)} ${text}</span>`).join('');
   const face = cardFace({ ...CARD_BY_ID[u.id], atk: u.atk, hp: u.hp }, { foil: ref.player === ME && foils.includes(u.id) });
   return `<div class="zoom">${face}<div class="z-side">${chips}</div></div>`;
 }
@@ -194,8 +198,8 @@ function renderBattle() {
       ${foeHandHtml()}
       ${boardHtml(FOE, targets)}
       <div class="center">
-        <button class="icon-btn" data-act="concede" aria-label="Rendirse" title="Rendirse">⚑</button>
-        <button class="icon-btn" data-act="history" aria-label="Historial de la partida" title="Historial">📜</button>
+        <button class="icon-btn" data-act="concede" aria-label="Rendirse" title="Rendirse">${icon('flag')}</button>
+        <button class="icon-btn" data-act="history" aria-label="Historial de la partida" title="Historial">${icon('scroll')}</button>
         <span class="turn-badge ${mine ? 'mine' : 'theirs'}">${mine ? 'TU TURNO' : 'RIVAL'}</span>
         <span class="message">${battle.message}</span>
         <button class="btn small ${live && nothingLeft() ? 'nudge' : ''}" data-act="end" ${live ? '' : 'disabled'}>Fin de turno</button>
@@ -215,11 +219,11 @@ function showLog() {
   const line = (e) => {
     if (e.card && e.uid !== undefined) names[e.uid] = CARD_BY_ID[e.card]?.name;
     switch (e.type) {
-      case 'play': return `🃏 ${e.player === ME ? 'Tú' : battle.rivalName}: ${CARD_BY_ID[e.card].name}`;
-      case 'attack': return `⚔️ ${who(e)} → ${who(e.target)}`;
-      case 'damage': return `💥 ${who(e)} −${e.amount}`;
-      case 'heal': return `💚 ${who(e)} +${e.amount}`;
-      case 'death': return `💀 ${who(e)}`;
+      case 'play': return `${icon('hand')} ${e.player === ME ? 'Tú' : battle.rivalName}: ${CARD_BY_ID[e.card].name}`;
+      case 'attack': return `${icon('swords')} ${who(e)} → ${who(e.target)}`;
+      case 'damage': return `${icon('spark')} ${who(e)} −${e.amount}`;
+      case 'heal': return `${icon('heart')} ${who(e)} +${e.amount}`;
+      case 'death': return `${icon('skull')} ${who(e)}`;
       case 'turn': return `<b>Turno de ${e.player === ME ? 'ti' : battle.rivalName}</b>`;
       default: return null;
     }
@@ -497,17 +501,19 @@ async function runAiTurn() {
   renderBattle();
 }
 
+async function askConcede(state) {
+  if (state.winner !== null) return;
+  const sure = await ask(state.turnNumber < MIN_TURNS_TO_COUNT ? '¿Rendirte? Tan pronto no cuenta como partida ni da recompensa.' : '¿Rendirte? La partida contará como derrota.',
+    { yes: 'Rendirse', no: 'Seguir jugando', danger: true });
+  if (!sure || battle?.state !== state || state.winner !== null) return; // el rival sigue jugando mientras se decide
+  concede(state, ME);
+  afterAction();
+}
+
 function onBattleTap(el) {
   const { state } = battle;
   const act = el.closest('[data-act]')?.dataset.act;
-  if (act === 'concede') {
-    // Se permite rendirse también durante el turno rival.
-    if (state.winner === null && confirm(state.turnNumber < MIN_TURNS_TO_COUNT ? '¿Rendirte? Tan pronto no cuenta como partida ni da recompensa.' : '¿Rendirte? La partida contará como derrota.')) {
-      concede(state, ME);
-      afterAction();
-    }
-    return;
-  }
+  if (act === 'concede') return void askConcede(state); // se permite también durante el turno rival
   if (act === 'history') return showLog();
   // En el turno rival no se juega, pero se pueden seguir mirando las cartas.
   const busy = battle.busy;

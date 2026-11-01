@@ -2,7 +2,8 @@
 import { PACKS, BIG_PACK, COLLECTION } from '../core/config.js';
 import { CARD_BY_ID } from '../core/cards.js';
 import { openPack, RARITIES, RARITY_TEXT, COLLECTIBLE } from '../core/collection.js';
-import { app, getProfile, setProfile, onTap, topBar, cardFace, toast, wait } from './store.js';
+import { app, getProfile, setProfile, onTap, topBar, cardFace, artHtml, toast, wait } from './store.js';
+import { icon } from './icons.js';
 import { sfx } from './sound.js';
 
 const pct = (x) => `${(x * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
@@ -13,32 +14,32 @@ export function showShop() {
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Tienda')}
-      ${PACKS.map((pack, i) => `
-      <div class="pack-offer">
-        <img class="pack-art" src="img/ui/pack.webp" alt="">
-        <div>
+      <div class="packs stagger">
+        ${PACKS.map((pack, i) => `
+        <article class="pack-offer">
+          <img class="pack-art" src="img/ui/pack.webp" alt="">
           <h3>${pack.name}</h3>
-          <p>${pack.cards} cartas${pack.lastOdds ? ' (la última, rara o mejor)' : ''} · <b class="coins">${pack.price} 🪙</b></p>
-          <button class="btn gold" data-act="buy" data-pack="${i}" ${p.coins < pack.price ? 'disabled' : ''}>Comprar y abrir</button>
-          ${p.coins < pack.price ? `<p class="sub">Te faltan ${pack.price - p.coins} 🪙. Juega partidas o completa misiones.</p>` : ''}
-        </div>
-      </div>`).join('')}
+          <p class="sub">${pack.cards} cartas${pack.lastOdds ? ', la última rara o mejor' : ''}</p>
+          <button class="btn gold small" data-act="buy" data-pack="${i}" aria-label="Comprar ${pack.name} por ${pack.price} monedas" ${p.coins < pack.price ? 'disabled' : ''}>${icon('coin')}${pack.price}</button>
+          ${p.coins < pack.price ? `<p class="sub short">Te faltan ${pack.price - p.coins}</p>` : ''}
+        </article>`).join('')}
+      </div>
       <div class="panel">
         <h3>Probabilidades por carta</h3>
         <table class="odds">
-          <tr class="sub"><td></td><td>Carta normal</td><td>Última del grande</td><td></td></tr>
+          <tr class="sub"><td></td><td>Normal</td><td>Última del grande</td><td></td></tr>
           ${RARITIES.map((r) => `<tr class="t-${r}"><td>${RARITY_TEXT[r]}</td><td>${pct(BIG_PACK.odds[r])}</td><td>${pct(BIG_PACK.lastOdds[r])}</td>
             <td class="sub">${COLLECTIBLE.filter((c) => c.rarity === r).length} cartas</td></tr>`).join('')}
         </table>
         <p class="sub">Dentro de cada rareza todas las cartas tienen la misma probabilidad. Si ya tienes el máximo de copias,
-          la carta se convierte en fragmentos 💠 (${RARITIES.map((r) => `${RARITY_TEXT[r]} ${COLLECTION.duplicateFragments[r]}`).join(', ')}).
+          la carta se convierte en fragmentos ${icon('shard')} (${RARITIES.map((r) => `${RARITY_TEXT[r]} ${COLLECTION.duplicateFragments[r]}`).join(', ')}).
           Las monedas solo se ganan jugando: no se venden ni se cambian por dinero.</p>
       </div>
       ${history.length ? `
       <div class="panel">
         <h3>Últimos sobres</h3>
         ${history.map((h) => `<div class="history-row"><span class="sub">${new Date(h.at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</span>
-          <span>${h.cards.map((id) => `<span class="t-${CARD_BY_ID[id].rarity}" title="${CARD_BY_ID[id].name}">${CARD_BY_ID[id].art}</span>`).join(' ')}</span></div>`).join('')}
+          <span class="minis">${h.cards.map((id) => `<span class="mini r-${CARD_BY_ID[id].rarity}" title="${CARD_BY_ID[id].name}">${artHtml(CARD_BY_ID[id])}</span>`).join('')}</span></div>`).join('')}
       </div>` : ''}
     </section>`;
   onTap((el) => {
@@ -61,7 +62,7 @@ async function buyPack(pack) {
             <div class="back r-${CARD_BY_ID[x.id].rarity}-glow"></div>
             <div class="front">
               ${cardFace(CARD_BY_ID[x.id], { foil: getProfile().foils.includes(x.id) })}
-              <span class="tag ${x.isNew ? 'new' : x.fragments ? 'dupe' : ''}">${x.isNew ? '¡Nueva!' : x.fragments ? `+${x.fragments} 💠` : 'Copia +1'}</span>
+              <span class="tag ${x.isNew ? 'new' : x.fragments ? 'dupe' : ''}">${x.isNew ? '¡Nueva!' : x.fragments ? `+${x.fragments} ${icon('shard')}` : 'Copia +1'}</span>
             </div>
           </div>`).join('')}
       </div>

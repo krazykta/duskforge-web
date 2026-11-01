@@ -2,8 +2,9 @@
 import { RULES, COLLECTION } from '../core/config.js';
 import { CARD_BY_ID, SETS, cardText } from '../core/cards.js';
 import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors, craftCard, upgradeFoil } from '../core/collection.js';
-import { app, getProfile, setProfile, onTap, topBar, cardFace, toast } from './store.js';
+import { app, getProfile, setProfile, onTap, topBar, cardFace, artHtml, toast } from './store.js';
 import { sfx } from './sound.js';
+import { icon } from './icons.js';
 
 const sortCards = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
 
@@ -15,18 +16,19 @@ const searchBox = (value) => `<input class="search" type="search" placeholder="B
 
 // Repinta solo la rejilla al escribir, para no perder el foco del buscador.
 function bindSearch(state, repaint) {
-  app.querySelector('.search').addEventListener('input', (ev) => { state.query = ev.target.value; repaint(); });
+  app.querySelector('.search')?.addEventListener('input', (ev) => { state.query = ev.target.value; repaint(); });
 }
 
 // ---------- Colección ----------
 const filters = { set: 'all', rarity: 'all', type: 'all', cost: 'all', owned: 'all', query: '' };
+let filtersOpen = false;
 
 function chip(group, value, label, state = filters) {
   return `<button class="chip ${state[group] === value ? 'on' : ''}" data-filter="${group}:${value}">${label}</button>`;
 }
 
 const costMatch = (c, cost) => cost === 'all' || (cost === '4' ? c.cost >= 4 : c.cost === Number(cost));
-const costChips = (state) => chip('cost', 'all', 'Todo coste', state) + ['0', '1', '2', '3'].map((c) => chip('cost', c, `${c}💎`, state)).join('') + chip('cost', '4', '4+💎', state);
+const costChips = (state) => chip('cost', 'all', 'Todo coste', state) + ['0', '1', '2', '3'].map((c) => chip('cost', c, `${c}${icon('gem')}`, state)).join('') + chip('cost', '4', `4+${icon('gem')}`, state);
 
 function collectionGrid() {
   const p = getProfile();
@@ -44,27 +46,40 @@ function collectionGrid() {
 export function showCollection() {
   const p = getProfile();
   const owned = COLLECTIBLE.filter((c) => p.collection[c.id]).length;
+  const active = ['owned', 'set', 'rarity', 'type', 'cost'].filter((k) => filters[k] !== 'all').length;
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Colección')}
-      <p class="sub">${owned} / ${COLLECTIBLE.length} cartas descubiertas</p>
-      <p class="sub">${RARITIES.map((r) => {
-        const all = COLLECTIBLE.filter((c) => c.rarity === r);
-        return `<span style="color: var(--${r})">${RARITY_TEXT[r]} ${all.filter((c) => p.collection[c.id]).length}/${all.length}</span>`;
-      }).join(' · ')}</p>
+      <div class="panel album">
+        <div class="row"><b>${owned} / ${COLLECTIBLE.length}</b><span class="sub">cartas descubiertas</span></div>
+        <div class="xpbar"><div style="width:${(owned / COLLECTIBLE.length) * 100}%"></div></div>
+        <div class="row rarities">${RARITIES.map((r) => {
+          const all = COLLECTIBLE.filter((c) => c.rarity === r);
+          return `<span class="t-${r}" title="${RARITY_TEXT[r]}">${RARITY_TEXT[r]} <b>${all.filter((c) => p.collection[c.id]).length}/${all.length}</b></span>`;
+        }).join('')}</div>
+      </div>
       <div class="filters">
-        ${searchBox(filters.query)}
-        <div>${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
-        <div>${chip('set', 'all', 'Toda expansión')}${SETS.map(([name], i) => chip('set', String(i), name)).join('')}</div>
-        <div>${chip('rarity', 'all', 'Toda rareza')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
-        <div>${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}</div>
-        <div>${costChips(filters)}</div>
+        <div class="search-line">
+          ${searchBox(filters.query)}
+          <button class="icon-btn ${filtersOpen || active ? 'on' : ''}" data-act="filters" aria-expanded="${filtersOpen}" aria-label="Filtros">${icon('filter')}${active ? `<span class="badge">${active}</span>` : ''}</button>
+        </div>
+        <div class="rails ${filtersOpen ? '' : 'hidden'}">
+          <div class="rail">${chip('owned', 'all', 'Todas')}${chip('owned', 'yes', 'Las tengo')}${chip('owned', 'no', 'Me faltan')}</div>
+          <div class="rail">${chip('set', 'all', 'Toda expansión')}${SETS.map(([name], i) => chip('set', String(i), name)).join('')}</div>
+          <div class="rail">${chip('rarity', 'all', 'Toda rareza')}${RARITIES.map((r) => chip('rarity', r, RARITY_TEXT[r])).join('')}</div>
+          <div class="rail">${chip('type', 'all', 'Todo')}${chip('type', 'unit', 'Criaturas')}${chip('type', 'spell', 'Hechizos')}</div>
+          <div class="rail">${costChips(filters)}</div>
+        </div>
       </div>
       <div class="grid">${collectionGrid()}</div>
     </section>`;
   bindSearch(filters, () => (app.querySelector('.grid').innerHTML = collectionGrid()));
-  app.querySelector('.chip.on[data-filter^="set:"]').scrollIntoView({ block: 'nearest', inline: 'center' });
+  if (filtersOpen) app.querySelector('.chip.on[data-filter^="set:"]').scrollIntoView({ block: 'nearest', inline: 'center' });
   onTap((el) => {
+    if (el.closest('[data-act="filters"]')) {
+      filtersOpen = !filtersOpen;
+      return showCollection();
+    }
     const f = el.closest('[data-filter]');
     if (f) {
       const [group, value] = f.dataset.filter.split(':');
@@ -92,8 +107,8 @@ function showCardDetail(id) {
       <p class="sub">Expansión: ${SETS[card.set][0]}</p>
       <p>Tienes <b>${owned} / ${max}</b> copias.</p>
       <div class="modal-actions">
-        <button class="btn small" data-act="craft" ${owned >= max || p.fragments < craft ? 'disabled' : ''}>Fabricar · ${craft} 💠</button>
-        <button class="btn small gold" data-act="foil" ${!owned || isFoil || p.fragments < foil ? 'disabled' : ''}>${isFoil ? 'Ya es brillante ✨' : `Brillante ✨ · ${foil} 💠`}</button>
+        <button class="btn small" data-act="craft" ${owned >= max || p.fragments < craft ? 'disabled' : ''}>Fabricar ${icon('shard')}${craft}</button>
+        <button class="btn small gold" data-act="foil" ${!owned || isFoil || p.fragments < foil ? 'disabled' : ''}>${isFoil ? 'Ya es brillante' : `Brillante ${icon('shard')}${foil}`}</button>
       </div>
       <p class="sub">Brillante es una mejora solo visual: no cambia el poder de la carta.</p>
       <button class="btn ghost" data-act="close">Cerrar</button>
@@ -117,7 +132,8 @@ function showCardDetail(id) {
 // ---------- Constructor de mazos ----------
 let draft = null; // mazo en edición (sin guardar)
 let slot = null; // hueco de mazo que se está editando
-const builder = { query: '', cost: 'all' };
+const builder = { query: '', cost: 'all', view: 'deck' };
+const CURVE_TOP = 5; // el coste 5 o más va en la misma barra
 
 function poolGrid(inDeck) {
   const p = getProfile();
@@ -136,24 +152,33 @@ export function showDeckBuilder() {
   const changed = draft.slice().sort().join() !== p.decks[slot].slice().sort().join();
   const deckRows = Object.keys(inDeck).map((id) => CARD_BY_ID[id]).sort(sortCards).map((c) => `
     <button class="deck-row r-${c.rarity}" data-remove="${c.id}" aria-label="Quitar ${c.name}">
-      <span class="cost">${c.cost}</span><span>${c.art} ${c.name}</span><span class="n">x${inDeck[c.id]}</span>
+      <span class="thumb">${artHtml(c)}</span><span class="name">${c.name}</span><span class="n">x${inDeck[c.id]}</span><span class="cost">${c.cost}</span>
     </button>`).join('');
+  const curve = Array.from({ length: CURVE_TOP + 1 }, (_, n) => draft.filter((id) => (n === CURVE_TOP ? CARD_BY_ID[id].cost >= n : CARD_BY_ID[id].cost === n)).length);
+  const tallest = Math.max(1, ...curve);
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Mazos')}
-      <div class="deck-tabs">${p.decks.map((d, i) => `<button class="chip ${i === slot ? 'on' : ''}" data-slot="${i}">Mazo ${i + 1}${i === p.activeDeck ? ' ⚔️' : d.length ? '' : ' (vacío)'}</button>`).join('')}</div>
-      ${slot === p.activeDeck ? '<p class="sub">⚔️ Este es el mazo con el que juegas.</p>' : p.decks[slot].length ? '<button class="btn small" data-act="use">Usar en combate</button>' : ''}
-      <div class="deck-head">
-        <b class="${draft.length === RULES.deckSize ? 'ok' : 'warn'}">${draft.length} / ${RULES.deckSize} cartas</b>
-        <button class="btn small gold" data-act="save" ${errors.length || !changed ? 'disabled' : ''}>Guardar</button>
+      <div class="seg">${p.decks.map((d, i) => `<button class="${i === slot ? 'on' : ''}" data-slot="${i}" aria-label="Mazo ${i + 1}${i === p.activeDeck ? ', en uso' : ''}">Mazo ${i + 1}${i === p.activeDeck ? icon('swords') : ''}</button>`).join('')}</div>
+      <div class="panel deck-status">
+        <div class="deck-head">
+          <div><b class="${draft.length === RULES.deckSize ? 'ok' : ''}">${draft.length} / ${RULES.deckSize}</b><span class="sub">cartas</span></div>
+          <div class="curve" title="Cartas por coste">${curve.map((n, i) => `<span><i style="height:${(n / tallest) * 100}%"></i>${i === CURVE_TOP ? `${i}+` : i}</span>`).join('')}</div>
+          <button class="btn small gold" data-act="save" ${errors.length || !changed ? 'disabled' : ''}>Guardar</button>
+        </div>
+        <div class="xpbar"><div style="width:${(draft.length / RULES.deckSize) * 100}%"></div></div>
+        ${errors.length && draft.length >= RULES.deckSize ? `<p class="warn">${errors[0]}</p>` : ''}
+        ${slot === p.activeDeck ? '<p class="sub">Es el mazo con el que juegas.</p>' : p.decks[slot].length ? '<button class="btn small ghost" data-act="use">Usar en combate</button>' : ''}
+        ${changed ? '<button class="link" data-act="reset">Descartar cambios</button>' : ''}
       </div>
-      ${errors.length && draft.length >= RULES.deckSize ? `<p class="warn">${errors[0]}</p>` : ''}
-      <p class="sub">Toca una carta del mazo para quitarla y una de abajo para añadirla.</p>
-      <div class="deck-list">${deckRows || '<p class="sub">Mazo vacío</p>'}</div>
-      <h3>Tus cartas</h3>
-      <div class="filters">${searchBox(builder.query)}<div>${costChips(builder)}</div></div>
-      <div class="grid">${poolGrid(inDeck)}</div>
-      ${changed ? '<button class="btn ghost small" data-act="reset">Descartar cambios</button>' : ''}
+      <div class="seg">
+        <button class="${builder.view === 'deck' ? 'on' : ''}" data-view="deck">En el mazo</button>
+        <button class="${builder.view === 'pool' ? 'on' : ''}" data-view="pool">Añadir cartas</button>
+      </div>
+      ${builder.view === 'deck' ? `
+      <div class="deck-list">${deckRows || '<p class="sub empty">Mazo vacío. Ve a «Añadir cartas» para llenarlo.</p>'}</div>` : `
+      <div class="filters">${searchBox(builder.query)}<div class="rail">${costChips(builder)}</div></div>
+      <div class="grid">${poolGrid(inDeck)}</div>`}
     </section>`;
   bindSearch(builder, () => (app.querySelector('.grid').innerHTML = poolGrid(inDeck)));
   onTap((el) => {
@@ -162,7 +187,9 @@ export function showDeckBuilder() {
     const act = el.closest('[data-act]')?.dataset.act;
     const f = el.closest('[data-filter]');
     const tab = el.closest('[data-slot]');
-    if (tab) {
+    const view = el.closest('[data-view]');
+    if (view) builder.view = view.dataset.view;
+    else if (tab) {
       slot = Number(tab.dataset.slot);
       draft = [...p.decks[slot]]; // cambiar de hueco descarta lo no guardado
     } else if (f) builder.cost = f.dataset.filter.split(':')[1];
@@ -183,9 +210,14 @@ export function showDeckBuilder() {
       toast(`Jugarás con el Mazo ${slot + 1}`);
     } else if (act === 'reset') draft = [...p.decks[slot]];
     else return;
+    const y = app.querySelector('.screen').scrollTop; // seguir en el mismo sitio de la lista al añadir o quitar
     showDeckBuilder();
+    app.querySelector('.screen').scrollTop = y;
   });
 }
 
 // Al salir del constructor sin guardar, se descartan los cambios.
-export const resetDeckDraft = () => (draft = slot = null);
+export function resetDeckDraft() {
+  draft = slot = null;
+  builder.view = 'deck';
+}
