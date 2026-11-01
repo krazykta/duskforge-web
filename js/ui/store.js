@@ -99,7 +99,7 @@ export async function flushCloud() {
     setCloudState('rejected');
     return false;
   }
-  if (r.conflict) return pullCloud(); // otro dispositivo guardó antes: se une y se vuelve a enviar
+  if (r.conflict) return pullCloud(true); // otro dispositivo guardó antes: se une y se vuelve a enviar
   if (r.error) {
     setCloudState('offline');
     pushTimer = setTimeout(flushCloud, RETRY_MS);
@@ -111,18 +111,20 @@ export async function flushCloud() {
   return inSync();
 }
 
-async function pullCloud() {
+async function pullCloud(afterConflict = false) {
   if (flushing) return false; // leer mientras se guarda confundiría lo propio con lo de otro dispositivo
   flushing = true;
   lastPull = Date.now();
   const r = await pullProfile(cloudUser.id);
   flushing = false;
   if (!cloudUser) return false;
-  if (r.error) {
+  const moved = r.data && r.rev !== sync?.rev;
+  if (r.error || (afterConflict && !moved)) { // sin nada nuevo que unir, reenviar ya volvería a chocar
     setCloudState('offline');
+    pushTimer = setTimeout(flushCloud, RETRY_MS);
     return false;
   }
-  if (r.data && r.rev !== sync?.rev) {
+  if (moved) {
     adopt(r.data, r.rev);
     if (screen === 'menu') go('menu'); // shortcut: en otras pantallas lo nuevo se ve al volver a entrar
   }

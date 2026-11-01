@@ -1,5 +1,6 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
 import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
+import { isPwned } from '../pwned.js';
 import { app, go, toast, ask, topBar, connectCloud, disconnectCloud, getCloudUser, getCloudState, cloudText, flushCloud } from './store.js';
 
 const GUEST_KEY = 'duskforge.guest';
@@ -68,7 +69,7 @@ export function showAuth(mode = 'login') {
       <form class="panel auth-form" novalidate>
         <h3>${f.title}</h3>
         ${f.fields.map((k) => (typeof FIELD[k] === 'function' ? FIELD[k](mode) : FIELD[k])).join('')}
-        ${mode === 'login' || mode === 'forgot' ? '' : '<p class="sub">Mínimo 8 caracteres.</p>'}
+        ${mode === 'login' || mode === 'forgot' ? '' : '<p class="sub">Mínimo 8 caracteres. Comprobamos que no esté en filtraciones públicas, sin enviar tu contraseña.</p>'}
         <p class="warn" role="alert" id="auth-msg"></p>
         <button class="btn gold" type="submit">${f.submit}</button>
       </form>
@@ -116,6 +117,7 @@ async function submit(mode, v) {
     const r = await signIn(email, v.password);
     return r.error ? r : enterWithUser(r.data.user);
   }
+  if (v.password && await isPwned(v.password)) return { error: 'Esa contraseña aparece en filtraciones conocidas. Elige otra.' };
   if (mode === 'register') {
     const r = await signUp(email, v.password);
     if (r.error) return r;
