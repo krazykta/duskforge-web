@@ -39,7 +39,7 @@ body {
   user-select: none;
 }
 
-#app { max-width: 520px; height: 100dvh; margin: 0 auto; position: relative; }
+#app { max-width: 520px; height: var(--app-h, 100dvh); margin: 0 auto; position: relative; }
 .screen {
   height: 100%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
@@ -91,9 +91,9 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 .modal .btn { width: 100%; }
 
 /* --- Combate --- */
-.battle { animation: none; justify-content: space-between; gap: 6px; padding-left: 8px; padding-right: 8px; }
+.battle { animation: none; justify-content: space-between; gap: 6px; padding-left: 8px; padding-right: 8px; padding-bottom: calc(8px + max(16px, env(safe-area-inset-bottom))); }
 .hero {
-  display: flex; align-items: center; gap: 10px; width: 100%;
+  display: flex; align-items: center; gap: 10px; width: 100%; z-index: 1;
   background: var(--panel); border: 2px solid transparent; border-radius: var(--radius); padding: 6px 10px; position: relative;
 }
 .hero .portrait { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #10142a; border: 2px solid var(--violet-soft); }
@@ -102,6 +102,11 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 .energy { display: flex; gap: 3px; justify-content: flex-end; margin-bottom: 2px; }
 .gem { width: 12px; height: 12px; transform: rotate(45deg); border: 1px solid var(--blue); background: transparent; }
 .gem.full { background: var(--blue); box-shadow: 0 0 6px var(--blue); }
+
+.foe-hand { display: flex; justify-content: center; flex: none; width: 100%; height: 36px; margin-top: -14px; pointer-events: none; }
+.foe-card { width: 34px; height: 50px; margin: 0 -9px; flex: none; border-radius: 5px; background: url(img/ui/card_back.webp) center / cover; border: 1px solid rgba(248, 184, 74, 0.55); box-shadow: 0 3px 6px #000a; transform-origin: 50% 0; }
+.foe-card.drawn { animation: foe-draw 0.4s ease backwards; }
+@keyframes foe-draw { from { transform: translate(120px, -24px) rotate(24deg); opacity: 0; } }
 
 .board { display: flex; justify-content: center; gap: 6px; width: 100%; min-height: 96px; align-items: center; }
 .unit {
@@ -112,6 +117,17 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 }
 .unit.new { animation: pop 0.25s ease; }
 @keyframes pop { from { transform: scale(0.4); opacity: 0; } }
+/* Golpe contra la mesa al aterrizar: rebote y onda de polvo */
+.unit.land { animation: land 0.28s ease-out; }
+.unit.land::before { content: ''; position: absolute; inset: -4px; border-radius: 14px; border: 2px solid var(--ember-soft); pointer-events: none; animation: ring 0.45s ease-out forwards; }
+@keyframes land { 0% { transform: scale(1.1); } 45% { transform: scale(0.96); } }
+@keyframes ring { from { opacity: 0.8; } to { transform: scale(1.5); opacity: 0; } }
+.fly { position: fixed; z-index: 35; pointer-events: none; perspective: 700px; }
+.fly-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.fly-in > div { position: absolute; inset: 0; border-radius: 8px; overflow: hidden; backface-visibility: hidden; box-shadow: 0 10px 20px #000b; }
+.fly-back { background: url(img/ui/card_back.webp) center / cover; transform: rotateY(180deg); }
+.fly-front { background: linear-gradient(160deg, #262c52, #12162c); border: 2px solid var(--common); display: grid; place-items: center; font-size: 30px; }
+.fly-front img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .unit.ready { box-shadow: 0 0 10px 2px var(--green); }
 .unit.guard { border-radius: 10px 10px 40% 40%; border-width: 3px; }
 .unit.stealth { opacity: 0.55; filter: grayscale(0.4); }
@@ -145,8 +161,8 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
   display: flex; flex-direction: column; align-items: center; padding: 4px; cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 10px #0008;
 }
-.card.drawn { animation: draw 0.35s ease; }
-@keyframes draw { from { transform: translateY(80px) scale(0.6); opacity: 0; } }
+.card.drawn { animation: draw 0.4s ease backwards; }
+@keyframes draw { from { transform: translate(90px, 40px) rotate(14deg) scale(0.7); opacity: 0; } }
 .card.unplayable { filter: brightness(0.55); }
 .card.playable { box-shadow: 0 0 10px 1px var(--green); }
 .card .cost { position: absolute; top: -8px; left: -8px; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #60a5fa, #1d4ed8); border: 2px solid #bfdbfe; display: grid; place-items: center; font-weight: 900; font-size: 14px; }
@@ -307,6 +323,8 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
   .logo img { width: min(300px, 74vw, 30dvh); }
   .board { min-height: 80px; }
   .hand { min-height: 118px; }
+  .foe-hand { height: 28px; }
+  .foe-card { width: 28px; height: 40px; margin: 0 -8px; }
   .card { width: 80px; flex-basis: 80px; }
   .detail { min-height: 44px; font-size: 13px; }
 }
@@ -330,7 +348,7 @@ body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::aft
 
 /* ---------- Ilustraciones de cartas ---------- */
 .face .art:has(img), .card .art:has(img) { width: 100%; margin-top: 0; }
-.face .art img, .card .art img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; }
+.face .art img, .card .art img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 15%; border-radius: 6px; } /* el recorte come más de abajo: las caras suelen ir arriba */
 .face.big .art img { aspect-ratio: 1; }
 .unit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
 .deck-tabs { width: 100%; display: flex; gap: 6px; flex-wrap: wrap; }

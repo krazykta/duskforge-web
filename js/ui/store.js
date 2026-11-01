@@ -10,6 +10,11 @@ import { CARD_ART } from './card-art.js';
 import { music } from './sound.js';
 
 export const app = document.getElementById('app');
+// 100dvh puede medir más que lo visible en la PWA de Android y esconder la mano tras la barra del sistema.
+const fitHeight = () => document.documentElement.style.setProperty('--app-h', `${innerHeight}px`);
+addEventListener('resize', fitHeight);
+fitHeight();
+
 const STORAGE_KEY = 'duskforge.profile';
 const OLD_KEY = 'cardclash.profile'; // nombre anterior del juego: se lee una vez para no perder el progreso
 

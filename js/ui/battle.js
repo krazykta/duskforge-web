@@ -27,6 +27,7 @@ export function startBattle() {
     busy: false,
     message: state.turn === ME ? 'Empiezas tú' : 'Empieza el rival',
     prevHandLen: 0,
+    prevFoeHand: 0,
     seenUnits: new Set(), // para animar solo las criaturas recién llegadas
     log: [], // todos los eventos, para las estadísticas de misiones
   };
@@ -62,6 +63,17 @@ function heroHtml(p, targetSet) {
     </div>`;
 }
 
+// Mano del rival: dorsos en abanico, medio escondidos tras su barra.
+function foeHandHtml() {
+  const n = battle.state.players[FOE].hand.length;
+  const cards = Array.from({ length: n }, (_, i) => {
+    const o = i - (n - 1) / 2;
+    const isNew = i >= battle.prevFoeHand;
+    return `<div class="foe-card ${isNew ? 'drawn' : ''}" style="transform: translateY(${-o * o}px) rotate(${-o * 4}deg); ${isNew ? `animation-delay: ${(i - battle.prevFoeHand) * 70}ms` : ''}"></div>`;
+  });
+  return `<div class="foe-hand" aria-hidden="true">${cards.join('')}</div>`;
+}
+
 function unitHtml(u, p, targetSet) {
   const c = CARD_BY_ID[u.id];
   const k = tKey({ player: p, uid: u.uid });
@@ -87,9 +99,10 @@ function cardHtml(id, i) {
   const playable = err === null || err === 'Elige un objetivo';
   const cls = ['card', `r-${c.rarity}`, getProfile().foils.includes(id) && 'foil', playable ? 'playable' : 'unplayable',
     sel && sel.kind === 'hand' && sel.index === i && 'selected', i >= battle.prevHandLen && 'drawn'];
+  const delay = i >= battle.prevHandLen ? `style="animation-delay: ${(i - battle.prevHandLen) * 70}ms"` : '';
   const stats = c.type === 'unit' ? `${c.atk}/${c.hp}` : 'Hechizo';
   return `
-    <div class="${cls.filter(Boolean).join(' ')}" data-hand="${i}" role="button" aria-label="${c.name}, coste ${c.cost}">
+    <div class="${cls.filter(Boolean).join(' ')}" data-hand="${i}" ${delay} role="button" aria-label="${c.name}, coste ${c.cost}">
       <span class="cost">${c.cost}</span>
       <span class="art">${artHtml(c)}</span>
       <span class="name">${c.name}</span>
@@ -126,6 +139,7 @@ function renderBattle() {
   app.innerHTML = `
     <section class="screen battle">
       ${heroHtml(FOE, targetSet)}
+      ${foeHandHtml()}
       <div class="board">${state.players[FOE].board.map((u) => unitHtml(u, FOE, targetSet)).join('')}</div>
       <div class="center">
         <button class="icon-btn" data-act="concede" aria-label="Rendirse" title="Rendirse">⚑</button>
@@ -139,6 +153,44 @@ function renderBattle() {
       <div class="hand">${state.players[ME].hand.map(cardHtml).join('')}</div>
     </section>`;
   battle.prevHandLen = state.players[ME].hand.length;
+  battle.prevFoeHand = state.players[FOE].hand.length;
+}
+
+// La carta vuela de la mano a la mesa; la del rival sale bocabajo y se gira por el camino.
+async function flyCard({ id, from, hidden }, events) {
+  if (!from || getProfile().settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = CARD_BY_ID[id];
+  const summon = events.find((e) => e.type === 'summon' && e.card === id);
+  const unit = summon && app.querySelector(`[data-t="${tKey(summon)}"]`);
+  unit?.classList.remove('new'); // su animación de aparición falsearía la medida: la sustituye el aterrizaje
+  const to = (unit ?? app.querySelector('.center')).getBoundingClientRect();
+  const w = unit ? to.width : 96;
+  const h = unit ? to.height : 128;
+  const left = to.left + (to.width - w) / 2;
+  const top = to.top + (to.height - h) / 2;
+  const fly = document.createElement('div');
+  fly.className = 'fly';
+  fly.style.cssText = `left: ${left}px; top: ${top}px; width: ${w}px; height: ${h}px`;
+  fly.innerHTML = `<div class="fly-in"><div class="fly-back"></div><div class="fly-front r-${c.rarity}">${artHtml(c)}</div></div>`;
+  document.body.appendChild(fly);
+  if (unit) unit.style.visibility = 'hidden';
+  const dx = from.left + from.width / 2 - (left + w / 2);
+  const dy = from.top + from.height / 2 - (top + h / 2);
+  const flight = [
+    { transform: `translate(${dx}px, ${dy}px) scale(${from.width / w})` },
+    { transform: 'translate(0, 0) scale(1.2)', offset: 0.72 }, // se eleva sobre la mesa antes de caer
+    { transform: 'translate(0, 0) scale(1)' },
+  ];
+  if (hidden) fly.firstChild.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(180deg)', offset: 0.25 }, { transform: 'rotateY(0)', offset: 0.75 }], { duration: 480, fill: 'forwards' });
+  await fly.animate(flight, { duration: 480, easing: 'ease-in-out', fill: 'forwards' }).finished;
+  if (unit) {
+    unit.style.visibility = '';
+    unit.classList.add('land');
+  } else {
+    await wait(380); // los hechizos se quedan un momento a la vista
+    await fly.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(1.15)' }], { duration: 200, fill: 'forwards' }).finished;
+  }
+  fly.remove();
 }
 
 // Números flotantes y sacudidas a partir de los eventos del motor.
@@ -171,11 +223,18 @@ async function lunge(p, uid) {
   await wait(300);
 }
 
-async function afterAction() {
+async function afterAction(fly) {
   if (!battle || battle.finishing) return false; // rendición mientras otra acción estaba en curso
   const events = takeEvents(battle.state);
   battle.log.push(...events);
   renderBattle();
+  if (fly) {
+    const wasBusy = battle.busy;
+    battle.busy = true; // después de pintar: el botón no parpadea y los toques se ignoran durante el vuelo
+    await flyCard(fly, events);
+    if (!battle || battle.finishing) return false;
+    battle.busy = wasBusy;
+  }
   animateEvents(events);
   eventSound(events, ME);
   if (battle.state.winner !== null) {
@@ -191,10 +250,12 @@ async function afterAction() {
 
 async function playerPlay(index, target) {
   battle.sel = null;
+  const id = battle.state.players[ME].hand[index];
+  const from = app.querySelector(`[data-hand="${index}"]`)?.getBoundingClientRect();
   const r = playCard(battle.state, ME, index, target);
   battle.message = r.ok ? '' : r.error;
   if (!r.ok) sfx('error');
-  await afterAction();
+  await afterAction(r.ok ? { id, from } : null);
 }
 
 async function playerAttack(uid, target) {
@@ -216,8 +277,11 @@ async function runAiTurn() {
     await wait(aiDelay());
     if (!battle || battle.state !== s || s.winner !== null) return; // partida abandonada
     const a = nextAction(s, FOE);
+    let fly = null;
     if (a.type === 'play') {
-      battle.message = `El rival juega ${CARD_BY_ID[s.players[FOE].hand[a.handIndex]].name}`;
+      const id = s.players[FOE].hand[a.handIndex];
+      fly = { id, from: app.querySelectorAll('.foe-card')[a.handIndex]?.getBoundingClientRect(), hidden: true };
+      battle.message = `El rival juega ${CARD_BY_ID[id].name}`;
       playCard(s, FOE, a.handIndex, a.target);
     } else if (a.type === 'attack') {
       await lunge(FOE, a.uid);
@@ -226,7 +290,7 @@ async function runAiTurn() {
       endTurn(s, FOE);
       battle.message = 'Tu turno';
     }
-    if (!(await afterAction())) return;
+    if (!(await afterAction(fly))) return;
   }
   if (battle?.state !== s) return;
   battle.busy = false;
