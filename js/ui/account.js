@@ -1,7 +1,6 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
-import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, pullProfile, pushProfile, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
-import { app, getProfile, go, toast, topBar, setCloudUser, getCloudUser, flushCloud, replaceProfile } from './store.js';
-import { PROFILE_VERSION } from '../core/progression.js';
+import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
+import { app, go, toast, topBar, connectCloud, disconnectCloud, getCloudUser, cloudText, flushCloud } from './store.js';
 
 const GUEST_KEY = 'duskforge.guest';
 const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } };
@@ -16,6 +15,12 @@ export async function startApp() {
     recovering = true;
     setTimeout(() => go('auth', 'newPassword')); // fuera del callback: Supabase recomienda no esperar dentro
   });
+  // Un enlace de correo caducado o ya usado vuelve aquí con el error en la dirección.
+  const linkError = new URLSearchParams(location.hash.slice(1)).get('error_code');
+  if (linkError) {
+    history.replaceState(null, '', location.pathname);
+    toast(linkError === 'otp_expired' ? 'El enlace ha caducado. Pide otro.' : 'El enlace no es válido.');
+  }
   const user = await currentUser().catch(() => null); // una sesión ilegible no debe dejar el juego en "Cargando…"
   if (user) return enterWithUser(user);
   go(isGuest() ? 'menu' : 'auth');
@@ -23,17 +28,12 @@ export async function startApp() {
 
 // Al entrar: si la cuenta ya tiene partida en la nube, se usa esa; si no, se sube la de este dispositivo.
 async function enterWithUser(user) {
-  const r = await pullProfile(user.id);
+  const r = await connectCloud(user);
   if (r.error) {
-    // No se sube nada para no sobrescribir la partida de la nube con la local.
     toast('No se pudo cargar tu partida de la nube. Juegas con la de este dispositivo.');
-  } else if (r.data?.version > PROFILE_VERSION) {
-    // Una versión antigua del juego no la entendería y la sustituiría por una partida nueva.
+  } else if (r.newer) {
     toast('Tu partida es de una versión más nueva: actualiza el juego. Mientras tanto no se guarda en la nube.');
   } else {
-    if (r.data) replaceProfile(r.data);
-    else await pushProfile(user.id, getProfile());
-    setCloudUser(user);
     mySupport().then((s) => s.data?.some((m) => m.reply && !m.reply_seen) && toast('Te hemos respondido: míralo en Ajustes → Contacto'));
   }
   setGuest(false);
@@ -198,8 +198,10 @@ export function accountPanel() {
   const user = getCloudUser();
   return user
     ? `<div class="panel"><h3>Cuenta</h3>
-        <p class="sub">Conectado como <b>${escapeHtml(user.email)}</b>. Tu partida se guarda en la nube.</p>
-        <div class="modal-actions"><button class="btn small ghost" data-act="logout">Cerrar sesión</button>
+        <p class="sub">Conectado como <b>${escapeHtml(user.email)}</b>.</p>
+        <p class="sub cloud-line" aria-live="polite">${cloudText()}</p>
+        <div class="modal-actions"><button class="btn small ghost" data-act="password">Cambiar contraseña</button>
+        <button class="btn small ghost" data-act="logout">Cerrar sesión</button>
         <button class="btn small danger" data-act="delete-account">Borrar cuenta</button></div></div>`
     : `<div class="panel"><h3>Cuenta</h3>
         <p class="sub">Sin cuenta: el progreso solo está en este dispositivo y se pierde si borras la app.</p>
@@ -207,8 +209,10 @@ export function accountPanel() {
 }
 
 export async function accountAction(act) {
+  if (act === 'password') return go('auth', 'newPassword');
   if (act === 'logout') {
-    await flushCloud();
+    const safe = await flushCloud();
+    if (!safe && !confirm('Tu última partida aún no está en la nube y se perderá al cerrar sesión. ¿Cerrar igualmente?')) return;
     await signOut();
   } else if (act === 'delete-account') {
     if (!confirm('¿Borrar tu cuenta y tu partida de la nube para siempre? No se puede deshacer.')) return;
@@ -216,8 +220,7 @@ export async function accountAction(act) {
     if (r.error) return toast(r.error);
     await signOut();
   } else return;
-  setCloudUser(null);
-  replaceProfile(null); // este dispositivo vuelve a empezar; la partida sigue en la cuenta (salvo si se borró)
+  disconnectCloud();
   toast(act === 'logout' ? 'Sesión cerrada' : 'Cuenta borrada');
   go('auth');
 }

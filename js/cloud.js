@@ -19,22 +19,24 @@ const ERRORS = {
   DF429: 'Ya has enviado 5 mensajes hoy. Te responderemos lo antes posible.',
 };
 const message = (error) => ERRORS[error.code] || 'No se pudo completar. Comprueba tu conexión e inténtalo de nuevo.';
+// Los enlaces de los correos vuelven aquí; en local o en la app nativa se usa la Site URL de Supabase.
+const backHere = () => (location.protocol === 'https:' ? location.origin + location.pathname : undefined);
 
 async function call(promise) {
   if (!sb) return { error: 'Sin conexión con el servidor.' };
   try {
     const { data, error } = await promise;
-    return error ? { error: message(error) } : { data };
+    return error ? { error: message(error), code: error.code } : { data };
   } catch {
     return { error: 'Sin conexión con el servidor.' };
   }
 }
 
 export const currentUser = async () => (sb ? (await sb.auth.getSession()).data.session?.user ?? null : null);
-export const signUp = (email, password) => call(sb?.auth.signUp({ email, password }));
+export const signUp = (email, password) => call(sb?.auth.signUp({ email, password, options: { emailRedirectTo: backHere() } }));
 export const signIn = (email, password) => call(sb?.auth.signInWithPassword({ email, password }));
 export const signOut = () => call(sb?.auth.signOut());
-export const sendReset = (email) => call(sb?.auth.resetPasswordForEmail(email));
+export const sendReset = (email) => call(sb?.auth.resetPasswordForEmail(email, { redirectTo: backHere() }));
 export const setPassword = (password) => call(sb?.auth.updateUser({ password }));
 export const deleteAccount = () => call(sb?.rpc('delete_my_account'));
 // Soporte: los mensajes se guardan cifrados y solo se leen con estas funciones (ver docs/soporte.md).
@@ -43,9 +45,17 @@ export const mySupport = () => call(sb?.rpc('my_support_messages'));
 export const markSupportSeen = () => call(sb?.rpc('mark_support_seen'));
 
 export async function pullProfile(userId) {
-  const r = await call(sb?.from('profiles').select('data').eq('id', userId).maybeSingle());
-  return r.error ? r : { data: r.data?.data ?? null };
+  const r = await call(sb?.from('profiles').select('data, rev').eq('id', userId).maybeSingle());
+  return r.error ? r : { data: r.data?.data ?? null, rev: r.data?.rev ?? null };
 }
 
-export const pushProfile = (userId, data) =>
-  call(sb?.from('profiles').upsert({ id: userId, data, updated_at: new Date().toISOString() }));
+// Guarda solo si la fila sigue en la versión que leímos (rev); sin rev es la primera vez que se sube.
+// El servidor revisa cada guardado (supabase/migrations/0003_profile_guard.sql).
+export async function saveProfile(userId, data, rev) {
+  const r = await call(rev === null
+    ? sb?.from('profiles').insert({ id: userId, data }).select('rev').single()
+    : sb?.from('profiles').update({ data }).eq('id', userId).eq('rev', rev).select('rev').maybeSingle());
+  if (r.code === 'DF422') return { rejected: true };
+  if (r.code === 'DF409' || r.code === '23505' || (!r.error && !r.data)) return { conflict: true };
+  return r.error ? r : { rev: r.data.rev };
+}

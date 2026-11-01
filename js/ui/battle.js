@@ -13,6 +13,7 @@ import { motionOn, strikeFx, shootFx, castFx, healFx, auraFx, deathFx, landFx, s
 const ME = 0;
 const FOE = 1;
 const MAX_AI_ACTIONS = 60; // red de seguridad: un fallo de la IA no puede dejar la partida colgada
+const MIN_TURNS_TO_COUNT = 4; // rendirse antes no cuenta como partida
 const aiDelay = () => (getProfile().settings.fastAi ? 300 : 650);
 
 let battle = null;
@@ -501,7 +502,7 @@ function onBattleTap(el) {
   const act = el.closest('[data-act]')?.dataset.act;
   if (act === 'concede') {
     // Se permite rendirse también durante el turno rival.
-    if (state.winner === null && confirm('¿Rendirte? La partida contará como derrota.')) {
+    if (state.winner === null && confirm(state.turnNumber < MIN_TURNS_TO_COUNT ? '¿Rendirte? Tan pronto no cuenta como partida ni da recompensa.' : '¿Rendirte? La partida contará como derrota.')) {
       concede(state, ME);
       afterAction();
     }
@@ -562,8 +563,10 @@ function onBattleTap(el) {
 function finishMatch() {
   const won = battle.state.winner === ME;
   sfx(won ? 'win' : 'lose');
-  const claim = claimMatchRewards(getProfile(), battle.matchId, won, new Date(), matchStats(battle.log, won, ME));
-  setProfile(claim.profile);
+  // Rendirse nada más empezar no cuenta: si no, abandonar en bucle daría monedas gratis.
+  const abandoned = battle.log.some((e) => e.conceded) && battle.state.turnNumber < MIN_TURNS_TO_COUNT;
+  const claim = abandoned ? { rewards: null } : claimMatchRewards(getProfile(), battle.matchId, won, new Date(), matchStats(battle.log, won, ME));
+  if (!abandoned) setProfile(claim.profile);
   const draw = battle.state.winner === 'draw';
   battle = null;
   document.querySelector('.log-bg')?.remove();
