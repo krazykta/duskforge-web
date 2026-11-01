@@ -3,36 +3,46 @@ import { AI_DECKS, AI_NAMES } from '../core/config.js';
 import { CARD_BY_ID } from '../core/cards.js';
 import { attackStyle, fxElement, RANGED } from '../core/cardfx.js';
 import { createMatch, playCard, playError, cardTargets, attack, attackTargets, endTurn, concede, takeEvents, findUnit, actionError, stateSignature, HERO } from '../core/engine.js';
-import { nextAction } from '../core/ai.js';
+import { aiAction, MIN_TURNS_TO_COUNT, setupMatch } from '../core/replay.js';
 import { claimMatchRewards } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
-import { app, getProfile, setProfile, go, onTap, wait, ask, artHtml, cardFace } from './store.js';
+import { app, beginMatch, endMatch, getCloudUser, getProfile, setProfile, go, onTap, wait, ask, artHtml, cardFace, toast } from './store.js';
 import { icon } from './icons.js';
 import { sfx, eventSound } from './sound.js';
 import { motionOn, strikeFx, shootFx, castFx, healFx, auraFx, deathFx, landFx, shake } from './fx.js';
 
 let ME = 0; // con amigos, cada móvil ocupa un asiento de la misma partida
 let FOE = 1;
-const MAX_AI_ACTIONS = 60; // red de seguridad: un fallo de la IA no puede dejar la partida colgada
-const MIN_TURNS_TO_COUNT = 4; // rendirse antes no cuenta como partida
 const aiDelay = () => (getProfile().settings.fastAi ? 300 : 650);
 
 let battle = null;
 
 // net (partida con amigos): { room, seat, decks, seed, first }. Sin él se juega contra la IA.
-export function startBattle(net = null) {
+// Con cuenta, la semilla, el rival y el mazo los da el servidor, que luego repite la partida con las jugadas guardadas.
+export async function startBattle(net = null) {
+  if (net || !getCloudUser()) return setupBattle(net, null);
+  app.innerHTML = '<section class="screen"><p class="sub preparing">Preparando la partida…</p></section>';
+  onTap(() => {});
+  const ticket = await beginMatch();
+  if (!ticket.id) toast(ticket.seed ? 'Has llegado al tope de hoy: esta partida no da recompensa' : 'Sin conexión: esta partida no da recompensa');
+  setupBattle(null, ticket);
+}
+
+function setupBattle(net, ticket) {
   ME = net ? net.seat : 0;
   FOE = 1 - ME;
-  const rival = Math.floor(Math.random() * AI_DECKS.length);
+  const rival = ticket?.rival ?? Math.floor(Math.random() * AI_DECKS.length);
   const state = net
     ? createMatch({ decks: net.decks, seed: net.seed, firstPlayer: net.first })
-    : createMatch({ decks: [getProfile().deck, AI_DECKS[rival]], seed: Date.now(), firstPlayer: Math.random() < 0.5 ? ME : FOE });
+    : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival });
   takeEvents(state);
   battle = {
     state,
     net,
     rivalName: net ? 'Tu amigo' : AI_NAMES[rival],
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    ticket, // con cuenta: la partida que abrió el servidor ({} si no se pudo)
+    moves: [], // las jugadas propias, para que el servidor las repita
     sel: null, // { kind: 'hand', index, aiming } | { kind: 'unit', uid }
     inspect: null, // { player, uid } criatura que se está mirando
     busy: false,
@@ -455,7 +465,11 @@ async function playerPlay(index, target) {
   const r = playCard(battle.state, ME, index, target);
   battle.message = r.ok ? '' : r.error;
   if (!r.ok) sfx('error');
-  else battle.net?.room.send({ type: 'play', handIndex: index, target: target ?? null });
+  else {
+    const move = { type: 'play', handIndex: index, target: target ?? null };
+    battle.moves.push(move);
+    battle.net?.room.send(move);
+  }
   await afterAction(r.ok ? { fly: { id, el } } : {});
 }
 
@@ -467,7 +481,11 @@ async function playerAttack(uid, target) {
   if (!battle || battle.finishing) return;
   const r = attack(battle.state, ME, uid, target);
   battle.message = r.ok ? '' : r.error;
-  if (r.ok) battle.net?.room.send({ type: 'attack', uid, target });
+  if (r.ok) {
+    const move = { type: 'attack', uid, target };
+    battle.moves.push(move);
+    battle.net?.room.send(move);
+  }
   battle.busy = false;
   await afterAction(hit);
 }
@@ -491,7 +509,7 @@ async function foeAction(s, count) {
   }
   await wait(aiDelay());
   if (!battle || battle.state !== s || s.winner !== null) return null; // partida abandonada
-  return count > MAX_AI_ACTIONS ? { type: 'end' } : nextAction(s, FOE);
+  return aiAction(s, count);
 }
 
 async function runAiTurn() {
@@ -540,6 +558,7 @@ async function askConcede(state) {
   const sure = await ask(question, { yes: 'Rendirse', no: 'Seguir jugando', danger: true });
   if (!sure || battle?.state !== state || state.winner !== null) return; // el rival sigue jugando mientras se decide
   concede(state, ME);
+  battle.moves.push({ type: 'concede' });
   await battle.net?.room.send({ type: 'concede' });
   afterAction();
 }
@@ -560,6 +579,7 @@ function onBattleTap(el) {
   if (!busy && act === 'end') {
     clearSelection();
     endTurn(state, ME);
+    battle.moves.push({ type: 'end' });
     battle.net?.room.send({ type: 'end', sig: stateSignature(state) });
     battle.message = 'Turno del rival';
     afterAction().then((alive) => alive && runAiTurn());
@@ -601,19 +621,29 @@ function onBattleTap(el) {
   else renderBattle();
 }
 
-function finishMatch() {
+async function finishMatch() {
   const won = battle.state.winner === ME;
+  const draw = battle.state.winner === 'draw';
   sfx(won ? 'win' : 'lose');
   // Rendirse nada más empezar no cuenta: si no, abandonar en bucle daría monedas gratis.
   const abandoned = battle.log.some((e) => e.conceded) && battle.state.turnNumber < MIN_TURNS_TO_COUNT;
-  const { net } = battle;
+  const { net, ticket, moves, matchId, log } = battle;
   net?.room.close();
-  // Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
-  const counts = !abandoned && !net;
-  const claim = counts ? claimMatchRewards(getProfile(), battle.matchId, won, new Date(), matchStats(battle.log, won, ME)) : { rewards: null };
-  if (counts) setProfile(claim.profile);
-  const draw = battle.state.winner === 'draw';
-  battle = null;
   document.querySelector('.log-bg')?.remove();
-  go('result', won, claim.rewards, draw, Boolean(net));
+  let rewards = null;
+  let note = '';
+  if (ticket?.id) {
+    battle.message = 'Guardando la partida…';
+    renderBattle();
+    const r = await endMatch(ticket.id, moves);
+    rewards = r.rewards ?? null;
+    note = r.pending ? 'Sin conexión: el resultado se sumará a tu cuenta cuando vuelva.' : r.error ?? '';
+  } else if (ticket) note = 'Esta partida no da recompensa.';
+  else if (!abandoned && !net) { // sin cuenta. Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
+    const claim = claimMatchRewards(getProfile(), matchId, won, new Date(), matchStats(log, won, ME));
+    setProfile(claim.profile);
+    rewards = claim.rewards;
+  }
+  battle = null;
+  go('result', won, rewards, draw, Boolean(net), note);
 }

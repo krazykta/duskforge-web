@@ -1,6 +1,9 @@
 // Cuenta (correo + contraseña) y partida guardada en Supabase.
 // La clave publicable NO es secreta: está pensada para ir en la app. Los datos los protege
-// RLS en la base de datos (cada usuario solo puede leer y escribir su propia fila).
+// RLS en la base de datos (cada usuario solo puede leer su fila; escribirla, solo la función game).
+import { API_VERSION } from './core/config.js';
+
+const GAME_TIMEOUT_MS = 15000;
 const SUPABASE_URL = 'https://opcpyzzctddsflfhriga.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_7o0PA0opdwOK_yXbisR_PQ_LoJv476Y';
 
@@ -44,24 +47,21 @@ export const sendSupport = (message) => call(sb?.rpc('send_support_message', { m
 export const mySupport = () => call(sb?.rpc('my_support_messages'));
 export const markSupportSeen = () => call(sb?.rpc('mark_support_seen'));
 
-// Productos comprados (pase premium). Solo el servidor los concede: ver docs/pagos.md.
-export async function myEntitlements() {
-  const r = await call(sb?.from('entitlements').select('sku'));
-  return (r.data ?? []).map((e) => e.sku); // un fallo aquí no debe impedir entrar en la cuenta
-}
-
-export async function pullProfile(userId) {
-  const r = await call(sb?.from('profiles').select('data, rev').eq('id', userId).maybeSingle());
-  return r.error ? r : { data: r.data?.data ?? null, rev: r.data?.rev ?? null };
-}
-
-// Guarda solo si la fila sigue en la versión que leímos (rev); sin rev es la primera vez que se sube.
-// El servidor revisa cada guardado (supabase/migrations/0003_profile_guard.sql).
-export async function saveProfile(userId, data, rev) {
-  const r = await call(rev === null
-    ? sb?.from('profiles').insert({ id: userId, data }).select('rev').single()
-    : sb?.from('profiles').update({ data }).eq('id', userId).eq('rev', rev).select('rev').maybeSingle());
-  if (r.code === 'DF422') return { rejected: true };
-  if (r.code === 'DF409' || r.code === '23505' || (!r.error && !r.data)) return { conflict: true };
-  return r.error ? r : { rev: r.data.rev };
+// Todo lo que cambia la partida guardada pasa por la función game (supabase/functions/game).
+// offline: no ha habido respuesta válida, se puede reintentar. Los errores de juego vienen en { error }.
+export async function callGame(op, args) {
+  if (!sb) return { error: 'Sin conexión con el servidor.', offline: true };
+  try {
+    const session = (await sb.auth.getSession()).data.session;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/game`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session?.access_token}`, apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ v: API_VERSION, op, args }),
+      signal: AbortSignal.timeout(GAME_TIMEOUT_MS),
+    });
+    const body = await res.json();
+    return res.ok ? body : { ...body, offline: true };
+  } catch {
+    return { error: 'Sin conexión con el servidor.', offline: true };
+  }
 }

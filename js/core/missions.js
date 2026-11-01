@@ -4,12 +4,13 @@ import { MISSIONS } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { HERO } from './engine.js';
 
-const pad = (n) => String(n).padStart(2, '0');
-export const localDay = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// El día del juego es el de UTC: el mismo para el servidor y todos los móviles, y cambiar la hora del móvil no da nada.
+export const localDay = (d = new Date()) => d.toISOString().slice(0, 10);
+export const nextDayStart = (d = new Date()) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
 
 // La semana empieza el lunes; su clave es la fecha de ese lunes.
 export function weekKey(d = new Date()) {
-  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+  const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
   return localDay(monday);
 }
 

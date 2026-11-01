@@ -1,9 +1,9 @@
 // Misiones diarias y semanales con su tiempo restante, logros permanentes y pase de temporada.
-import { refreshMissions, claimMission, missionDef } from '../core/missions.js';
-import { achievementList, claimAchievement, claimableAchievements } from '../core/achievements.js';
-import { claimTier, claimableTiers, passTier, seasonOver } from '../core/pass.js';
+import { refreshMissions, missionDef, nextDayStart, weekKey } from '../core/missions.js';
+import { achievementList, claimableAchievements } from '../core/achievements.js';
+import { claimableTiers, passTier, seasonOver } from '../core/pass.js';
 import { ACHIEVEMENTS, COSMETICS, PACKS, SEASON, tierId } from '../core/config.js';
-import { app, getProfile, setProfile, hasPremiumPass, onTap, topBar, toast } from './store.js';
+import { act, app, getProfile, setProfile, hasPremiumPass, onTap, topBar, toast } from './store.js';
 import { showReveal } from './shop.js';
 import { sfx } from './sound.js';
 import { icon } from './icons.js';
@@ -72,9 +72,8 @@ export function showMissions(open) {
   if (open) view = open;
   setProfile(refreshMissions(getProfile()));
   const m = getProfile().missions;
-  const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const nextMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7 - ((now.getDay() + 6) % 7));
+  const midnight = nextDayStart();
+  const nextMonday = new Date(new Date(weekKey()).getTime() + 7 * 86400000);
   const claimable = claimableAchievements(getProfile());
   const tiers = claimableTiers(getProfile(), hasPremiumPass());
   const list = (items) => [...items].sort((a, b) => order(a) - order(b)).map(missionRow).join('');
@@ -97,7 +96,7 @@ export function showMissions(open) {
       </div>` : `
       <div class="panel">${list(achievementList(getProfile()))}</div>`}
     </section>`;
-  onTap((el) => {
+  onTap(async (el) => {
     const tab = el.closest('[data-view]');
     if (tab) {
       view = tab.dataset.view;
@@ -108,9 +107,8 @@ export function showMissions(open) {
     const b = el.closest('[data-claim]');
     if (!b) return;
     const id = b.dataset.claim;
-    const r = id.startsWith('a_') ? claimAchievement(getProfile(), id) : claimMission(getProfile(), id);
+    const r = await act(id.startsWith('a_') ? 'claimAchievement' : 'claimMission', { id });
     if (r.error) return toast(r.error);
-    setProfile(r.profile);
     sfx('coins');
     toast(`+${r.reward.coins} monedas${r.reward.fragments ? ` y +${r.reward.fragments} fragmentos` : ''}`);
     keepScroll();
@@ -123,11 +121,10 @@ function keepScroll() {
   app.querySelector('.screen').scrollTop = y;
 }
 
-function claimPass(n, premium) {
-  const r = claimTier(getProfile(), n, premium, { owned: hasPremiumPass() });
+async function claimPass(n, premium) {
+  const r = await act('claimTier', { n, premium });
   if (r.error) return toast(r.error);
   if (r.results) return showReveal(r, 'missions');
-  setProfile(r.profile);
   sfx('coins');
   keepScroll();
 }

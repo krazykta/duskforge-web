@@ -1,8 +1,8 @@
 // Colección (con filtros y detalle de carta) y constructor de mazos.
 import { RULES, COLLECTION } from '../core/config.js';
 import { CARD_BY_ID, SETS, cardText } from '../core/cards.js';
-import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors, craftCard, upgradeFoil } from '../core/collection.js';
-import { app, getProfile, setProfile, onTap, topBar, cardFace, artHtml, toast } from './store.js';
+import { COLLECTIBLE, RARITIES, RARITY_TEXT, maxCopies, countCards, deckErrors } from '../core/collection.js';
+import { act, app, getProfile, savePrefs, onTap, topBar, cardFace, artHtml, toast } from './store.js';
 import { sfx } from './sound.js';
 import { icon } from './icons.js';
 
@@ -114,16 +114,16 @@ function showCardDetail(id) {
       <button class="btn ghost" data-act="close">Cerrar</button>
     </div>`;
   app.appendChild(bg);
-  bg.addEventListener('click', (ev) => {
+  bg.addEventListener('click', async (ev) => {
     ev.stopPropagation(); // que no lo procese también la pantalla de debajo
-    const act = ev.target.closest('[data-act]')?.dataset.act;
-    if (act === 'close' || ev.target === bg) return showCollection();
-    const r = act === 'craft' ? craftCard(getProfile(), id) : act === 'foil' ? upgradeFoil(getProfile(), id) : null;
-    if (!r) return;
+    const action = ev.target.closest('[data-act]')?.dataset.act;
+    if (action === 'close' || ev.target === bg) return showCollection();
+    if (action !== 'craft' && action !== 'foil') return;
+    const r = await act(action === 'craft' ? 'craftCard' : 'upgradeFoil', { id });
     if (r.error) return toast(r.error);
-    setProfile(r.profile);
+    if (!bg.isConnected) return;
     sfx('forge');
-    toast(act === 'craft' ? `¡${card.name} fabricada!` : `¡${card.name} ahora es brillante!`);
+    toast(action === 'craft' ? `¡${card.name} fabricada!` : `¡${card.name} ahora es brillante!`);
     showCollection();
     showCardDetail(id);
   });
@@ -201,12 +201,10 @@ export function showDeckBuilder() {
       if ((inDeck[id] || 0) >= Math.min(p.collection[id], maxCopies(c))) return toast(`No puedes añadir más copias de ${c.name}`);
       draft.push(id);
     } else if (act === 'save') {
-      const q = getProfile();
-      const decks = q.decks.map((d, i) => (i === slot ? [...draft] : d));
-      setProfile({ ...q, decks, deck: decks[q.activeDeck] });
+      savePrefs({ decks: getProfile().decks.map((d, i) => (i === slot ? [...draft] : d)) });
       toast('Mazo guardado');
     } else if (act === 'use') {
-      setProfile({ ...p, activeDeck: slot, deck: [...p.decks[slot]] });
+      savePrefs({ activeDeck: slot });
       toast(`Jugarás con el Mazo ${slot + 1}`);
     } else if (act === 'reset') draft = [...p.decks[slot]];
     else return;

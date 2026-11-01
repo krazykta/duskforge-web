@@ -1,10 +1,10 @@
 // Tienda: ofertas del día, sobres, cartas sueltas, coleccionables y mejoras. Las probabilidades se muestran ANTES de comprar.
 import { COLLECTION, COSMETICS, COSMETIC_KINDS, PACK, PACKS, UPGRADES } from '../core/config.js';
 import { CARD_BY_ID } from '../core/cards.js';
-import { maxCopies, openPack, RARITIES, RARITY_TEXT, COLLECTIBLE } from '../core/collection.js';
-import { localDay } from '../core/missions.js';
-import { buyCard, buyCosmetic, buyOffer, buyUpgrade, dailyShop, equipCosmetic, isBought } from '../core/shop.js';
-import { app, getProfile, setProfile, onTap, topBar, cardFace, artHtml, toast, wait } from './store.js';
+import { maxCopies, RARITIES, RARITY_TEXT, COLLECTIBLE } from '../core/collection.js';
+import { localDay, nextDayStart } from '../core/missions.js';
+import { dailyShop, isBought } from '../core/shop.js';
+import { act, app, getProfile, onTap, topBar, cardFace, artHtml, toast, wait } from './store.js';
 import { icon } from './icons.js';
 import { sfx } from './sound.js';
 
@@ -16,8 +16,7 @@ const price = (coins) => `${icon('coin')}${coins}`;
 const afford = (p, coins) => (p.coins < coins ? 'disabled' : '');
 
 function timeToMidnight() {
-  const now = new Date();
-  const ms = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+  const ms = nextDayStart() - new Date();
   return `${Math.floor(ms / 3600000)} h ${Math.floor((ms % 3600000) / 60000)} min`;
 }
 
@@ -142,41 +141,36 @@ export function showShop() {
   onTap(onShopTap);
 }
 
-// Aplica una compra y repinta sin perder el sitio en la lista.
+// Repinta tras una compra sin perder el sitio en la lista.
 function done(r) {
   if (r.error) return toast(r.error);
-  setProfile(r.profile);
   sfx('coins');
   const y = app.querySelector('.screen').scrollTop;
   showShop();
   app.querySelector('.screen').scrollTop = y;
 }
 
-function onShopTap(el) {
-  const p = getProfile();
+async function onShopTap(el) {
   const hit = (name) => el.closest(`[data-${name}]`)?.dataset[name];
   if (hit('view')) {
     view = hit('view');
     return showShop();
   }
-  if (el.closest('[data-act="buy"]')) return buyPack(PACKS[hit('pack')]);
-  if (hit('card')) return done(buyCard(p, hit('card')));
-  if (hit('cosmetic')) return done(buyCosmetic(p, hit('cosmetic')));
-  if (hit('equip')) return done(equipCosmetic(p, hit('equip')));
-  if (hit('upgrade')) return done(buyUpgrade(p, hit('upgrade')));
+  if (el.closest('[data-act="buy"]')) return showReveal(await act('openPack', { pack: Number(hit('pack')) }));
+  if (hit('card')) return done(await act('buyCard', { id: hit('card') }));
+  if (hit('cosmetic')) return done(await act('buyCosmetic', { id: hit('cosmetic') }));
+  if (hit('equip')) return done(await act('equipCosmetic', { id: hit('equip') }));
+  if (hit('upgrade')) return done(await act('buyUpgrade', { id: hit('upgrade') }));
   const offer = hit('offer');
   if (!offer) return;
-  const r = buyOffer(p, offer);
+  const r = await act('buyOffer', { id: offer });
   if (r.results) return showReveal(r);
   done(r);
 }
 
-const buyPack = (pack) => showReveal(openPack(getProfile(), { pack }));
-
-// Guarda el resultado y lo destapa. back: pantalla a la que se vuelve.
+// Destapa lo que ha salido, ya guardado: cerrar la app no pierde el sobre. back: pantalla a la que se vuelve.
 export async function showReveal(r, back = 'shop') {
   if (r.error) return toast(r.error);
-  setProfile(r.profile); // se guarda antes de la animación: cerrar la app no pierde el sobre
   sfx('packOpen');
   app.innerHTML = `
     <section class="screen">

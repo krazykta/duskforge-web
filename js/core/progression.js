@@ -1,6 +1,5 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
-// shortcut: el perfil vive en el dispositivo y se puede manipular; en la fase de backend
-// las recompensas se validarán en servidor.
+// Con cuenta las ejecuta el servidor (core/server.js); sin cuenta, el móvil, y ese progreso no sale de él.
 import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, SEASON, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';

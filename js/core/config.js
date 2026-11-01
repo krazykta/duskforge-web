@@ -15,6 +15,8 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
+export const API_VERSION = 1; // súbelo si cambia lo que el juego y la función de Supabase se envían
+
 export const ECONOMY = {
   winCoins: 30,
   lossCoins: 15,
@@ -23,6 +25,7 @@ export const ECONOMY = {
   firstWinOfDayCoins: 50,
   pursePerLevel: 5, // monedas extra por victoria con cada nivel de la mejora Bolsa de botín
   xpPerLevel: 100,
+  dailyMatches: 100, // partidas al día con recompensa: nadie honrado llega y limita a los bots
 };
 
 export const COLLECTION = {

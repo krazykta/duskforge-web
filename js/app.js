@@ -3,7 +3,7 @@ import { ECONOMY, COSMETICS, SEASON } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
 import { passTier } from './core/pass.js';
-import { app, getProfile, setProfile, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { app, getProfile, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
@@ -96,13 +96,13 @@ function showRules() {
   bg.addEventListener('click', (ev) => {
     ev.stopPropagation();
     if (!ev.target.closest('[data-act="close"]')) return;
-    setProfile({ ...getProfile(), tutorialSeen: true });
+    savePrefs({ tutorialSeen: true });
     bg.remove();
   });
 }
 
 // ---------- Resultado ----------
-function showResult(won, rewards, draw, friendly) {
+function showResult(won, rewards, draw, friendly, note) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   app.innerHTML = `
     <section class="screen result ${won ? 'won' : ''}">
@@ -114,7 +114,7 @@ function showResult(won, rewards, draw, friendly) {
         <div><span>Monedas</span><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
         ${rewards.firstWinBonus ? `<div class="bonus"><span>Primera victoria del día</span><span>incluye +${rewards.firstWinBonus}</span></div>` : ''}
         <div><span>Experiencia</span><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
-      </div>` : `<p class="sub">${friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.'}</p>`}
+      </div>` : `<p class="sub">${note || (friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.')}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       <div class="menu-buttons">
         <button class="btn gold" data-go="${friendly ? 'online' : 'battle'}">Jugar otra vez</button>
@@ -150,8 +150,7 @@ function showSettings() {
     if (act) return accountAction(act);
     const input = el.closest('[data-setting]');
     if (!input) return;
-    const p = getProfile();
-    setProfile({ ...p, settings: { ...p.settings, [input.dataset.setting]: input.checked } });
+    savePrefs({ settings: { ...getProfile().settings, [input.dataset.setting]: input.checked } });
     updateMusic();
   });
 }

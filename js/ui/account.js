@@ -1,7 +1,7 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
 import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
 import { isPwned } from '../pwned.js';
-import { app, go, toast, ask, topBar, connectCloud, disconnectCloud, getCloudUser, getCloudState, cloudText, flushCloud } from './store.js';
+import { app, go, toast, ask, topBar, connectCloud, disconnectCloud, getCloudUser, getCloudState, cloudText, flushPrefs } from './store.js';
 
 const GUEST_KEY = 'duskforge.guest';
 const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } };
@@ -33,13 +33,11 @@ export async function startApp() {
   go(isGuest() ? 'menu' : 'auth');
 }
 
-// Al entrar: si la cuenta ya tiene partida en la nube, se usa esa; si no, se sube la de este dispositivo.
+// Al entrar se usa siempre la partida de la cuenta.
 async function enterWithUser(user) {
   const r = await connectCloud(user);
   if (r.error) {
-    toast('No se pudo cargar tu partida de la nube. Juegas con la de este dispositivo.');
-  } else if (r.newer) {
-    toast('Tu partida es de una versión más nueva: actualiza el juego. Mientras tanto no se guarda en la nube.');
+    toast('No se pudo cargar tu partida. Juegas sin cuenta hasta que vuelva la conexión.');
   } else {
     mySupport().then((s) => s.data?.some((m) => m.reply && !m.reply_seen) && toast('Te hemos respondido: míralo en Ajustes → Contacto'));
   }
@@ -53,11 +51,12 @@ const FORMS = {
   register: { title: 'Crear cuenta', fields: ['email', 'password', 'password2'], submit: 'Crear cuenta' },
   forgot: { title: 'Recuperar contraseña', fields: ['email'], submit: 'Enviar correo' },
   newPassword: { title: 'Nueva contraseña', fields: ['password', 'password2'], submit: 'Guardar contraseña' },
+  deleteAccount: { title: 'Borrar cuenta', fields: ['password'], submit: 'Borrar para siempre' },
 };
 const FIELD = {
   email: '<label>Correo<input name="email" type="email" autocomplete="email" required></label>',
   password: (mode) => `<label>Contraseña<input name="password" type="password" minlength="8" required
-    autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}"></label>`,
+    autocomplete="${mode === 'register' || mode === 'newPassword' ? 'new-password' : 'current-password'}"></label>`,
   password2: '<label>Repite la contraseña<input name="password2" type="password" minlength="8" required autocomplete="new-password"></label>',
 };
 
@@ -69,22 +68,24 @@ export function showAuth(mode = 'login') {
       <form class="panel auth-form" novalidate>
         <h3>${f.title}</h3>
         ${f.fields.map((k) => (typeof FIELD[k] === 'function' ? FIELD[k](mode) : FIELD[k])).join('')}
-        ${mode === 'login' || mode === 'forgot' ? '' : '<p class="sub">Mínimo 8 caracteres. Comprobamos que no esté en filtraciones públicas, sin enviar tu contraseña.</p>'}
+        ${mode === 'register' || mode === 'newPassword' ? '<p class="sub">Mínimo 8 caracteres. Comprobamos que no esté en filtraciones públicas, sin enviar tu contraseña.</p>' : ''}
+        ${mode === 'register' ? '<p class="sub">La cuenta empieza desde cero: el progreso jugado sin cuenta no se traspasa.</p>' : ''}
+        ${mode === 'deleteAccount' ? '<p class="sub">Escribe tu contraseña para confirmar. Se borrarán tu cuenta y tu partida, y no se puede deshacer.</p>' : ''}
         <p class="warn" role="alert" id="auth-msg"></p>
         <button class="btn gold" type="submit">${f.submit}</button>
       </form>
       <div class="auth-links">
-        ${mode !== 'login' && mode !== 'newPassword' ? '<button class="link" data-mode="login">Ya tengo cuenta</button>' : ''}
+        ${mode === 'register' || mode === 'forgot' ? '<button class="link" data-mode="login">Ya tengo cuenta</button>' : ''}
         ${mode === 'login' ? '<button class="link" data-mode="register">Crear cuenta nueva</button><button class="link" data-mode="forgot">¿Olvidaste tu contraseña?</button>' : ''}
-        ${mode !== 'newPassword' ? '<button class="link" data-act="guest">Jugar sin cuenta</button>' : ''}
+        ${mode === 'deleteAccount' ? '<button class="link" data-go="settings">Cancelar</button>' : mode !== 'newPassword' ? '<button class="link" data-act="guest">Jugar sin cuenta</button>' : ''}
       </div>
-      ${mode !== 'newPassword' ? '<p class="sub small-print">Solo guardamos tu correo y tu partida. La contraseña se guarda cifrada (hash) y nunca la vemos.</p>' : ''}
+      ${mode === 'login' || mode === 'register' || mode === 'forgot' ? '<p class="sub small-print">Solo guardamos tu correo y tu partida. La contraseña se guarda cifrada (hash) y nunca la vemos.</p>' : ''}
     </section>`;
   const form = app.querySelector('form');
   const msg = app.querySelector('#auth-msg');
   app.querySelector('.auth-links').addEventListener('click', (ev) => {
     const b = ev.target.closest('button');
-    if (!b) return;
+    if (!b || b.dataset.go) return;
     if (b.dataset.mode) return showAuth(b.dataset.mode);
     setGuest(true);
     go('menu');
@@ -105,7 +106,7 @@ export function showAuth(mode = 'login') {
 
 function validate(mode, v) {
   if ('email' in v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) return 'Escribe un correo válido.';
-  if ('password' in v && v.password.length < 8 && mode !== 'login') return 'La contraseña debe tener al menos 8 caracteres.';
+  if ('password' in v && v.password.length < 8 && (mode === 'register' || mode === 'newPassword')) return 'La contraseña debe tener al menos 8 caracteres.';
   if ('password' in v && !v.password) return 'Escribe tu contraseña.';
   if ('password2' in v && v.password !== v.password2) return 'Las contraseñas no coinciden.';
   return null;
@@ -116,6 +117,16 @@ async function submit(mode, v) {
   if (mode === 'login') {
     const r = await signIn(email, v.password);
     return r.error ? r : enterWithUser(r.data.user);
+  }
+  if (mode === 'deleteAccount') {
+    const check = await signIn(getCloudUser().email, v.password);
+    if (check.error) return { error: 'Contraseña incorrecta.' };
+    const r = await deleteAccount();
+    if (r.error) return r;
+    await signOut();
+    disconnectCloud();
+    toast('Cuenta borrada');
+    return go('auth');
   }
   if (v.password && await isPwned(v.password)) return { error: 'Esa contraseña aparece en filtraciones conocidas. Elige otra.' };
   if (mode === 'register') {
@@ -218,17 +229,12 @@ export function accountPanel() {
 
 export async function accountAction(act) {
   if (act === 'password') return go('auth', 'newPassword');
-  if (act === 'logout') {
-    const safe = await flushCloud();
-    if (!safe && !(await ask('Tu última partida aún no está en la nube y se perderá al cerrar sesión. ¿Cerrar igualmente?', { yes: 'Cerrar sesión', danger: true }))) return;
-    await signOut();
-  } else if (act === 'delete-account') {
-    if (!(await ask('¿Borrar tu cuenta y tu partida de la nube para siempre? No se puede deshacer.', { yes: 'Borrar cuenta', danger: true }))) return;
-    const r = await deleteAccount();
-    if (r.error) return toast(r.error);
-    await signOut();
-  } else return;
+  if (act === 'delete-account') return go('auth', 'deleteAccount');
+  if (act !== 'logout') return;
+  const safe = await flushPrefs();
+  if (!safe && !(await ask('Tus últimos ajustes aún no han llegado a tu cuenta y se perderán. ¿Cerrar sesión igualmente?', { yes: 'Cerrar sesión', danger: true }))) return;
+  await signOut();
   disconnectCloud();
-  toast(act === 'logout' ? 'Sesión cerrada' : 'Cuenta borrada');
+  toast('Sesión cerrada');
   go('auth');
 }
