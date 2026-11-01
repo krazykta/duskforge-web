@@ -59,7 +59,7 @@ function showMenu() {
             ${nextGoal(p)}
           </span>
         </button>
-        <button class="btn gold big-play" data-go="battle">${icon('swords')}<span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
+        <button class="btn gold big-play" data-go="battle"><img src="img/ui/icon_play.webp" alt=""><span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
         <div class="home-extra">
           <button class="btn small ghost" data-go="online">${icon('heart')}Con amigos</button>
           <button class="btn small ghost" data-act="pass">${icon('spark')}Pase ${passTier(p)}/${SEASON.tiers.length}</button>
@@ -104,16 +104,18 @@ function showRules() {
 // ---------- Resultado ----------
 function showResult(won, rewards, draw, friendly, note) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
+  const art = won ? 'victory' : 'defeat';
   app.innerHTML = `
-    <section class="screen result ${won ? 'won' : ''}">
+    <section class="screen result ${won ? 'won' : draw ? 'draw' : 'lost'}">
+      <img class="result-art" src="img/ui/${draw ? 'battle_bg' : art}.webp" alt="">
       <div class="rays" aria-hidden="true"></div>
-      ${draw ? '' : `<img class="result-art" src="img/ui/${won ? 'victory' : 'defeat'}.webp" alt="">`}
-      <h1 class="result-title ${won ? 'win' : 'lose'}">${won ? '¡VICTORIA!' : draw ? 'EMPATE' : 'DERROTA'}</h1>
+      <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
+      <h1 class="result-title">${draw ? 'EMPATE' : `<img src="img/ui/title_${art}.webp" alt="${won ? '¡Victoria!' : 'Derrota'}">`}</h1>
       ${rewards ? `
       <div class="panel rewards">
-        <div><span>Monedas</span><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
-        ${rewards.firstWinBonus ? `<div class="bonus"><span>Primera victoria del día</span><span>incluye +${rewards.firstWinBonus}</span></div>` : ''}
-        <div><span>Experiencia</span><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
+        <div class="reward"><small>Monedas</small><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
+        <div class="reward"><small>Experiencia</small><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
+        ${rewards.firstWinBonus ? `<p class="bonus">Primera victoria del día: incluye +${rewards.firstWinBonus} monedas</p>` : ''}
       </div>` : `<p class="sub">${note || (friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.')}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       <div class="menu-buttons">

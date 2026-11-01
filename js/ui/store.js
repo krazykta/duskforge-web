@@ -215,7 +215,7 @@ tabbar.id = 'tabbar';
 tabbar.setAttribute('aria-label', 'Secciones');
 tabbar.innerHTML = `<span class="ink"></span>${TABS.map(([id, label, art]) => `
   <button class="tab ${art ? '' : 'main'}" data-tab="${id}">
-    ${art ? `<img src="img/ui/icon_${art}.webp" alt="">` : `<span class="play-dot">${icon('swords')}</span>`}<span>${label}</span>
+    ${art ? `<img src="img/ui/icon_${art}.webp" alt="">` : '<img class="play-emblem" src="img/ui/icon_play.webp" alt="">'}<span>${label}</span>
   </button>`).join('')}`;
 document.body.appendChild(tabbar);
 tabbar.addEventListener('click', (ev) => {
