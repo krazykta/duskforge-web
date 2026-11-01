@@ -157,7 +157,7 @@ function cardHtml(id, i) {
     <div class="${cls.filter(Boolean).join(' ')}" data-hand="${i}" ${delay} role="button" aria-label="${c.name}, coste ${c.cost}">
       <span class="cost">${c.cost}</span>
       <span class="art">${artHtml(c)}</span>
-      <span class="name">${c.name}</span>
+      <span class="name" style="--n:${c.name.length}">${c.name}</span>
       <span class="type">${stats}</span>
     </div>`;
 }

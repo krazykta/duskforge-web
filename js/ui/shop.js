@@ -191,6 +191,8 @@ export async function showReveal(r, back = 'shop') {
       </div>
     </section>`;
   document.body.classList.remove('tabs-on'); // el sobre ocupa toda la pantalla; las pestañas vuelven al seguir
+  // El sobre reparte el ancho según la pantalla: cada carta se dibuja a tamaño de colección y se escala entera, para que nada se descoloque.
+  app.querySelectorAll('.flip').forEach((f) => { f.querySelector('.face').style.transform = `scale(${f.offsetWidth / 108})`; });
   const root = app.querySelector('section');
   const revealed = new Set();
   const reveal = (i) => {

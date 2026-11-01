@@ -376,18 +376,22 @@ export function topBar(title, back) {
 export const artHtml = (card) =>
   CARD_ART.has(card.id) ? `<img src="img/cards/${card.id}.webp" alt="" draggable="false" loading="lazy">` : card.art;
 
+// Letra de la descripción en % del ancho interior de la carta (9,2 px a tamaño de colección): baja lo justo según su largo.
+const textFit = (len, unit) => (Math.min(9.2, unit ? 12.3 - len * 0.0375 : 9.2) / 0.94).toFixed(2);
+
 // Cara completa de una carta (colección, sobres, detalle).
 export function cardFace(card, { count = null, foil = false, locked = false, big = false, attrs = '' } = {}) {
   const cls = ['face', `r-${card.rarity}`, foil && 'foil', locked && 'locked', big && 'big'].filter(Boolean).join(' ');
   const stats = card.type === 'unit' ? `<span class="fatk">${card.atk}</span><span class="fhp">${card.hp}</span>` : '';
+  const text = cardText(card);
   return `
     <div class="${cls}" ${attrs} role="button" aria-label="${card.name}${locked ? ' (no la tienes)' : ''}">
       <span class="cost">${card.cost}</span>
       ${count !== null ? `<span class="count">x${count}</span>` : ''}
       <span class="art">${artHtml(card)}</span>
-      <span class="name">${card.name}</span>
+      <span class="name" style="--n:${card.name.length}">${card.name}</span>
       <span class="type">${card.type === 'unit' ? 'Criatura' : 'Hechizo'} · ${RARITY_TEXT[card.rarity]}</span>
-      <span class="text">${cardText(card)}</span>
+      <span class="text" style="--f:${textFit(text.length, card.type === 'unit')}">${card.type === 'unit' ? '<i></i><i></i>' : ''}${text}</span>
       ${stats}
     </div>`;
 }
