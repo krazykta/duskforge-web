@@ -178,7 +178,8 @@ tabbar.innerHTML = `<span class="ink"></span>${TABS.map(([id, label, art]) => `
 document.body.appendChild(tabbar);
 tabbar.addEventListener('click', (ev) => {
   const tab = ev.target.closest('[data-tab]')?.dataset.tab;
-  if (tab && tab !== screen) go(tab);
+  if (tab === 'menu' && screen === 'menu') go('battle'); // la pestaña se llama Jugar: en el inicio, juega
+  else if (tab && tab !== screen) go(tab);
 });
 
 function paintTabs() {
@@ -209,6 +210,7 @@ function motionFor(from, to) {
 
 export function go(name, ...args) {
   const motion = motionFor(screen, name);
+  if (history.state?.df !== 'app') history.pushState({ df: 'app' }, ''); // tras un Atrás en el inicio que no llegó a salir de la app
   tapHandler = null;
   cameFrom = screen;
   screen = name;

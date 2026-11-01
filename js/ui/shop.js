@@ -71,6 +71,7 @@ async function buyPack(pack) {
         <button class="btn ghost" data-go="collection">Ver colección</button>
       </div>
     </section>`;
+  document.body.classList.remove('tabs-on'); // el sobre ocupa toda la pantalla; las pestañas vuelven al seguir
   const root = app.querySelector('section');
   const revealed = new Set();
   const reveal = (i) => {

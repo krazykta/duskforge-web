@@ -128,6 +128,8 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 .seg button.on { color: #fff; background: linear-gradient(180deg, rgba(126, 34, 206, 0.8), rgba(88, 28, 160, 0.8)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
 
 /* --- Barra de pestañas: vive fuera de #app y no se mueve al cambiar de pantalla --- */
+/* view-transition-name hace de #app un contexto propio: con una ventana abierta tiene que quedar por encima de las pestañas */
+body:has(#app .modal-bg) #app { z-index: 25; }
 #tabbar { display: none; position: fixed; z-index: 20; left: 50%; bottom: 0; transform: translateX(-50%); width: min(100%, 520px); height: var(--tabs); padding-bottom: env(safe-area-inset-bottom);
   grid-template-columns: repeat(5, 1fr); background: linear-gradient(180deg, #1a1331, #0e0a1b); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4); view-transition-name: tabbar; }
 .tabs-on #tabbar { display: grid; }
@@ -144,6 +146,7 @@ h1, h2, h3, .result-title, .btn { font-family: var(--display); }
 .tab .badge { position: absolute; top: 2px; left: calc(50% + 6px); margin: 0; }
 
 /* --- Paso entre pantallas: se mueve #app y lo demás queda quieto --- */
+::view-transition { pointer-events: none; } /* las pestañas responden aunque la transición siga en marcha */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
 ::view-transition-group(screen) { overflow: clip; animation-duration: 0.3s; }
 ::view-transition-old(screen), ::view-transition-new(screen) { animation: 0.3s var(--ease) both fade-in; mix-blend-mode: normal; height: 100%; }
@@ -189,8 +192,10 @@ html[data-motion='zoom']::view-transition-new(screen) { animation: 0.42s 0.1s va
 .home { justify-content: space-between; position: relative; overflow: hidden; }
 .home > :not(.embers) { z-index: 1; position: relative; }
 .home .logo { margin-top: auto; margin-bottom: auto; }
-.home .logo img { animation: breathe 5s ease-in-out infinite; }
-@keyframes breathe { 50% { filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 38px rgba(242, 107, 42, 0.5)); } }
+/* Latido de la forja detrás del logo: se anima la opacidad de un halo, no el filtro de la imagen, que en móvil pesa mucho */
+.home .logo { position: relative; }
+.home .logo::before { content: ''; position: absolute; inset: -12%; z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(242, 107, 42, 0.42), transparent); opacity: 0.25; animation: breathe 5s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: 0.85; } }
 .home-foot { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .summary { font: inherit; color: var(--text); text-align: left; display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; transition: transform 0.12s var(--ease); }
 .summary:active { transform: scale(0.98); }
@@ -500,7 +505,7 @@ body[data-cloud='rejected'] .gear::after { background: var(--red); }
 .mini { width: 26px; height: 26px; border-radius: 6px; overflow: hidden; border: 1px solid; display: grid; place-items: center; font-size: 14px; box-shadow: none; }
 
 .opening-title { color: var(--gold); text-align: center; margin: 0; font-size: 20px; }
-.reveal { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; }
+.reveal { display: flex; flex-wrap: wrap; gap: 20px 10px; justify-content: center; width: 100%; }
 .flip { width: 31%; max-width: 140px; aspect-ratio: 5 / 7.4; position: relative; perspective: 800px; cursor: pointer; animation: rise-in 0.42s var(--ease) backwards; }
 .flip:nth-child(2) { animation-delay: 70ms; }
 .flip:nth-child(3) { animation-delay: 140ms; }
