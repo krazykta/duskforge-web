@@ -382,6 +382,18 @@ export function endTurn(state, p) {
   return { ok: true };
 }
 
+// Jugada recibida de otro dispositivo: es dato ajeno, se comprueba antes de aplicarla. Null si es válida.
+export function actionError(state, p, a) {
+  if (a?.type === 'end') return state.winner === null && state.turn === p ? null : 'Jugada no válida';
+  const target = typeof a?.target === 'object' ? a.target : undefined;
+  if (a?.type === 'play' && Number.isInteger(a.handIndex) && target !== undefined) return playError(state, p, a.handIndex, target);
+  if (a?.type === 'attack' && target && attackTargets(state, p, a.uid).some((t) => sameTarget(t, target))) return null;
+  return 'Jugada no válida';
+}
+
+// Resumen de la partida para comprobar que los dos dispositivos siguen viendo lo mismo.
+export const stateSignature = (s) => JSON.stringify([s.seed, s.turnNumber, s.players.map((p) => [p.hp, p.energy, p.hand.length, p.deck.length, p.board.map((u) => [u.id, u.hp, u.atk])])]);
+
 export function concede(state, p) {
   if (state.winner !== null) return { ok: false, error: 'La partida ha terminado' };
   state.winner = other(p);

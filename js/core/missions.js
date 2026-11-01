@@ -13,18 +13,20 @@ export function weekKey(d = new Date()) {
   return localDay(monday);
 }
 
-// Elige las misiones del día de forma determinista a partir de la fecha.
-function pickDaily(day, cfg) {
+// Saca del día n elementos sin repetir, siempre los mismos para esa fecha.
+export function pickForDay(day, list, n) {
   let h = 2166136261;
   for (const ch of day) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
-  const pool = [...cfg.daily];
+  const pool = [...list];
   const picked = [];
-  while (picked.length < cfg.dailyCount && pool.length) {
+  while (picked.length < n && pool.length) {
     h = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
     picked.push(pool.splice(h % pool.length, 1)[0]);
   }
   return picked;
 }
+
+const pickDaily = (day, cfg) => pickForDay(day, cfg.daily, cfg.dailyCount);
 
 const fresh = (defs) => defs.map((m) => ({ id: m.id, progress: 0, claimed: false }));
 

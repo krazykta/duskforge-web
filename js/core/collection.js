@@ -28,6 +28,11 @@ export function deckErrors(deck, collection, rules = RULES) {
   return errors;
 }
 
+const COLLECTIBLE_IDS = new Set(COLLECTIBLE.map((c) => c.id));
+const ANY_COLLECTION = Object.fromEntries(COLLECTIBLE.map((c) => [c.id, COLLECTION.maxCopies]));
+// Mazo recibido de otro jugador: da igual qué cartas tenga, pero debe cumplir las reglas.
+export const legalDeck = (deck) => Array.isArray(deck) && deck.every((id) => COLLECTIBLE_IDS.has(id)) && deckErrors(deck, ANY_COLLECTION).length === 0;
+
 // Completa un mazo antiguo más corto con cartas del mazo inicial, conservando las que eligió el jugador.
 // Siempre llega al tamaño pedido: la colección garantiza el mazo inicial entero.
 export function fillDeck(deck, collection, rules = RULES) {
@@ -51,7 +56,7 @@ function rollRarity(rng, odds) {
 }
 
 // Añade una carta: si ya tienes el máximo, se convierte en fragmentos.
-function grantCard(profile, id, cfg) {
+export function grantCard(profile, id, cfg = COLLECTION) {
   const card = CARD_BY_ID[id];
   const owned = profile.collection[id] || 0;
   if (owned >= maxCopies(card, cfg)) {

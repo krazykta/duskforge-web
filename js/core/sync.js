@@ -26,6 +26,10 @@ export function mergeProfiles(base, local, cloud) {
   for (const [id, n] of Object.entries(local.collection)) merged.collection[id] = Math.max(merged.collection[id] || 0, n);
   merged.foils = [...new Set([...cloud.foils, ...local.foils])];
   merged.achievements = [...new Set([...cloud.achievements, ...local.achievements])];
+  merged.upgrades = Object.fromEntries(Object.keys(local.upgrades).map((k) => [k, Math.max(cloud.upgrades[k], local.upgrades[k])]));
+  merged.cosmetics = { ...local.cosmetics, owned: [...new Set([...cloud.cosmetics.owned, ...local.cosmetics.owned])] };
+  merged.pass = { ...local.pass, xp: Math.max(0, cloud.pass.xp + local.pass.xp - base.pass.xp) };
+  merged.decks = merged.decks.concat(cloud.decks.slice(merged.decks.length)); // huecos comprados en el otro dispositivo
   merged.claimedMatches = [...new Set([...cloud.claimedMatches, ...local.claimedMatches])];
   merged.packHistory = [...new Map([...cloud.packHistory, ...local.packHistory].map((h) => [h.at, h])).values()].sort((x, y) => x.at - y.at);
   merged.lastFirstWinDay = [cloud.lastFirstWinDay, local.lastFirstWinDay].filter(Boolean).sort().pop() ?? null;

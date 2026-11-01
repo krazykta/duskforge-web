@@ -1,13 +1,15 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { ECONOMY } from './core/config.js';
+import { ECONOMY, COSMETICS, SEASON } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
-import { app, getProfile, setProfile, register, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { passTier } from './core/pass.js';
+import { app, getProfile, setProfile, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
+import { showOnline } from './ui/online.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
 
@@ -38,6 +40,7 @@ function nextGoal(p) {
 function showMenu() {
   const p = getProfile();
   const into = xpIntoLevel(p.xp);
+  const title = COSMETICS.find((c) => c.id === p.cosmetics.title)?.name;
   app.innerHTML = `
     <section class="screen scenic home">
       <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
@@ -51,16 +54,21 @@ function showMenu() {
         <button class="panel summary" data-go="missions">
           <span class="lvl"><b>${levelOf(p.xp)}</b></span>
           <span class="summary-text">
-            <span class="row"><b>Nivel ${levelOf(p.xp)}</b><span class="sub">${p.wins} V · ${p.losses} D</span></span>
+            <span class="row"><b>Nivel ${levelOf(p.xp)}</b><span class="sub">${title ?? `${p.wins} V · ${p.losses} D`}</span></span>
             <span class="xpbar" title="${into} / ${ECONOMY.xpPerLevel} XP"><span style="width:${(into / ECONOMY.xpPerLevel) * 100}%"></span></span>
             ${nextGoal(p)}
           </span>
         </button>
         <button class="btn gold big-play" data-go="battle">${icon('swords')}<span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
+        <div class="home-extra">
+          <button class="btn small ghost" data-go="online">${icon('heart')}Con amigos</button>
+          <button class="btn small ghost" data-act="pass">${icon('spark')}Pase ${passTier(p)}/${SEASON.tiers.length}</button>
+        </div>
       </div>
     </section>`;
   onTap((el) => {
     if (el.closest('[data-act="rules"]')) showRules();
+    if (el.closest('[data-act="pass"]')) go('missions', 'pass');
   });
   if (!p.tutorialSeen) showRules();
 }
@@ -94,7 +102,7 @@ function showRules() {
 }
 
 // ---------- Resultado ----------
-function showResult(won, rewards, draw) {
+function showResult(won, rewards, draw, friendly) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   app.innerHTML = `
     <section class="screen result ${won ? 'won' : ''}">
@@ -106,10 +114,10 @@ function showResult(won, rewards, draw) {
         <div><span>Monedas</span><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
         ${rewards.firstWinBonus ? `<div class="bonus"><span>Primera victoria del día</span><span>incluye +${rewards.firstWinBonus}</span></div>` : ''}
         <div><span>Experiencia</span><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
-      </div>` : '<p class="sub">Terminó demasiado pronto: no cuenta como partida ni da recompensa.</p>'}
+      </div>` : `<p class="sub">${friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.'}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       <div class="menu-buttons">
-        <button class="btn gold" data-go="battle">Jugar otra vez</button>
+        <button class="btn gold" data-go="${friendly ? 'online' : 'battle'}">Jugar otra vez</button>
         <button class="btn ghost" data-go="menu">Volver al inicio</button>
       </div>
     </section>`;
@@ -158,5 +166,6 @@ register('missions', showMissions);
 register('settings', showSettings);
 register('auth', showAuth);
 register('support', showSupport);
+register('online', showOnline);
 
 startApp();

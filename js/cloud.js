@@ -44,6 +44,12 @@ export const sendSupport = (message) => call(sb?.rpc('send_support_message', { m
 export const mySupport = () => call(sb?.rpc('my_support_messages'));
 export const markSupportSeen = () => call(sb?.rpc('mark_support_seen'));
 
+// Productos comprados (pase premium). Solo el servidor los concede: ver docs/pagos.md.
+export async function myEntitlements() {
+  const r = await call(sb?.from('entitlements').select('sku'));
+  return (r.data ?? []).map((e) => e.sku); // un fallo aquí no debe impedir entrar en la cuenta
+}
+
 export async function pullProfile(userId) {
   const r = await call(sb?.from('profiles').select('data, rev').eq('id', userId).maybeSingle());
   return r.error ? r : { data: r.data?.data ?? null, rev: r.data?.rev ?? null };

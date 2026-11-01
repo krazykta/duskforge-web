@@ -4,9 +4,11 @@ import { newProfile, sanitizeProfile, PROFILE_VERSION } from '../core/progressio
 import { mergeProfiles } from '../core/sync.js';
 import { refreshMissions, claimableCount } from '../core/missions.js';
 import { claimableAchievements } from '../core/achievements.js';
+import { claimableTiers } from '../core/pass.js';
+import { SEASON } from '../core/config.js';
 import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
-import { pullProfile, saveProfile } from '../cloud.js';
+import { myEntitlements, pullProfile, saveProfile } from '../cloud.js';
 import { CARD_ART } from './card-art.js';
 import { music } from './sound.js';
 import { icon } from './icons.js';
@@ -32,6 +34,8 @@ export function setProfile(next) {
   profile = next;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch { /* sin almacenamiento: se juega igual */ }
   document.body.classList.toggle('reduced-motion', profile.settings.reducedMotion);
+  const { back, board } = profile.cosmetics;
+  document.documentElement.className = [back, board].filter(Boolean).map((id) => `c-${id}`).join(' ');
   paintTabs();
   if (cloudUser) {
     clearTimeout(pushTimer);
@@ -50,9 +54,11 @@ let pushTimer = null;
 let flushing = false;
 let lastPull = 0;
 let sync = null;
+let entitlements = new Set();
 try { sync = JSON.parse(localStorage.getItem(SYNC_KEY)); } catch { /* sin datos previos */ }
 
 export const getCloudUser = () => cloudUser;
+export const hasPremiumPass = () => entitlements.has(SEASON.sku);
 export const getCloudState = () => cloudState;
 const CLOUD_TEXT = {
   saving: 'Guardando…', saved: 'Guardado en la nube', offline: 'Sin conexión: se guardará al volver',
@@ -136,6 +142,7 @@ export async function connectCloud(user) {
   }
   if (r.data?.version > PROFILE_VERSION) return { newer: true }; // una versión antigua la sustituiría por una partida nueva
   cloudUser = user;
+  entitlements = new Set(await myEntitlements());
   if (r.data) adopt(r.data, r.rev);
   else remember(user.id, null, null);
   await flushCloud();
@@ -145,6 +152,7 @@ export async function connectCloud(user) {
 export function disconnectCloud() {
   clearTimeout(pushTimer);
   cloudUser = null;
+  entitlements = new Set();
   remember(null);
   setCloudState('off');
   replaceProfile(null); // este dispositivo vuelve a empezar; la partida sigue en la cuenta (salvo si se borró)
@@ -162,7 +170,7 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { settings: 'menu', support: 'settings', auth: 'menu' }; // pantallas que se abren encima de otra
+const PARENT = { settings: 'menu', support: 'settings', auth: 'menu', online: 'menu' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;
@@ -188,7 +196,7 @@ function paintTabs() {
   if (i < 0) return;
   tabbar.style.setProperty('--tab', i);
   tabbar.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === screen));
-  const count = claimableCount(refreshMissions(profile)) + claimableAchievements(profile);
+  const count = claimableCount(refreshMissions(profile)) + claimableAchievements(profile) + claimableTiers(profile, hasPremiumPass());
   const tab = tabbar.querySelector('[data-tab="missions"]');
   tab.querySelector('.badge')?.remove();
   if (count) tab.insertAdjacentHTML('beforeend', `<span class="badge">${count}</span>`);

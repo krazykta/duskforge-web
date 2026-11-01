@@ -1,15 +1,18 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // shortcut: el perfil vive en el dispositivo y se puede manipular; en la fase de backend
 // las recompensas se validarán en servidor.
-import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, SEASON, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
 
 export { localDay };
-export const PROFILE_VERSION = 2;
+export const PROFILE_VERSION = 3;
 const MAX_REMEMBERED_MATCHES = 50;
 const OLD_DECK_SIZE = 12; // tamaño de mazo anterior a RULES.deckSize
+const BASE_DECK_SLOTS = 3;
+const KNOWN_ACHIEVEMENTS = new Set(ACHIEVEMENTS.map((a) => a.id));
+const isTierClaim = (id) => /^s\d+p?_\d+$/.test(id); // también de temporadas pasadas: el servidor no deja perder ninguna
 
 export function newProfile() {
   return {
@@ -21,7 +24,11 @@ export function newProfile() {
     decks: [[...STARTER_DECK], [], []], // huecos de mazo guardados ([] = vacío)
     activeDeck: 0,
     foils: [],
-    achievements: [], // logros ya reclamados (core/achievements.js)
+    achievements: [], // logros (core/achievements.js) y casillas del pase (core/pass.js) ya reclamados
+    upgrades: { deck: 0, purse: 0 }, // nivel de cada mejora comprada
+    cosmetics: { owned: [], back: null, board: null, title: null },
+    pass: { season: SEASON.id, xp: 0 },
+    shop: { day: null, bought: [] }, // lo comprado hoy en el escaparate
     packHistory: [],
     missions: null, // se generan al consultarlas (core/missions.js)
     settings: { reducedMotion: false, fastAi: false, sound: true, music: true },
@@ -47,7 +54,7 @@ function sanitizeMissionList(list) {
 // campo a campo, sin perder el resto del progreso.
 export function sanitizeProfile(raw) {
   const base = newProfile();
-  if (!isObj(raw) || (raw.version !== 1 && raw.version !== PROFILE_VERSION)) return base;
+  if (!isObj(raw) || !Number.isInteger(raw.version) || raw.version < 1 || raw.version > PROFILE_VERSION) return base;
 
   const collection = { ...base.collection }; // la colección inicial siempre está garantizada
   if (isObj(raw.collection)) {
@@ -59,7 +66,8 @@ export function sanitizeProfile(raw) {
   // Los mazos de antes de subir el tamaño se completan en vez de perderse.
   const grown = (d) => (d.length === OLD_DECK_SIZE ? fillDeck(d, collection) : d);
   const deck = grown(strList(raw.deck));
-  const decks = [0, 1, 2].map((i) => {
+  const upgrades = Object.fromEntries(UPGRADES.map((u) => [u.id, int(raw.upgrades?.[u.id], u.prices.length)]));
+  const decks = Array.from({ length: BASE_DECK_SLOTS + upgrades.deck }, (_, i) => {
     const d = grown(strList(Array.isArray(raw.decks) ? raw.decks[i] : null));
     return deckErrors(d, collection).length === 0 ? d : [];
   });
@@ -70,6 +78,8 @@ export function sanitizeProfile(raw) {
   const daily = isObj(m) && sanitizeMissionList(m.daily);
   const weekly = isObj(m) && sanitizeMissionList(m.weekly);
   const settings = isObj(raw.settings) ? raw.settings : {};
+  const owned = [...new Set(strList(raw.cosmetics?.owned).filter((id) => COSMETICS.some((c) => c.id === id)))];
+  const equipped = (kind) => (owned.find((id) => id === raw.cosmetics?.[kind] && COSMETICS.some((c) => c.id === id && c.kind === kind)) ?? null);
 
   return {
     ...base,
@@ -80,7 +90,11 @@ export function sanitizeProfile(raw) {
     collection,
     deck: decks[activeDeck], decks, activeDeck,
     foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],
-    achievements: [...new Set(strList(raw.achievements).filter((id) => ACHIEVEMENTS.some((a) => a.id === id)))],
+    achievements: [...new Set(strList(raw.achievements).filter((id) => KNOWN_ACHIEVEMENTS.has(id) || isTierClaim(id)))],
+    upgrades,
+    cosmetics: { owned, back: equipped('back'), board: equipped('board'), title: equipped('title') },
+    pass: { season: SEASON.id, xp: raw.pass?.season === SEASON.id ? int(raw.pass.xp) : 0 }, // cada temporada empieza de cero
+    shop: { day: typeof raw.shop?.day === 'string' ? raw.shop.day : null, bought: strList(raw.shop?.bought) },
     packHistory: Array.isArray(raw.packHistory)
       ? raw.packHistory.filter((h) => isObj(h) && Number.isFinite(h.at) && strList(h.cards).every((id) => CARD_BY_ID[id]))
         .map((h) => ({ at: h.at, cards: strList(h.cards) })).slice(-COLLECTION.historySize)
@@ -99,7 +113,7 @@ export function claimMatchRewards(profile, matchId, won, now = new Date(), stats
   const today = localDay(now);
   const firstWin = won && profile.lastFirstWinDay !== today;
   const rewards = {
-    coins: (won ? eco.winCoins : eco.lossCoins) + (firstWin ? eco.firstWinOfDayCoins : 0),
+    coins: (won ? eco.winCoins + eco.pursePerLevel * profile.upgrades.purse : eco.lossCoins) + (firstWin ? eco.firstWinOfDayCoins : 0),
     xp: won ? eco.winXp : eco.lossXp,
     firstWinBonus: firstWin ? eco.firstWinOfDayCoins : 0,
     levelBefore: levelOf(profile.xp, eco),
@@ -108,6 +122,7 @@ export function claimMatchRewards(profile, matchId, won, now = new Date(), stats
     ...profile,
     coins: profile.coins + rewards.coins,
     xp: profile.xp + rewards.xp,
+    pass: { ...profile.pass, xp: profile.pass.xp + rewards.xp },
     wins: profile.wins + (won ? 1 : 0),
     losses: profile.losses + (won ? 0 : 1),
     lastFirstWinDay: firstWin ? today : profile.lastFirstWinDay,

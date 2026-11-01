@@ -21,6 +21,7 @@ export const ECONOMY = {
   winXp: 50,
   lossXp: 20,
   firstWinOfDayCoins: 50,
+  pursePerLevel: 5, // monedas extra por victoria con cada nivel de la mejora Bolsa de botín
   xpPerLevel: 100,
 };
 
@@ -50,7 +51,86 @@ export const BIG_PACK = {
   odds: PACK.odds,
   lastOdds: { common: 0, rare: 0.75, epic: 0.2, legendary: 0.05 },
 };
-export const PACKS = [PACK, BIG_PACK];
+export const CHEST = {
+  name: 'Cofre de coleccionista',
+  price: 340,
+  cards: 10,
+  odds: PACK.odds,
+  lastOdds: BIG_PACK.lastOdds,
+};
+export const EPIC_PACK = {
+  name: 'Sobre épico',
+  price: 400,
+  cards: 5,
+  odds: PACK.odds,
+  lastOdds: { common: 0, rare: 0, epic: 0.85, legendary: 0.15 },
+};
+export const LEGEND_PACK = {
+  name: 'Sobre legendario',
+  price: 900,
+  cards: 5,
+  odds: PACK.odds,
+  lastOdds: { common: 0, rare: 0, epic: 0, legendary: 1 },
+};
+export const PACKS = [PACK, BIG_PACK, CHEST, EPIC_PACK, LEGEND_PACK];
+
+// Escaparate del día: igual para todos y distinto cada día (ver core/shop.js). Cada artículo se compra una vez al día.
+export const SHOP = { slots: ['common', 'common', 'rare', 'rare', 'epic', 'legendary'], dealOff: 0.4, offersPerDay: 3 };
+export const CARD_PRICE = { common: 60, rare: 160, epic: 400, legendary: 1200 };
+export const OFFERS = [
+  { id: 'o_big', name: 'Sobre grande', text: '5 cartas, la última rara o mejor', was: 180, price: 120, pack: BIG_PACK },
+  { id: 'o_chest', name: 'Cofre de coleccionista', text: '10 cartas, la última rara o mejor', was: 340, price: 240, pack: CHEST },
+  { id: 'o_epic', name: 'Sobre épico', text: '5 cartas, la última épica o mejor', was: 400, price: 280, pack: EPIC_PACK },
+  { id: 'o_legend', name: 'Sobre legendario', text: '5 cartas, la última legendaria', was: 900, price: 650, pack: LEGEND_PACK },
+  { id: 'o_frags', name: 'Saco de fragmentos', text: '200 fragmentos para fabricar lo que quieras', price: 150, fragments: 200 },
+];
+
+// Mejoras permanentes; cada precio es un nivel. No hay ninguna de XP: el servidor rechaza la que no sale de las partidas.
+export const UPGRADES = [
+  { id: 'deck', name: 'Hueco de mazo', text: 'Un mazo guardado más.', prices: [300, 800] },
+  { id: 'purse', name: 'Bolsa de botín', text: `+${ECONOMY.pursePerLevel} monedas por victoria.`, prices: [500, 1200, 2500] },
+];
+
+// Coleccionables: no cambian el combate. Sin precio solo se consiguen en el pase. Su aspecto está en styles.css (.c-<id>).
+export const COSMETICS = [
+  { id: 'back_ember', kind: 'back', name: 'Dorso de ascuas', price: 300 },
+  { id: 'back_jade', kind: 'back', name: 'Dorso de jade', price: 300 },
+  { id: 'back_abyss', kind: 'back', name: 'Dorso del abismo', price: 300 },
+  { id: 'back_blood', kind: 'back', name: 'Dorso de sangre', price: 500 },
+  { id: 'back_s1', kind: 'back', name: 'Dorso de la temporada' },
+  { id: 'back_s1p', kind: 'back', name: 'Dorso dorado' },
+  { id: 'board_frost', kind: 'board', name: 'Mesa de escarcha', price: 400 },
+  { id: 'board_forest', kind: 'board', name: 'Mesa del bosque', price: 400 },
+  { id: 'board_crimson', kind: 'board', name: 'Mesa carmesí', price: 600 },
+  { id: 'board_s1p', kind: 'board', name: 'Mesa de la forja' },
+  { id: 'title_wander', kind: 'title', name: 'Errante del Ocaso', price: 150 },
+  { id: 'title_forge', kind: 'title', name: 'Alma de la Forja', price: 250 },
+  { id: 'title_abyss', kind: 'title', name: 'Voz del Abismo', price: 400 },
+  { id: 'title_legend', kind: 'title', name: 'Leyenda Viva', price: 1000 },
+  { id: 'title_s1', kind: 'title', name: 'Ascua Eterna' },
+  { id: 'title_s1p', kind: 'title', name: 'Corona de Ascuas' },
+];
+export const COSMETIC_KINDS = { back: 'Dorsos de carta', board: 'Mesas de combate', title: 'Títulos' };
+
+// Pase de temporada: las casillas se ganan con la XP de las partidas. pack es un índice de PACKS.
+// Las casillas reclamadas se guardan como logros (s1_5, s1p_5) y el servidor las paga igual: al cambiar
+// o sumar temporada hay que copiar sus recompensas en el guard (lo comprueba test/server-guard.test.js).
+function seasonTier(n) {
+  const free = { 15: { cosmetic: 'title_s1' }, 30: { cosmetic: 'back_s1' } }[n]
+    ?? (n % 5 === 0 ? { pack: 1 } : n % 2 ? { coins: 40 } : { fragments: 30 });
+  const premium = { 10: { cosmetic: 'board_s1p' }, 20: { cosmetic: 'title_s1p' }, 30: { cosmetic: 'back_s1p' } }[n]
+    ?? (n % 5 === 0 ? { pack: 3 } : n % 2 ? { coins: 80 } : { fragments: 60 });
+  return { free, premium };
+}
+export const SEASON = {
+  id: 's1',
+  name: 'Ascuas del Ocaso',
+  ends: '2027-02-01',
+  xpPerTier: 100,
+  sku: 'pass_s1', // producto que desbloquea la vía premium (tabla entitlements, ver docs/pagos.md)
+  tiers: Array.from({ length: 30 }, (_, i) => seasonTier(i + 1)),
+};
+export const tierId = (n, premium) => `${SEASON.id}${premium ? 'p' : ''}_${n}`;
 
 // Misiones: "stat" es la estadística que las hace avanzar (ver core/missions.js).
 export const MISSIONS = {
