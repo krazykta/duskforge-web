@@ -2407,7 +2407,7 @@ export const SETS = [
 let set = 0;
 for (const c of CARDS) { if (SETS[set + 1]?.[1] === c.id) set++; c.set = set; }
 
-export const CARD_BY_ID = Object.fromEntries(CARDS.map((c) => [c.id, c]));
+export const CARD_BY_ID = Object.assign(Object.create(null), Object.fromEntries(CARDS.map((c) => [c.id, c]))); // sin prototipo: "constructor" no es una carta
 
 export const KEYWORD_TEXT = {
   guard: 'Guardián',

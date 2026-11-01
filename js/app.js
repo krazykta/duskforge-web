@@ -1,13 +1,26 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
 import { ECONOMY } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
-import { app, getProfile, setProfile, register, onTap, topBar, missionBadge } from './ui/store.js';
+import { app, getProfile, setProfile, register, onTap, topBar, missionBadge, toast } from './ui/store.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
+
+if ('serviceWorker' in navigator && location.hostname !== 'localhost') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+// Un fallo inesperado se avisa una vez en vez de dejar al jugador ante una pantalla que no responde.
+let lastCrash = 0;
+function onCrash(err) {
+  console.error(err);
+  if (Date.now() - lastCrash < 10000) return;
+  lastCrash = Date.now();
+  toast('Algo ha fallado. Si se repite, reinicia el juego.');
+}
+addEventListener('error', (ev) => onCrash(ev.error ?? ev.message));
+addEventListener('unhandledrejection', (ev) => onCrash(ev.reason));
 
 // ---------- Menú ----------
 function showMenu() {
@@ -44,10 +57,11 @@ function showRules() {
     <div class="modal" role="dialog" aria-label="Cómo jugar">
       <h2>Cómo jugar</h2>
       <ul>
-        <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20.</li>
+        <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20, pero curarte puede llevarte por encima: la vida no tiene tope.</li>
+        <li>Los mazos tienen <b>24 cartas</b> y cada jugador puede tener hasta <b>10 criaturas</b> en la mesa.</li>
         <li>Cada turno ganas <b>energía 💎</b> (hasta 5). Las cartas cuestan energía. Quien empieza segundo roba una carta más y recibe un <b>Ascua</b> (+1 de energía un turno).</li>
-        <li>Toca una carta para verla y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo.</li>
-        <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo.</li>
+        <li>Toca una carta para verla en grande y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo. Las criaturas del rival también se pueden ampliar.</li>
+        <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo. 💀 significa que el objetivo caerá y ⚠️ que caerá tu atacante. 💤 es que esa criatura ya no puede atacar este turno.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
         <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ❄️ no ataca en su siguiente turno.</li>
         <li>Una criatura <b>silenciada</b> 🔇 pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>

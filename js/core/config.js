@@ -4,14 +4,14 @@ export const GAME_NAME = 'DUSKFORGE';
 
 export const RULES = {
   startHp: 20,
-  deckSize: 12,
+  deckSize: 24,
   startHand: 3,
   secondPlayerExtraCards: 1, // compensa al jugador que empieza segundo
   secondPlayerBonus: 'ember', // y además recibe esta carta (Ascua: +1 de energía un turno)
   maxHand: 7, // si robas con la mano llena, la carta se quema
   startEnergy: 1,
   maxEnergy: 5,
-  boardSize: 5,
+  boardSize: 10,
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
@@ -98,16 +98,27 @@ export const ACHIEVEMENTS = [
 export const STARTER_DECK = [
   'dusk_recruit', 'dusk_recruit', 'ash_bat', 'rune_squire', 'flame_acolyte', 'bronze_sentinel',
   'arcane_librarian', 'night_leech', 'spark', 'spark', 'mire_toad', 'lightning_lance',
+  'ash_bat', 'rune_squire', 'flame_acolyte', 'bronze_sentinel', 'moon_potion', 'aegis',
+  'dark_blessing', 'grave_rat', 'cinder_imp', 'shadow_cutpurse', 'bog_lurker', 'tower_archer',
 ];
 
-export const AI_DECK = [
+// Cada lista de rival define su estilo con 12 cartas; el resto lo pone el mazo inicial, igual que empieza el jugador.
+function fullAiDeck(list) {
+  const deck = [...list];
+  for (const id of STARTER_DECK) {
+    if (deck.length < RULES.deckSize && deck.filter((x) => x === id).length < 2) deck.push(id);
+  }
+  return deck;
+}
+
+const ASSAULT_DECK = [
   'ash_bat', 'ash_bat', 'rune_squire', 'flame_acolyte', 'night_leech', 'doom_herald',
   'storm_apprentice', 'lightning_rider', 'spark', 'dark_blessing', 'aegis', 'arcane_vision',
 ];
 
 // Mazos del rival: la partida elige uno al azar. Cada uno enseña un estilo de juego.
 export const AI_DECKS = [
-  AI_DECK, // Asalto: criaturas rápidas y hechizos de apoyo
+  ASSAULT_DECK, // Asalto: criaturas rápidas y hechizos de apoyo
   [ // Cripta: muertos que vuelven y veneno
     'grave_rat', 'ash_bat', 'cinder_imp', 'cinder_imp', 'bone_warden', 'tomb_scholar',
     'venom_spitter', 'spore_mother', 'plague_bearer', 'soul_siphon', 'dusk_recruit', 'ash_bat',
@@ -215,7 +226,8 @@ export const AI_DECKS = [
     'ronin_youth', 'paper_folder', 'kappa', 'mist_scout', 'lantern_bearer', 'oni_brute',
     'wandering_swordsman', 'tea_master', 'quick_draw', 'paper_charm', 'sake_offering', 'paper_flock',
   ],
-];
+].map(fullAiDeck);
+export const AI_DECK = AI_DECKS[0];
 
 // Nombre del rival que se muestra en combate, uno por mazo de AI_DECKS (mismo orden).
 export const AI_NAMES = ['Señor del Abismo', 'Guardiana de la Cripta', 'Bruja de la Escarcha', 'El Encapuchado', 'Maestro Forjador',

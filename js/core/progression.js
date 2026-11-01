@@ -3,12 +3,13 @@
 // las recompensas se validarán en servidor.
 import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS } from './config.js';
 import { CARD_BY_ID } from './cards.js';
-import { countCards, deckErrors, maxCopies } from './collection.js';
+import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
 
 export { localDay };
 export const PROFILE_VERSION = 2;
 const MAX_REMEMBERED_MATCHES = 50;
+const OLD_DECK_SIZE = 12; // tamaño de mazo anterior a RULES.deckSize
 
 export function newProfile() {
   return {
@@ -55,9 +56,11 @@ export function sanitizeProfile(raw) {
       if (c && !c.token) collection[id] = Math.max(collection[id] || 0, int(n, maxCopies(c)));
     }
   }
-  const deck = strList(raw.deck);
+  // Los mazos de antes de subir el tamaño se completan en vez de perderse.
+  const grown = (d) => (d.length === OLD_DECK_SIZE ? fillDeck(d, collection) : d);
+  const deck = grown(strList(raw.deck));
   const decks = [0, 1, 2].map((i) => {
-    const d = strList(Array.isArray(raw.decks) ? raw.decks[i] : null);
+    const d = grown(strList(Array.isArray(raw.decks) ? raw.decks[i] : null));
     return deckErrors(d, collection).length === 0 ? d : [];
   });
   const activeDeck = int(raw.activeDeck, decks.length - 1);

@@ -1,6 +1,7 @@
 // Cuenta: entrar, crear cuenta, recuperar contraseña, cerrar sesión y borrar cuenta.
 import { sb, currentUser, signUp, signIn, signOut, sendReset, setPassword, deleteAccount, pullProfile, pushProfile, sendSupport, mySupport, markSupportSeen } from '../cloud.js';
 import { app, getProfile, go, toast, topBar, setCloudUser, getCloudUser, flushCloud, replaceProfile } from './store.js';
+import { PROFILE_VERSION } from '../core/progression.js';
 
 const GUEST_KEY = 'duskforge.guest';
 const isGuest = () => { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } };
@@ -15,7 +16,7 @@ export async function startApp() {
     recovering = true;
     setTimeout(() => go('auth', 'newPassword')); // fuera del callback: Supabase recomienda no esperar dentro
   });
-  const user = await currentUser();
+  const user = await currentUser().catch(() => null); // una sesión ilegible no debe dejar el juego en "Cargando…"
   if (user) return enterWithUser(user);
   go(isGuest() ? 'menu' : 'auth');
 }
@@ -26,6 +27,9 @@ async function enterWithUser(user) {
   if (r.error) {
     // No se sube nada para no sobrescribir la partida de la nube con la local.
     toast('No se pudo cargar tu partida de la nube. Juegas con la de este dispositivo.');
+  } else if (r.data?.version > PROFILE_VERSION) {
+    // Una versión antigua del juego no la entendería y la sustituiría por una partida nueva.
+    toast('Tu partida es de una versión más nueva: actualiza el juego. Mientras tanto no se guarda en la nube.');
   } else {
     if (r.data) replaceProfile(r.data);
     else await pushProfile(user.id, getProfile());

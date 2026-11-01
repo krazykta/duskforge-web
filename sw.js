@@ -13,7 +13,7 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // Supabase y demás van siempre a la red
   e.respondWith(caches.open(CACHE).then(async (cache) => {
     const cached = await cache.match(e.request);
-    const fresh = fetch(e.request).then((res) => { if (res.status === 200) cache.put(e.request, res.clone()); return res; });
+    const fresh = fetch(e.request).then((res) => { if (res.status === 200) cache.put(e.request, res.clone()).catch(() => {}); return res; });
     if (cached) { fresh.catch(() => {}); return cached; }
     return fresh;
   }));

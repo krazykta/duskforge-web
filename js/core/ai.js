@@ -49,7 +49,7 @@ function isUseful(state, p, card) {
   if (e.kind === 'bounce' && e.target === 'allyUnit') return false; // shortcut: la IA no sabe cuándo conviene retirar
   if (e.kind === 'transform') return state.players[other(p)].board.some((u) => u.atk >= 3 || u.guard);
   if (e.kind === 'draw') return me.deck.length >= e.amount && me.hand.length + e.amount <= state.rules.maxHand; // sin fatiga ni cartas quemadas
-  if (e.kind === 'heal') return me.maxHp - me.hp >= Math.min(3, e.amount);
+  if (e.kind === 'heal') return state.rules.startHp - me.hp >= Math.min(3, e.amount); // no se gasta si no le hace falta
   const foeBoard = state.players[other(p)].board;
   if (e.kind === 'damageAllEnemies') return foeBoard.length > 0;
   if (e.kind === 'damageAll') return foeBoard.length > me.board.length; // solo si sale ganando

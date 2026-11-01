@@ -37,7 +37,7 @@ export function createMatch({ decks, seed = Date.now(), firstPlayer = 0, rules =
     players: decks.map((deck) => {
       if (deck.length !== rules.deckSize) throw new Error(`El mazo debe tener ${rules.deckSize} cartas`);
       for (const id of deck) if (!CARD_BY_ID[id]) throw new Error(`Carta desconocida: ${id}`);
-      return { hp: rules.startHp, maxHp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [] };
+      return { hp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [] };
     }),
   };
   state.players.forEach((pl, i) => (pl.deck = shuffle(state, [...decks[i]])));
@@ -109,12 +109,11 @@ function damage(state, target, amount, source = null) {
   return amount;
 }
 
+// La vida no tiene tope: toda curación suma aunque se pase de la inicial.
 function heal(state, p, amount) {
-  const pl = state.players[p];
-  const healed = Math.min(amount, pl.maxHp - pl.hp);
-  if (healed <= 0) return;
-  pl.hp += healed;
-  emit(state, { type: 'heal', player: p, uid: HERO, amount: healed });
+  if (amount <= 0) return;
+  state.players[p].hp += amount;
+  emit(state, { type: 'heal', player: p, uid: HERO, amount });
 }
 
 // Retira las unidades muertas y resuelve sus efectos "al morir" (que pueden matar a otras).

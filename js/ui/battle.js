@@ -1,15 +1,18 @@
 // Pantalla de combate: dibuja el estado del motor y traduce toques en acciones.
 import { AI_DECKS, AI_NAMES } from '../core/config.js';
-import { CARD_BY_ID, cardText } from '../core/cards.js';
+import { CARD_BY_ID } from '../core/cards.js';
+import { attackStyle, fxElement, RANGED } from '../core/cardfx.js';
 import { createMatch, playCard, playError, cardTargets, attack, attackTargets, endTurn, concede, takeEvents, findUnit, HERO } from '../core/engine.js';
 import { nextAction } from '../core/ai.js';
 import { claimMatchRewards } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
-import { app, getProfile, setProfile, go, onTap, wait, artHtml } from './store.js';
+import { app, getProfile, setProfile, go, onTap, wait, artHtml, cardFace } from './store.js';
 import { sfx, eventSound } from './sound.js';
+import { motionOn, strikeFx, shootFx, castFx, healFx, auraFx, deathFx, landFx, shake } from './fx.js';
 
 const ME = 0;
 const FOE = 1;
+const MAX_AI_ACTIONS = 60; // red de seguridad: un fallo de la IA no puede dejar la partida colgada
 const aiDelay = () => (getProfile().settings.fastAi ? 300 : 650);
 
 let battle = null;
@@ -22,14 +25,14 @@ export function startBattle() {
     state,
     rivalName: AI_NAMES[rival],
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-    sel: null, // { kind: 'hand', index } | { kind: 'unit', uid }
+    sel: null, // { kind: 'hand', index, aiming } | { kind: 'unit', uid }
     inspect: null, // { player, uid } criatura que se está mirando
     busy: false,
     message: state.turn === ME ? 'Empiezas tú' : 'Empieza el rival',
     prevHandLen: 0,
     prevFoeHand: 0,
     seenUnits: new Set(), // para animar solo las criaturas recién llegadas
-    log: [], // todos los eventos, para las estadísticas de misiones
+    log: [], // todos los eventos, para las estadísticas de misiones y el historial
   };
   onTap(onBattleTap);
   sfx('shuffle');
@@ -42,24 +45,47 @@ function parseKey(k) {
   const [p, u] = k.split(':');
   return { player: Number(p), uid: u === 'h' ? HERO : Number(u) };
 }
+const tEl = (key) => app.querySelector(`[data-t="${key}"]`);
+const center = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 
 function currentTargets() {
   const { state, sel } = battle;
   if (!sel || state.turn !== ME) return [];
   if (sel.kind === 'unit') return attackTargets(state, ME, sel.uid);
-  return playError(state, ME, sel.index) === 'Elige un objetivo' ? cardTargets(state, ME, sel.index) : [];
+  return sel.aiming && playError(state, ME, sel.index) === 'Elige un objetivo' ? cardTargets(state, ME, sel.index) : [];
 }
 
-function heroHtml(p, targetSet) {
+const dies = (u, amount, source) => amount > 0 && !u.shield && (u.hp <= amount || source?.poison);
+
+// Qué va a pasar si se elige ese objetivo: 💀 cae él, ⚠️ cae tu atacante.
+function previewOf(t) {
+  const { state, sel } = battle;
+  const unit = t.uid === HERO ? null : findUnit(state, t.player, t.uid);
+  if (sel.kind === 'unit') {
+    const a = findUnit(state, ME, sel.uid);
+    const kills = unit ? dies(unit, a.atk, a) : state.players[t.player].hp <= a.atk;
+    return `${kills ? '💀' : ''}${unit && dies(a, unit.atk, unit) ? '⚠️' : ''}`;
+  }
+  const e = CARD_BY_ID[state.players[ME].hand[sel.index]].effect;
+  if (e?.kind === 'destroy') return unit ? '💀' : '';
+  if (e?.kind !== 'damage' && e?.kind !== 'damageHeal') return '';
+  return (unit ? dies(unit, e.amount) : state.players[t.player].hp <= e.amount) ? '💀' : '';
+}
+
+const previewHtml = (text) => (text ? `<span class="preview">${text}</span>` : '');
+
+function heroHtml(p, targets) {
   const pl = battle.state.players[p];
   const k = tKey({ player: p, uid: HERO });
   const gems = Array.from({ length: pl.maxEnergy }, (_, i) => `<span class="gem ${i < pl.energy ? 'full' : ''}"></span>`).join('');
+  const life = pl.hp > battle.state.rules.startHp ? 'over' : pl.hp <= 5 ? 'low' : '';
   return `
-    <div class="hero ${targetSet.has(k) ? 'targetable' : ''}" data-t="${k}" role="button" aria-label="${p === ME ? 'Tu héroe' : 'Héroe rival'}, ${pl.hp} de vida">
+    <div class="hero ${targets.has(k) ? 'targetable' : ''}" data-t="${k}" role="button" aria-label="${p === ME ? 'Tu héroe' : 'Héroe rival'}, ${pl.hp} de vida">
       <img class="portrait" src="img/ui/${p === ME ? 'hero_player' : 'hero_foe'}.webp" alt="">
-      <div class="hp">❤ ${pl.hp}</div>
+      <div class="hp ${life}">❤ ${pl.hp}</div>
       <div><b>${p === ME ? 'Tú' : battle.rivalName}</b></div>
-      <div class="meta"><div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}">${gems}</div>🂠 ${pl.hand.length} · 📚 ${pl.deck.length}</div>
+      <div class="meta"><div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}"><b>${pl.energy}/${pl.maxEnergy}</b>${gems}</div>🂠 ${pl.hand.length} · 📚 ${pl.deck.length}</div>
+      ${previewHtml(targets.get(k))}
     </div>`;
 }
 
@@ -74,30 +100,34 @@ function foeHandHtml() {
   return `<div class="foe-hand" aria-hidden="true">${cards.join('')}</div>`;
 }
 
-function unitHtml(u, p, targetSet) {
+function unitHtml(u, p, targets) {
   const c = CARD_BY_ID[u.id];
   const k = tKey({ player: p, uid: u.uid });
   const sel = battle.sel && battle.sel.kind === 'unit' && battle.sel.uid === u.uid;
-  const canAttack = p === ME && battle.state.turn === ME && attackTargets(battle.state, ME, u.uid).length > 0;
+  const myTurn = p === ME && battle.state.turn === ME;
+  const canAttack = myTurn && attackTargets(battle.state, ME, u.uid).length > 0;
   const isNew = !battle.seenUnits.has(u.uid);
   battle.seenUnits.add(u.uid);
   const foil = p === ME && getProfile().foils.includes(u.id);
   const cls = ['unit', `r-${c.rarity}`, foil && 'foil', isNew && 'new', u.guard && 'guard', u.shield && 'shield', u.stealth && 'stealth',
-    u.frozen && 'frozen', u.silenced && 'silenced', canAttack && 'ready', sel && 'selected', targetSet.has(k) && 'targetable'];
-  const kw = [u.swift && '⚡', u.drain && '🩸', u.poison && '☠️', u.fury && '⚔️', u.frozen && '❄️', u.silenced && '🔇'].filter(Boolean).join('');
+    u.frozen && 'frozen', u.silenced && 'silenced', canAttack && 'ready', sel && 'selected', targets.has(k) && 'targetable'];
+  const kw = [u.swift && '⚡', u.drain && '🩸', u.poison && '☠️', u.fury && '⚔️', u.frozen && '❄️', u.silenced && '🔇',
+    myTurn && !u.ready && !u.frozen && '💤'].filter(Boolean).join('');
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-t="${k}" role="button" aria-label="${c.name} ${u.atk}/${u.hp}">
       ${artHtml(c)}<span class="kw">${kw}</span>
       <span class="stat atk">${u.atk}</span><span class="stat hp ${u.hp < u.maxHp ? 'hurt' : ''}">${u.hp}</span>
+      ${previewHtml(targets.get(k))}
     </div>`;
 }
+
+const canPlay = (err) => err === null || err === 'Elige un objetivo';
 
 function cardHtml(id, i) {
   const { state, sel } = battle;
   const c = CARD_BY_ID[id];
   const err = state.turn === ME ? playError(state, ME, i) : 'No es tu turno';
-  const playable = err === null || err === 'Elige un objetivo';
-  const cls = ['card', `r-${c.rarity}`, getProfile().foils.includes(id) && 'foil', playable ? 'playable' : 'unplayable',
+  const cls = ['card', `r-${c.rarity}`, getProfile().foils.includes(id) && 'foil', canPlay(err) ? 'playable' : 'unplayable',
     sel && sel.kind === 'hand' && sel.index === i && 'selected', i >= battle.prevHandLen && 'drawn'];
   const delay = i >= battle.prevHandLen ? `style="animation-delay: ${(i - battle.prevHandLen) * 70}ms"` : '';
   const stats = c.type === 'unit' ? `${c.atk}/${c.hp}` : 'Hechizo';
@@ -110,70 +140,140 @@ function cardHtml(id, i) {
     </div>`;
 }
 
-function detailHtml() {
+const STATUS = [['guard', '🛡️ Guardián'], ['shield', '✨ Escudo'], ['swift', '⚡ Ímpetu'], ['drain', '🩸 Vampírico'], ['poison', '☠️ Letal'],
+  ['fury', '⚔️ Furia'], ['stealth', '🌫️ Sigilo'], ['frozen', '❄️ Congelada'], ['silenced', '🔇 Silenciada']];
+
+// Zoom de la carta tocada. No recibe toques (salvo su botón): debajo se puede seguir eligiendo.
+function zoomHtml() {
   const { state, sel, inspect } = battle;
-  let card = null;
-  let extra = '';
-  let action = '';
-  if (sel && sel.kind === 'hand') {
-    card = CARD_BY_ID[state.players[ME].hand[sel.index]];
-    if (state.turn === ME && playError(state, ME, sel.index) === null) action = `<button class="btn small gold" data-act="play-selected">Jugar</button>`;
-  } else {
-    const ref = (sel && sel.kind === 'unit' && { player: ME, uid: sel.uid }) || inspect;
-    const u = ref && findUnit(state, ref.player, ref.uid);
-    if (u) { card = CARD_BY_ID[u.id]; extra = ` · ${u.atk}/${u.hp}${u.silenced ? " · 🔇 silenciada: sin habilidad" : ""}`; }
+  const foils = getProfile().foils;
+  if (sel?.kind === 'hand') {
+    if (sel.aiming) return '';
+    const id = state.players[ME].hand[sel.index];
+    if (!id) return '';
+    const err = state.turn === ME ? playError(state, ME, sel.index) : 'Espera tu turno';
+    const side = err === null ? '<button class="btn small gold" data-act="play-selected">Jugar</button>'
+      : err === 'Elige un objetivo' ? '<button class="btn small gold" data-act="aim">Elegir objetivo</button>'
+      : `<span class="z-note">${err}</span>`;
+    return `<div class="zoom over-hand">${cardFace(CARD_BY_ID[id], { foil: foils.includes(id) })}<div class="z-side">${side}</div></div>`;
   }
-  if (!card) return `<div class="detail">Toca una carta o criatura para ver qué hace.</div>`;
-  const base = card.type === 'unit' ? `${card.atk}/${card.hp}` : 'Hechizo';
-  return `
-    <div class="detail">
-      <div><b>${card.name}</b> <small>(${card.cost}💎 · ${base}${extra})</small><br>${cardText(card) || 'Sin habilidad.'}</div>
-      ${action}
-    </div>`;
+  const ref = sel?.kind === 'unit' ? { player: ME, uid: sel.uid } : inspect;
+  const u = ref && findUnit(state, ref.player, ref.uid);
+  if (!u) return '';
+  const legend = sel?.kind === 'unit' ? '<span class="z-note">💀 cae el objetivo<br>⚠️ cae el tuyo</span>' : '';
+  const chips = legend + STATUS.filter(([k]) => u[k]).map(([, text]) => `<span class="z-note">${text}</span>`).join('');
+  const face = cardFace({ ...CARD_BY_ID[u.id], atk: u.atk, hp: u.hp }, { foil: ref.player === ME && foils.includes(u.id) });
+  return `<div class="zoom">${face}<div class="z-side">${chips}</div></div>`;
+}
+
+function paintZoom() {
+  app.querySelector('.zoom')?.remove();
+  app.firstElementChild.insertAdjacentHTML('beforeend', zoomHtml());
+}
+
+const boardHtml = (p, targets) => {
+  const units = battle.state.players[p].board;
+  return `<div class="board ${units.length > 5 ? 'crowded' : ''}">${units.map((u) => unitHtml(u, p, targets)).join('')}</div>`;
+};
+
+function nothingLeft() {
+  const { state } = battle;
+  const me = state.players[ME];
+  return !me.hand.some((_, i) => canPlay(playError(state, ME, i))) && !me.board.some((u) => attackTargets(state, ME, u.uid).length);
 }
 
 function renderBattle() {
   const { state } = battle;
-  const targetSet = new Set(currentTargets().map(tKey));
+  const targets = new Map(currentTargets().map((t) => [tKey(t), previewOf(t)]));
   const mine = state.turn === ME;
+  const live = mine && !battle.busy && state.winner === null;
   app.innerHTML = `
     <section class="screen battle">
-      ${heroHtml(FOE, targetSet)}
+      ${heroHtml(FOE, targets)}
       ${foeHandHtml()}
-      <div class="board">${state.players[FOE].board.map((u) => unitHtml(u, FOE, targetSet)).join('')}</div>
+      ${boardHtml(FOE, targets)}
       <div class="center">
         <button class="icon-btn" data-act="concede" aria-label="Rendirse" title="Rendirse">⚑</button>
+        <button class="icon-btn" data-act="history" aria-label="Historial de la partida" title="Historial">📜</button>
         <span class="turn-badge ${mine ? 'mine' : 'theirs'}">${mine ? 'TU TURNO' : 'RIVAL'}</span>
         <span class="message">${battle.message}</span>
-        <button class="btn small" data-act="end" ${!mine || battle.busy || state.winner !== null ? 'disabled' : ''}>Fin de turno</button>
+        <button class="btn small ${live && nothingLeft() ? 'nudge' : ''}" data-act="end" ${live ? '' : 'disabled'}>Fin de turno</button>
       </div>
-      <div class="board">${state.players[ME].board.map((u) => unitHtml(u, ME, targetSet)).join('')}</div>
-      ${heroHtml(ME, targetSet)}
-      ${detailHtml()}
+      ${boardHtml(ME, targets)}
+      ${heroHtml(ME, targets)}
       <div class="hand">${state.players[ME].hand.map(cardHtml).join('')}</div>
+      ${zoomHtml()}
     </section>`;
   battle.prevHandLen = state.players[ME].hand.length;
   battle.prevFoeHand = state.players[FOE].hand.length;
 }
 
-// La carta vuela de la mano a la mesa; la del rival sale bocabajo y se gira por el camino.
-async function flyCard({ id, from, hidden }, events) {
-  if (!from || getProfile().settings.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+function showLog() {
+  const names = {};
+  const who = (t) => (t.uid === HERO ? (t.player === ME ? 'Tú' : battle.rivalName) : names[t.uid] ?? 'Criatura');
+  const line = (e) => {
+    if (e.card && e.uid !== undefined) names[e.uid] = CARD_BY_ID[e.card]?.name;
+    switch (e.type) {
+      case 'play': return `🃏 ${e.player === ME ? 'Tú' : battle.rivalName}: ${CARD_BY_ID[e.card].name}`;
+      case 'attack': return `⚔️ ${who(e)} → ${who(e.target)}`;
+      case 'damage': return `💥 ${who(e)} −${e.amount}`;
+      case 'heal': return `💚 ${who(e)} +${e.amount}`;
+      case 'death': return `💀 ${who(e)}`;
+      case 'turn': return `<b>Turno de ${e.player === ME ? 'ti' : battle.rivalName}</b>`;
+      default: return null;
+    }
+  };
+  const lines = battle.log.map(line).filter(Boolean).reverse();
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg log-bg';
+  bg.innerHTML = `
+    <div class="modal" role="dialog" aria-label="Historial">
+      <h2>Historial</h2>
+      <div class="log-list">${lines.map((l) => `<div>${l}</div>`).join('') || 'Aún no ha pasado nada.'}</div>
+      <button class="btn">Cerrar</button>
+    </div>`;
+  document.body.appendChild(bg); // fuera de #app: el turno rival sigue repintando la mesa detrás
+  bg.addEventListener('click', () => bg.remove());
+}
+
+const snapshot = () => Object.fromEntries([...app.querySelectorAll('[data-t]')].map((el) => [el.dataset.t, el.getBoundingClientRect()]));
+
+// Dónde quedará una criatura que aún no está en la mesa: pinta el estado nuevo, mide y deja el DOM como estaba.
+function measure(key) {
+  const old = app.firstElementChild;
+  old.querySelectorAll('.drawn, .new, .land').forEach((el) => el.classList.remove('drawn', 'new', 'land')); // al volver no deben repetir su animación
+  const saved = [battle.prevHandLen, battle.prevFoeHand, new Set(battle.seenUnits)];
+  renderBattle();
+  const el = tEl(key);
+  el?.classList.remove('new'); // su animación de aparición falsearía la medida
+  const rect = el?.getBoundingClientRect();
+  app.replaceChildren(old);
+  [battle.prevHandLen, battle.prevFoeHand, battle.seenUnits] = saved;
+  return rect;
+}
+
+const AIMED = new Set(['damage', 'shieldBreak', 'buff', 'freeze', 'silence', 'weaken', 'bounce', 'heal']);
+
+// La carta vuela de la mano a la mesa (la del rival sale bocabajo y se gira por el camino) y su efecto sale
+// disparado hacia los objetivos. El DOM sigue mostrando el estado anterior hasta el impacto.
+async function castCard({ id, el, hidden }, events, rects, skip) {
   const c = CARD_BY_ID[id];
-  const summon = events.find((e) => e.type === 'summon' && e.card === id);
-  const unit = summon && app.querySelector(`[data-t="${tKey(summon)}"]`);
-  unit?.classList.remove('new'); // su animación de aparición falsearía la medida: la sustituye el aterrizaje
-  const to = (unit ?? app.querySelector('.center')).getBoundingClientRect();
-  const w = unit ? to.width : 96;
-  const h = unit ? to.height : 128;
-  const left = to.left + (to.width - w) / 2;
-  const top = to.top + (to.height - h) / 2;
+  const from = el.getBoundingClientRect();
+  const summoned = events.find((e) => e.type === 'summon' && e.card === id);
+  const key = summoned && tKey(summoned);
+  const slot = key && measure(key);
+  const mid = center(app.querySelector('.center').getBoundingClientRect());
+  const w = slot ? slot.width : 130;
+  const h = slot ? slot.height : 192;
+  const left = slot ? slot.left : mid.x - w / 2;
+  const top = slot ? slot.top : mid.y - h / 2;
+  el.style.visibility = 'hidden';
+  app.querySelector('.message').textContent = battle.message;
   const fly = document.createElement('div');
   fly.className = 'fly';
   fly.style.cssText = `left: ${left}px; top: ${top}px; width: ${w}px; height: ${h}px`;
-  fly.innerHTML = `<div class="fly-in"><div class="fly-back"></div><div class="fly-front r-${c.rarity}">${artHtml(c)}</div></div>`;
+  fly.innerHTML = `<div class="fly-in"><div class="fly-back"></div><div class="fly-front r-${c.rarity}">${slot ? artHtml(c) : cardFace(c)}</div></div>`;
   document.body.appendChild(fly);
-  if (unit) unit.style.visibility = 'hidden';
   const dx = from.left + from.width / 2 - (left + w / 2);
   const dy = from.top + from.height / 2 - (top + h / 2);
   const flight = [
@@ -182,60 +282,142 @@ async function flyCard({ id, from, hidden }, events) {
     { transform: 'translate(0, 0) scale(1)' },
   ];
   if (hidden) fly.firstChild.animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(180deg)', offset: 0.25 }, { transform: 'rotateY(0)', offset: 0.75 }], { duration: 480, fill: 'forwards' });
-  await fly.animate(flight, { duration: 480, easing: 'ease-in-out', fill: 'forwards' }).finished;
-  if (unit) {
-    unit.style.visibility = '';
-    unit.classList.add('land');
+  fly.animate(flight, { duration: 480, easing: 'ease-in-out', fill: 'forwards' });
+  await wait(480);
+
+  const aimed = [...new Set(events.filter((e) => AIMED.has(e.type)).map(tKey))].filter((k) => k !== key && rects[k]);
+  const spots = aimed.map((k) => center(rects[k]));
+  const power = Math.max(2, ...events.filter((e) => e.type === 'damage').map((e) => e.amount));
+  if (slot) {
+    rects[key] = slot;
+    skip.add(key);
+    landFx(center(slot));
+    if (aimed.length) {
+      sfx('summon');
+      await castFx(fxElement(c), center(slot), spots, power);
+    }
   } else {
-    await wait(380); // los hechizos se quedan un momento a la vista
-    await fly.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(1.15)' }], { duration: 200, fill: 'forwards' }).finished;
+    if (aimed.length) sfx('spell');
+    await wait(!hidden ? 380 : getProfile().settings.fastAi ? 500 : 900); // el hechizo del rival tiene que poder leerse
+    fly.animate([{ opacity: 1 }, { opacity: 0, transform: 'scale(1.15)' }], { duration: 220, fill: 'forwards' });
+    await castFx(fxElement(c), mid, spots, power);
   }
-  fly.remove();
+  for (const k of aimed) skip.add(k);
+  return key;
 }
 
-// Números flotantes y sacudidas a partir de los eventos del motor.
-function animateEvents(events) {
+function banner(text) {
+  const b = document.createElement('div');
+  b.className = 'turn-banner';
+  b.textContent = text;
+  document.body.appendChild(b);
+  setTimeout(() => b.remove(), 1100);
+}
+
+const FLOATS = { shieldBreak: '¡Escudo!', silence: 'Silencio', weaken: 'Debilitada', freeze: 'Congelada' };
+const AURAS = { shieldBreak: 'holy', silence: 'arcane', weaken: 'shadow', freeze: 'ice', buff: 'holy', transform: 'arcane' };
+
+// Números flotantes, sacudidas y efectos a partir de los eventos del motor. skip: lo que ya recibió su impacto.
+function showEvents(events, rects, skip) {
   let delay = 0;
+  let pain = 0;
   for (const e of events) {
-    if (e.type === 'burn') battle.message = 'Mano llena: carta quemada';
-    if (e.type === 'fatigue') battle.message = '¡Mazo vacío! Recibes daño de fatiga';
-    if (!['damage', 'heal', 'shieldBreak', 'silence', 'weaken', 'freeze'].includes(e.type)) continue;
-    const el = app.querySelector(`[data-t="${tKey(e)}"]`);
-    if (!el) continue;
-    const r = el.getBoundingClientRect();
+    if (e.type === 'turn' && e.player === ME) banner('TU TURNO');
+    if (e.type === 'attack' || e.uid === undefined) continue;
+    const k = tKey(e);
+    const el = tEl(k);
+    const r = rects[k] ?? el?.getBoundingClientRect();
+    if (!r) continue;
+    const at = center(r);
+    if (e.type === 'death') setTimeout(() => deathFx(at), 130);
+    else if (e.type === 'summon') { if (!skip.has(k)) landFx(at); }
+    else if (e.type === 'heal') healFx(at);
+    else if (AURAS[e.type] && !skip.has(k)) auraFx(AURAS[e.type], at);
+    if (e.type === 'damage') {
+      el?.classList.add('hit');
+      if (!skip.has(k)) strikeFx('hit', null, at);
+      pain = Math.max(pain, e.amount);
+    }
+    if (e.type !== 'damage' && e.type !== 'heal' && !FLOATS[e.type]) continue;
     const f = document.createElement('div');
     f.className = `float ${e.type === 'damage' ? 'dmg' : e.type === 'heal' ? 'heal' : 'info'}`;
-    f.textContent = e.type === 'damage' ? `-${e.amount}` : e.type === 'heal' ? `+${e.amount}`
-      : { shieldBreak: '¡Escudo!', silence: 'Silencio', weaken: 'Debilitada', freeze: 'Congelada' }[e.type];
-    f.style.left = `${r.left + r.width / 2 - 14}px`;
+    f.textContent = e.type === 'damage' ? `-${e.amount}` : e.type === 'heal' ? `+${e.amount}` : FLOATS[e.type];
+    f.style.left = `${at.x - 14}px`;
     f.style.top = `${r.top + r.height / 3}px`;
     f.style.animationDelay = `${delay}ms`;
     document.body.appendChild(f);
     setTimeout(() => f.remove(), 1000 + delay);
-    if (e.type === 'damage') el.classList.add('hit');
     delay += 80;
   }
+  shake(app, pain);
 }
 
-async function lunge(p, uid) {
-  const el = app.querySelector(`[data-t="${tKey({ player: p, uid })}"]`);
-  if (el) el.classList.add('attacking', p === FOE ? 'enemy' : 'me');
-  await wait(300);
+// El atacante se lanza o dispara antes de que el motor aplique el golpe. Devuelve lo que afterAction necesita para terminarlo.
+async function strike(p, uid, target) {
+  const u = findUnit(battle.state, p, uid);
+  const key = tKey({ player: p, uid });
+  const el = tEl(key);
+  const to = tEl(tKey(target));
+  if (!motionOn() || !u || !el || !to) return {};
+  const card = CARD_BY_ID[u.id];
+  const style = attackStyle(card);
+  const a = center(el.getBoundingClientRect());
+  const b = center(to.getBoundingClientRect());
+  const hit = tKey(target);
+  if (RANGED.has(style)) {
+    el.animate([{ transform: 'none' }, { transform: `translateY(${p === ME ? 8 : -8}px) scale(0.95)` }, { transform: 'none' }], { duration: 200 });
+    await shootFx(style, fxElement(card, style === 'breath' ? 'fire' : 'arcane'), a, b, u.atk);
+    return { hit };
+  }
+  const reach = Math.max(0, 1 - 34 / Math.hypot(b.x - a.x, b.y - a.y)); // se queda justo delante, sin taparlo
+  const dx = (b.x - a.x) * reach;
+  const dy = (b.y - a.y) * reach;
+  el.closest('.board').style.zIndex = 5;
+  el.animate([
+    { transform: 'none' },
+    { transform: `translate(${-dx * 0.08}px, ${-dy * 0.08}px) scale(1.1)`, offset: 0.35 },
+    { transform: `translate(${dx}px, ${dy}px) scale(1.1)` },
+  ], { duration: 260, easing: 'ease-in', fill: 'forwards' });
+  await wait(250);
+  strikeFx(style, null, b, u.atk);
+  return { hit, back: { key, at: { x: a.x + dx, y: a.y + dy } } };
 }
 
-async function afterAction(fly) {
+async function afterAction({ fly, back, hit } = {}) {
   if (!battle || battle.finishing) return false; // rendición mientras otra acción estaba en curso
   const events = takeEvents(battle.state);
   battle.log.push(...events);
-  renderBattle();
-  if (fly) {
+  for (const e of events) {
+    if (e.type === 'burn') battle.message = 'Mano llena: carta quemada';
+    if (e.type === 'fatigue') battle.message = '¡Mazo vacío! Recibes daño de fatiga';
+  }
+  const rects = snapshot();
+  const skip = new Set(hit ? [hit] : []);
+  let landed = null;
+  if (fly?.el && motionOn()) {
     const wasBusy = battle.busy;
-    battle.busy = true; // después de pintar: el botón no parpadea y los toques se ignoran durante el vuelo
-    await flyCard(fly, events);
-    if (!battle || battle.finishing) return false;
+    battle.busy = true; // los toques se ignoran hasta el impacto
+    try { landed = await castCard(fly, events, rects, skip); } catch (err) { console.error(err); } // decoración: nunca debe parar la partida
+    if (!battle || battle.finishing) {
+      document.querySelectorAll('.fly').forEach((f) => f.remove());
+      return false;
+    }
     battle.busy = wasBusy;
   }
-  animateEvents(events);
+  renderBattle();
+  document.querySelectorAll('.fly').forEach((f) => f.remove());
+  if (landed) {
+    const unit = tEl(landed);
+    unit?.classList.remove('new');
+    unit?.classList.add('land');
+  }
+  const attacker = back && tEl(back.key);
+  if (attacker) { // vuelve a su sitio, que puede haberse movido si alguien cayó
+    const c = center(attacker.getBoundingClientRect());
+    attacker.closest('.board').style.zIndex = 5;
+    attacker.animate([{ transform: `translate(${back.at.x - c.x}px, ${back.at.y - c.y}px) scale(1.1)` }, { transform: 'none' }], { duration: 220, easing: 'ease-out' });
+  }
+  showEvents(events, rects, skip);
   eventSound(events, ME);
   if (battle.state.winner !== null) {
     battle.finishing = true;
@@ -248,52 +430,69 @@ async function afterAction(fly) {
   return true;
 }
 
-async function playerPlay(index, target) {
+const clearSelection = () => {
   battle.sel = null;
+  battle.inspect = null;
+};
+
+async function playerPlay(index, target) {
+  clearSelection();
+  renderBattle(); // quita el zoom y deja la mano en su sitio antes del vuelo
   const id = battle.state.players[ME].hand[index];
-  const from = app.querySelector(`[data-hand="${index}"]`)?.getBoundingClientRect();
+  const el = app.querySelector(`[data-hand="${index}"]`);
   const r = playCard(battle.state, ME, index, target);
   battle.message = r.ok ? '' : r.error;
   if (!r.ok) sfx('error');
-  await afterAction(r.ok ? { id, from } : null);
+  await afterAction(r.ok ? { fly: { id, el } } : {});
 }
 
 async function playerAttack(uid, target) {
-  battle.sel = null;
+  clearSelection();
   battle.busy = true;
-  await lunge(ME, uid);
+  renderBattle();
+  const hit = await strike(ME, uid, target);
+  if (!battle || battle.finishing) return;
   const r = attack(battle.state, ME, uid, target);
   battle.message = r.ok ? '' : r.error;
   battle.busy = false;
-  await afterAction();
+  await afterAction(hit);
 }
 
 async function runAiTurn() {
   battle.busy = true;
-  battle.sel = null;
+  clearSelection();
   renderBattle();
   const s = battle.state;
-  while (s.turn === FOE && s.winner === null) {
-    await wait(aiDelay());
-    if (!battle || battle.state !== s || s.winner !== null) return; // partida abandonada
-    const a = nextAction(s, FOE);
-    let fly = null;
-    if (a.type === 'play') {
-      const id = s.players[FOE].hand[a.handIndex];
-      fly = { id, from: app.querySelectorAll('.foe-card')[a.handIndex]?.getBoundingClientRect(), hidden: true };
-      battle.message = `El rival juega ${CARD_BY_ID[id].name}`;
-      playCard(s, FOE, a.handIndex, a.target);
-    } else if (a.type === 'attack') {
-      await lunge(FOE, a.uid);
-      attack(s, FOE, a.uid, a.target);
-    } else {
-      endTurn(s, FOE);
-      battle.message = 'Tu turno';
+  let actions = 0;
+  try {
+    while (s.turn === FOE && s.winner === null) {
+      await wait(aiDelay());
+      if (!battle || battle.state !== s || s.winner !== null) return; // partida abandonada
+      const a = ++actions > MAX_AI_ACTIONS ? { type: 'end' } : nextAction(s, FOE);
+      let done = {};
+      if (a.type === 'play') {
+        const id = s.players[FOE].hand[a.handIndex];
+        done = { fly: { id, el: app.querySelectorAll('.foe-card')[a.handIndex], hidden: true } };
+        battle.message = `El rival juega ${CARD_BY_ID[id].name}`;
+        playCard(s, FOE, a.handIndex, a.target);
+      } else if (a.type === 'attack') {
+        done = await strike(FOE, a.uid, a.target);
+        if (!battle || battle.state !== s) return;
+        attack(s, FOE, a.uid, a.target);
+      } else {
+        endTurn(s, FOE);
+        battle.message = 'Tu turno';
+      }
+      if (!(await afterAction(done))) return;
     }
-    if (!(await afterAction(fly))) return;
+  } catch (err) {
+    console.error(err);
+    if (battle?.state === s && s.turn === FOE && s.winner === null) endTurn(s, FOE); // el turno pasa al jugador pase lo que pase
+    if (!(await afterAction())) return;
   }
   if (battle?.state !== s) return;
   battle.busy = false;
+  clearSelection(); // lo que se estuviera mirando no debe tapar el turno propio
   renderBattle();
 }
 
@@ -308,22 +507,30 @@ function onBattleTap(el) {
     }
     return;
   }
-  if (battle.busy || state.winner !== null) return;
-  if (act === 'end') {
-    battle.sel = null;
+  if (act === 'history') return showLog();
+  // En el turno rival no se juega, pero se pueden seguir mirando las cartas.
+  const busy = battle.busy;
+  if (state.winner !== null || (busy && state.turn !== FOE)) return;
+  const aim = () => {
+    battle.sel.aiming = true;
+    battle.message = 'Elige un objetivo';
+    renderBattle();
+  };
+  if (!busy && act === 'end') {
+    clearSelection();
     endTurn(state, ME);
     battle.message = 'Turno del rival';
     afterAction().then((alive) => alive && runAiTurn());
     return;
   }
-  if (act === 'play-selected' && battle.sel?.kind === 'hand') return void playerPlay(battle.sel.index, null);
+  if (!busy && act === 'play-selected' && battle.sel?.kind === 'hand') return void playerPlay(battle.sel.index, null);
+  if (!busy && act === 'aim' && battle.sel?.kind === 'hand') return aim();
 
-  const tEl = el.closest('[data-t]');
+  const unitTap = el.closest('[data-t]');
   const handEl = el.closest('[data-hand]');
-  const targets = currentTargets();
 
-  if (tEl && battle.sel && targets.some((t) => tKey(t) === tEl.dataset.t)) {
-    const target = parseKey(tEl.dataset.t);
+  if (!busy && unitTap && currentTargets().some((t) => tKey(t) === unitTap.dataset.t)) {
+    const target = parseKey(unitTap.dataset.t);
     if (battle.sel.kind === 'hand') return void playerPlay(battle.sel.index, target);
     return void playerAttack(battle.sel.uid, target);
   }
@@ -331,20 +538,25 @@ function onBattleTap(el) {
   if (handEl) {
     const i = Number(handEl.dataset.hand);
     const err = state.turn === ME ? playError(state, ME, i) : 'Espera tu turno';
-    if (battle.sel?.kind === 'hand' && battle.sel.index === i && err === null) return void playerPlay(i, null);
+    const again = battle.sel?.kind === 'hand' && battle.sel.index === i;
+    if (!busy && again && err === null) return void playerPlay(i, null);
+    if (!busy && again && err === 'Elige un objetivo') return aim();
     battle.sel = { kind: 'hand', index: i };
-    battle.message = err === null ? 'Toca otra vez para jugarla' : err;
-  } else if (tEl) {
-    const t = parseKey(tEl.dataset.t);
-    battle.inspect = t.uid === HERO ? null : t;
+    battle.inspect = null;
+    if (!busy) battle.message = canPlay(err) ? 'Toca otra vez para jugarla' : err;
+  } else if (unitTap) {
+    const t = parseKey(unitTap.dataset.t);
+    const same = (battle.sel?.kind === 'unit' && battle.sel.uid === t.uid) || (battle.inspect && tKey(battle.inspect) === unitTap.dataset.t);
     const canAttack = t.player === ME && t.uid !== HERO && attackTargets(state, ME, t.uid).length > 0;
-    battle.sel = canAttack && !(battle.sel?.kind === 'unit' && battle.sel.uid === t.uid) ? { kind: 'unit', uid: t.uid } : null;
-    battle.message = battle.sel ? 'Elige a quién atacar' : '';
+    battle.sel = !same && canAttack ? { kind: 'unit', uid: t.uid } : null;
+    battle.inspect = !same && !battle.sel && t.uid !== HERO ? t : null;
+    if (!busy) battle.message = battle.sel ? 'Elige objetivo' : '';
   } else {
-    battle.sel = null;
-    battle.message = '';
+    clearSelection();
+    if (!busy) battle.message = '';
   }
-  renderBattle();
+  if (busy) paintZoom();
+  else renderBattle();
 }
 
 function finishMatch() {
@@ -354,5 +566,6 @@ function finishMatch() {
   setProfile(claim.profile);
   const draw = battle.state.winner === 'draw';
   battle = null;
+  document.querySelector('.log-bg')?.remove();
   go('result', won, claim.rewards, draw);
 }

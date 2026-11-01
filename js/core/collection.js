@@ -1,5 +1,5 @@
 // Colección, mazos, sobres, fabricación y mejoras cosméticas. Funciones puras sobre el perfil.
-import { COLLECTION, PACK, RULES } from './config.js';
+import { COLLECTION, PACK, RULES, STARTER_DECK } from './config.js';
 import { CARDS, CARD_BY_ID } from './cards.js';
 import { addProgress } from './missions.js';
 
@@ -10,7 +10,7 @@ export const RARITY_TEXT = { common: 'Común', rare: 'Rara', epic: 'Épica', leg
 export const maxCopies = (card, cfg = COLLECTION) => (card.rarity === 'legendary' ? cfg.legendaryMaxCopies : cfg.maxCopies);
 
 export function countCards(ids) {
-  const counts = {};
+  const counts = Object.create(null); // sin prototipo: un id como "constructor" no puede colarse
   for (const id of ids) counts[id] = (counts[id] || 0) + 1;
   return counts;
 }
@@ -26,6 +26,20 @@ export function deckErrors(deck, collection, rules = RULES) {
     else if (n > (collection[id] || 0)) errors.push(`No tienes suficientes copias de ${c.name}`);
   }
   return errors;
+}
+
+// Completa un mazo antiguo más corto con cartas del mazo inicial, conservando las que eligió el jugador.
+// Siempre llega al tamaño pedido: la colección garantiza el mazo inicial entero.
+export function fillDeck(deck, collection, rules = RULES) {
+  const out = [...deck];
+  const inDeck = countCards(out);
+  for (const id of STARTER_DECK) {
+    if (out.length >= rules.deckSize) break;
+    if ((inDeck[id] || 0) >= Math.min(collection[id] || 0, maxCopies(CARD_BY_ID[id]))) continue;
+    out.push(id);
+    inDeck[id] = (inDeck[id] || 0) + 1;
+  }
+  return out;
 }
 
 function rollRarity(rng, odds) {
