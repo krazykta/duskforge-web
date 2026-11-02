@@ -49,24 +49,40 @@ export function eventSound(events, me) {
 // ---------- Música ----------
 // shortcut: el reproductor pide el MP3 por rangos y el service worker no los guarda, así que sin conexión no hay música; precargarla en caché si hace falta.
 // El volumen iguala las pistas: la de combate sale bastante más fuerte que la del menú.
-const TRACKS = { menu: { file: 'audio/music/menu.mp3', volume: 0.4 }, battle: { file: 'audio/music/battle.mp3', volume: 0.15 } };
+const TRACKS = {
+  menu: [{ file: 'audio/music/menu-nocturno.mp3', volume: 0.204 }],
+  battle: [{ file: 'audio/music/battle-gotico.mp3', volume: 0.14 }, { file: 'audio/music/battle-furia.mp3', volume: 0.148 }],
+};
 const player = new Audio();
-player.loop = true;
 let wanted = null;
+let track = null;
 
-// Pista que corresponde a la pantalla (null = silencio). Hasta el primer toque el navegador no deja sonar nada.
+// Otra pista al azar, sin repetir la que acaba de sonar.
+function pick() {
+  const others = TRACKS[wanted].filter((t) => t !== track);
+  if (others.length) track = others[Math.floor(Math.random() * others.length)];
+  else track = TRACKS[wanted][0];
+}
+
+// Lista que corresponde a la pantalla (null = silencio). Hasta el primer toque el navegador no deja sonar nada.
 export function music(name) {
+  if (name === wanted) return updateMusic();
   wanted = name;
+  if (name) pick();
   updateMusic();
 }
 
 export function updateMusic() {
   if (!wanted || !getProfile().settings.music || document.hidden) return player.pause();
-  const track = TRACKS[wanted];
   if (!player.src.endsWith(track.file)) player.src = track.file;
   player.volume = track.volume;
   if (player.paused) player.play().catch(() => {});
 }
 
+player.addEventListener('ended', () => {
+  if (!wanted) return;
+  pick();
+  updateMusic();
+});
 document.addEventListener('visibilitychange', updateMusic);
 document.addEventListener('pointerdown', updateMusic);
