@@ -1,6 +1,7 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
-import { AI_DECKS, API_VERSION, ECONOMY, MAIL, SEASON } from './config.js';
+import { AI_DECKS, API_VERSION, ARENA, ECONOMY, MAIL, SEASON } from './config.js';
+import { arenaLevel, claimArena, validFoeDeck } from './arena.js';
 import { claimMatchRewards, levelOf, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions } from './missions.js';
 import { claimMail } from './collection.js';
@@ -25,7 +26,7 @@ const FRIEND_TEXT = {
 };
 
 // db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit,
-// setName, social, addFriend, answerFriend, related, invite (ver supabase/functions/game/index.ts).
+// setName, social, addFriend, answerFriend, related, invite, arenaRival (ver supabase/functions/game/index.ts).
 export function createGame({ db, clock = () => new Date(), rng = random, perMinute = PER_MINUTE }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
@@ -45,10 +46,19 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
   }
 
   // Con id null la partida se juega igual, sin recompensa: se ha llegado al tope del día.
-  async function startMatch(uid) {
+  // En la Arena el rival es el mazo de otro jugador (o la IA si no hay nadie cerca) y los trofeos en juego se quitan ya.
+  async function startMatch(uid, arena) {
     const { profile } = await read(uid);
-    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp) };
-    return { match: { ...match, id: await db.startMatch(uid, match, ECONOMY.dailyMatches) } };
+    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp), arena, foe: null, stake: 0 };
+    if (arena) {
+      const found = await db.arenaRival(uid, profile.trophies, ARENA.spread);
+      match.foe = found && validFoeDeck(found.deck) ? { deck: found.deck, name: found.name ?? null, trophies: found.trophies } : null;
+      match.level = arenaLevel(profile.trophies, match.foe);
+      match.stake = Math.min(ARENA.loss, profile.trophies);
+    }
+    const id = await db.startMatch(uid, match, ECONOMY.dailyMatches);
+    if (id && match.stake) await change(uid, (p) => ({ profile: { ...p, trophies: Math.max(0, p.trophies - match.stake) } }));
+    return { match: { ...match, id } };
   }
 
   async function finishMatch(uid, { id, moves }) {
@@ -62,7 +72,11 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
       return { error: 'Esta partida no se pudo verificar' };
     }
     // Se paga antes de cerrar y claimMatchRewards es idempotente: un fallo entre medias se arregla reenviando.
-    const done = r.counts ? await change(uid, (p) => claimMatchRewards(p, id, r.won, now, r.stats)) : { profile: (await read(uid)).profile };
+    const claim = (p) => {
+      const c = claimMatchRewards(p, id, r.won, now, r.stats);
+      return m.arena ? claimArena(c, m.stake, r.won) : c;
+    };
+    const done = r.counts ? await change(uid, claim) : { profile: (await read(uid)).profile };
     await db.closeMatch(uid, id);
     return { profile: done.profile, rewards: done.rewards ?? null };
   }
@@ -117,7 +131,7 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     if (body?.v !== API_VERSION) return { error: 'Actualiza el juego para seguir', code: 'update' };
     const { op, args } = body;
     if (op === 'load') return { profile: (await read(uid)).profile, owned: await db.owned(uid) };
-    if (op === 'startMatch') return startMatch(uid);
+    if (op === 'startMatch') return startMatch(uid, args?.arena === true);
     if (op === 'finishMatch') return finishMatch(uid, args ?? {});
     if (op === 'mail') return { mail: await db.mail(uid, MAIL.shown) };
     if (op === 'claimMail') return collectMail(uid, args?.id);

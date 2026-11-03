@@ -17,6 +17,7 @@ export function newProfile() {
   return {
     version: PROFILE_VERSION,
     coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
+    trophies: 0, bestTrophies: 0, // Arena (core/arena.js)
     lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [], mailClaimed: [],
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
@@ -84,6 +85,7 @@ export function sanitizeProfile(raw) {
   return {
     ...base,
     coins: int(raw.coins), fragments: int(raw.fragments), xp: int(raw.xp), wins: int(raw.wins), losses: int(raw.losses),
+    trophies: int(raw.trophies), bestTrophies: int(raw.bestTrophies),
     lastFirstWinDay: typeof raw.lastFirstWinDay === 'string' ? raw.lastFirstWinDay : null,
     tutorialSeen: raw.tutorialSeen === true,
     welcomeClaimed: raw.welcomeClaimed === true,

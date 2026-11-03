@@ -167,11 +167,11 @@ export function markMailSeen() {
   paintMail();
 }
 
-// Pide al servidor una partida contra la IA. Sin respuesta devuelve {}: se juega igual, sin recompensa.
-export async function beginMatch() {
+// Pide al servidor una partida contra la IA, o de Arena. Sin respuesta devuelve {}: se juega igual, sin recompensa.
+export async function beginMatch(arena = false) {
   await flushPrefs();
   await sendResult();
-  return (await request('startMatch')).match ?? {};
+  return (await request('startMatch', arena ? { arena } : undefined)).match ?? {};
 }
 
 // El resultado se guarda antes de enviarlo: si no hay red o se cierra la app, se reenvía después.
@@ -252,7 +252,7 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu', player: 'online' }; // pantallas que se abren encima de otra
+const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu', player: 'online', arena: 'menu' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;

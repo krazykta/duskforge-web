@@ -19,8 +19,9 @@ export function aiHp(level) {
 }
 
 // level es el nivel del jugador al empezar; las partidas de antes de guardarlo se juegan con la vida normal.
-export function setupMatch({ deck, seed, first, rival, level = AI_HP.fullAt }) {
-  const state = createMatch({ decks: [deck, AI_DECKS[rival]], seed, firstPlayer: first });
+// foe (Arena): { deck } de otro jugador en lugar del mazo de la IA.
+export function setupMatch({ deck, seed, first, rival, level = AI_HP.fullAt, foe = null }) {
+  const state = createMatch({ decks: [deck, foe?.deck ?? AI_DECKS[rival]], seed, firstPlayer: first });
   state.players[FOE].hp = aiHp(level);
   return state;
 }

@@ -685,6 +685,18 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .reveal.many .flip { width: calc(25% - 6px); }
 .home-extra { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .home-extra .btn { width: 100%; gap: 6px; }
+.home-extra .arena-btn { grid-column: 1 / -1; gap: 8px; }
+.arena-btn small { font: 700 13px var(--display); color: var(--gold); }
+.arena-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.arena-trophies { display: inline-flex; align-items: center; gap: 8px; color: var(--gold); font-size: 34px; }
+.arena-trophies .ic { width: 34px; height: 34px; }
+.arena-name { font-family: var(--display); font-size: 19px; letter-spacing: 0.6px; }
+.arena-card .xpbar { width: 100%; }
+.arena-rules { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
+.progress-row.here { color: var(--gold); }
+.progress-row .ic { width: 14px; height: 14px; vertical-align: -2px; }
+.rewards.three { grid-template-columns: repeat(3, 1fr); }
+.trophies { color: var(--gold); }
 .pass-head { display: flex; flex-direction: column; gap: 7px; }
 .pass-head .row { display: flex; justify-content: space-between; align-items: baseline; }
 .pass-head p { margin: 0; }

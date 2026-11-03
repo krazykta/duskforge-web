@@ -25,6 +25,7 @@ export function publicProfile(raw) {
     level: levelOf(p.xp),
     wins: p.wins,
     losses: p.losses,
+    trophies: p.trophies,
     avatar: p.avatar === 'photo' ? null : p.avatar,
     frame: p.cosmetics.frame,
     banner: p.cosmetics.banner,

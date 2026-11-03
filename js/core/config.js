@@ -19,6 +19,21 @@ export const API_VERSION = 5; // súbelo si cambia lo que el juego y la función
 // a RULES.startHp: el mazo inicial gana el 74 % con 8 y el 46 % con 20. Después, +1 cada everyLevels niveles hasta max.
 export const AI_HP = { start: 8, fullAt: 10, everyLevels: 2, max: 30 };
 
+// Arena (decisión 42, core/arena.js): el mazo de otro jugador con trofeos parecidos, llevado por la IA.
+// La derrota se descuenta al empezar: cerrar la app a media partida no la evita.
+export const ARENA = {
+  win: 30,
+  loss: 20,
+  spread: 150, // trofeos de diferencia con el rival, como mucho
+  fallbackLevels: 6, // sin rivales cerca, la IA de siempre: +3 de vida por cada arena (ver aiHp)
+  arenas: [
+    { name: 'Forja de Novatos', from: 0, winBonus: 0 },
+    { name: 'Cripta Olvidada', from: 300, winBonus: 10 },
+    { name: 'Cumbres de Escarcha', from: 700, winBonus: 20 },
+    { name: 'Trono del Ocaso', from: 1200, winBonus: 35 },
+  ],
+};
+
 export const ECONOMY = {
   winCoins: 30,
   lossCoins: 15,

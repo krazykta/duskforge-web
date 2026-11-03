@@ -20,11 +20,16 @@ let battle = null;
 
 // net (partida con amigos): { room, seat, decks, seed, first, name? }. Sin él se juega contra la IA.
 // Con cuenta, la semilla, el rival y el mazo los da el servidor, que luego repite la partida con las jugadas guardadas.
-export async function startBattle(net = null) {
+// arena: el rival es el mazo de otro jugador y hay trofeos en juego (core/arena.js); solo con cuenta.
+export async function startBattle(net = null, { arena = false } = {}) {
   if (net || !getCloudUser()) return setupBattle(net, null);
-  app.innerHTML = '<section class="screen"><p class="sub preparing">Preparando la partida…</p></section>';
+  app.innerHTML = `<section class="screen"><p class="sub preparing">${arena ? 'Buscando rival…' : 'Preparando la partida…'}</p></section>`;
   onTap(() => {});
-  const ticket = await beginMatch();
+  const ticket = await beginMatch(arena);
+  if (arena && !ticket.seed) {
+    toast('Sin conexión: la Arena necesita internet');
+    return go('arena');
+  }
   if (!ticket.id) toast(ticket.seed ? 'Has llegado al tope de hoy: esta partida no da recompensa' : 'Sin conexión: esta partida no da recompensa');
   setupBattle(null, ticket);
 }
@@ -35,12 +40,12 @@ function setupBattle(net, ticket) {
   const rival = ticket?.rival ?? Math.floor(Math.random() * AI_DECKS.length);
   const state = net
     ? createMatch({ decks: net.decks, seed: net.seed, firstPlayer: net.first })
-    : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival, level: ticket?.level ?? levelOf(getProfile().xp) });
+    : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival, level: ticket?.level ?? levelOf(getProfile().xp), foe: ticket?.foe });
   takeEvents(state);
   battle = {
     state,
     net,
-    rivalName: net ? net.name ?? 'Tu amigo' : AI_NAMES[rival],
+    rivalName: net ? net.name ?? 'Tu amigo' : ticket?.foe ? ticket.foe.name ?? 'Rival de la Arena' : AI_NAMES[rival],
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
     ticket, // con cuenta: la partida que abrió el servidor ({} si no se pudo)
     moves: [], // las jugadas propias, para que el servidor las repita
@@ -639,6 +644,7 @@ async function finishMatch() {
     const r = await endMatch(ticket.id, moves);
     rewards = r.rewards ?? null;
     note = r.pending ? 'Sin conexión: el resultado se sumará a tu cuenta cuando vuelva.' : r.error ?? '';
+    if (!rewards && !r.pending && ticket.stake) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} Pierdes ${ticket.stake} trofeos.`;
   } else if (ticket) note = 'Esta partida no da recompensa.';
   else if (!abandoned && !net) { // sin cuenta. Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
     const claim = claimMatchRewards(getProfile(), matchId, won, new Date(), matchStats(log, won, ME));
@@ -646,5 +652,5 @@ async function finishMatch() {
     rewards = claim.rewards;
   }
   battle = null;
-  go('result', won, rewards, draw, Boolean(net), note);
+  go('result', won, rewards, draw, Boolean(net), note, Boolean(ticket?.arena));
 }

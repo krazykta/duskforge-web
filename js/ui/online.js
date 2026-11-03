@@ -1,6 +1,7 @@
 // Partida con amigos. Con cuenta: nombre público, lista de amigos e invitaciones (decisión 41).
 // shortcut: la sala por código sigue para quien no tiene cuenta; se quitará cuando las invitaciones estén probadas.
-import { ACHIEVEMENTS, COSMETICS, SEASON } from '../core/config.js';
+import { ACHIEVEMENTS, ARENA, COSMETICS, SEASON } from '../core/config.js';
+import { arenaIndex } from '../core/arena.js';
 import { COLLECTIBLE, RARITIES, RARITY_TEXT, legalDeck } from '../core/collection.js';
 import { FRIENDS } from '../core/social.js';
 import { CODE_LENGTH, cleanRoomCode, newRoomCode, openRoom } from '../online.js';
@@ -235,6 +236,7 @@ export async function showPlayer(id) {
     <div class="panel">
       <h3>Combates</h3>
       <div class="profile-stats">${stat(played, 'Partidas')}${stat(p.wins, 'Victorias')}${stat(p.losses, 'Derrotas')}${stat(played ? `${Math.round((p.wins / played) * 100)} %` : '–', 'Ganadas')}</div>
+      ${row(`Arena · ${ARENA.arenas[arenaIndex(p.trophies)].name}`, `${icon('trophy')}${p.trophies}`)}
     </div>
     <div class="panel">
       <h3>Colección y logros</h3>

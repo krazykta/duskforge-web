@@ -1,5 +1,5 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { ECONOMY, COSMETICS, COSMETIC_KINDS, SEASON, WELCOME_GIFT } from './core/config.js';
+import { ARENA, ECONOMY, COSMETICS, COSMETIC_KINDS, SEASON, WELCOME_GIFT } from './core/config.js';
 import { COLLECTIBLE, RARITIES } from './core/collection.js';
 import { achievementList } from './core/achievements.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
@@ -14,6 +14,8 @@ import { showReveal, showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
 import { showOnline, showPlayer } from './ui/online.js';
 import { showMail } from './ui/mail.js';
+import { showArena } from './ui/arena.js';
+import { arenaIndex } from './core/arena.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction, escapeHtml } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
 
@@ -64,6 +66,7 @@ function showMenu() {
         </button>
         <button class="btn gold big-play" data-go="battle"><img src="img/ui/icon_play.webp" alt=""><span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
         <div class="home-extra">
+          <button class="btn ghost arena-btn" data-go="arena">${icon('trophy')}Arena<small>${p.trophies}</small></button>
           <button class="btn small ghost" data-go="online">${icon('heart')}Con amigos</button>
           <button class="btn small ghost" data-act="pass">${icon('spark')}Pase ${passTier(p)}/${SEASON.tiers.length}</button>
         </div>
@@ -134,7 +137,7 @@ function showRules() {
 }
 
 // ---------- Resultado ----------
-function showResult(won, rewards, draw, friendly, note) {
+function showResult(won, rewards, draw, friendly, note, arena = false) {
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   const art = won ? 'victory' : 'defeat';
   app.innerHTML = `
@@ -144,14 +147,16 @@ function showResult(won, rewards, draw, friendly, note) {
       <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
       <h1 class="result-title">${draw ? 'EMPATE' : `<img src="img/ui/title_${art}.webp" alt="${won ? '¡Victoria!' : 'Derrota'}">`}</h1>
       ${rewards ? `
-      <div class="panel rewards">
+      <div class="panel rewards ${rewards.trophies !== undefined ? 'three' : ''}">
         <div class="reward"><small>Monedas</small><b class="coins">${icon('coin')}<span data-count="${rewards.coins}">+0</span></b></div>
         <div class="reward"><small>Experiencia</small><b><span data-count="${rewards.xp}">+0</span> XP</b></div>
+        ${rewards.trophies !== undefined ? `<div class="reward"><small>Trofeos</small><b class="trophies">${icon('trophy')}${rewards.trophies > 0 ? '+' : ''}${rewards.trophies}</b></div>` : ''}
         ${rewards.firstWinBonus ? `<p class="bonus">Primera victoria del día: incluye +${rewards.firstWinBonus} monedas</p>` : ''}
+        ${rewards.arenaBonus ? `<p class="bonus">Premio de la arena: incluye +${rewards.arenaBonus} monedas</p>` : ''}
       </div>` : `<p class="sub">${note || (friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.')}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       <div class="menu-buttons">
-        <button class="btn gold" data-go="${friendly ? 'online' : 'battle'}">Jugar otra vez</button>
+        <button class="btn gold" data-go="${friendly ? 'online' : arena ? 'arena' : 'battle'}">${arena ? 'Volver a la Arena' : 'Jugar otra vez'}</button>
         <button class="btn ghost" data-go="menu">Volver al inicio</button>
       </div>
     </section>`;
@@ -164,7 +169,7 @@ const bar = (n, total) => `<span class="xpbar"><span style="width:${total ? Math
 const progress = (label, n, total, cls = '') => `
   <div class="progress-row"><span class="${cls}">${label}</span><b>${n} / ${total}</b></div>${bar(n, total)}`;
 
-// Todo lo conseguido de un vistazo. Los trofeos de la Arena se añadirán aquí cuando exista.
+// Todo lo conseguido de un vistazo.
 function showProfile() {
   const p = getProfile();
   const user = getCloudUser();
@@ -194,6 +199,8 @@ function showProfile() {
         <div class="profile-stats">
           ${stat(played, 'Partidas')}${stat(p.wins, 'Victorias')}${stat(p.losses, 'Derrotas')}${stat(played ? `${Math.round((p.wins / played) * 100)} %` : '–', 'Ganadas')}
         </div>
+        <div class="progress-row"><span>Arena · ${ARENA.arenas[arenaIndex(p.trophies)].name}</span><b>${icon('trophy')}${p.trophies}</b></div>
+        <div class="progress-row"><span>Récord de trofeos</span><b>${p.bestTrophies}</b></div>
       </div>
       <div class="panel">
         <h3>Colección</h3>
@@ -272,5 +279,6 @@ register('auth', showAuth);
 register('support', showSupport);
 register('online', showOnline);
 register('player', showPlayer);
+register('arena', showArena);
 
 startApp();

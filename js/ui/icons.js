@@ -30,6 +30,7 @@ const PATHS = {
   shield: '<path fill="currentColor" d="M12 2 4 5v6.5c0 5 3.4 8.8 8 10.5 4.6-1.7 8-5.5 8-10.5V5z"/>',
   fog: '<path d="M4 8h13M7 12h13M4 16h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   spark: '<path fill="currentColor" d="M12 1.5 14 10l8.5 2-8.5 2-2 8.5-2-8.5-8.5-2L10 10z"/>',
+  trophy: '<path fill="currentColor" d="M7 3h10v5a5 5 0 0 1-4 4.9V17h3v4H8v-4h3v-4.1A5 5 0 0 1 7 8z"/><path d="M7 5.5H4.5v1.5a3 3 0 0 0 3 3M17 5.5h2.5v1.5a3 3 0 0 1-3 3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
   up: '<path d="m5 13 7-7 7 7M12 7v13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 
