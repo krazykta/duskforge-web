@@ -1,6 +1,7 @@
 // Avatar del perfil: el héroe, la ilustración de una carta que se tiene o una foto de la galería o la cámara.
 // La foto se queda en este dispositivo (PHOTO_KEY): no se sube a ningún sitio y en otro móvil se ve el héroe.
 import { CARD_BY_ID } from '../core/cards.js';
+import { COSMETICS } from '../core/config.js';
 import { CARD_ART } from './card-art.js';
 import { PHOTO_KEY, getProfile, savePrefs, toast } from './store.js';
 import { icon } from './icons.js';
@@ -18,9 +19,11 @@ export function avatarSrc(p = getProfile()) {
   return HERO;
 }
 
-// El marco equipado rodea la imagen; cls cambia el tamaño (ver .avatar en styles.css).
-export const avatarHtml = (p = getProfile(), cls = '') =>
-  `<span class="avatar ${p.cosmetics.frame ? `c-${p.cosmetics.frame}` : ''} ${cls}"><img src="${avatarSrc(p)}" alt="" draggable="false"></span>`;
+// El marco equipado rodea la imagen y sus efectos dependen de la rareza (fr-<rareza>); cls cambia el tamaño (ver .avatar en styles.css).
+export function avatarHtml(p = getProfile(), cls = '') {
+  const frame = COSMETICS.find((c) => c.id === p.cosmetics.frame);
+  return `<span class="avatar ${frame ? `framed c-${frame.id} fr-${frame.rarity}` : ''} ${cls}"><img src="${avatarSrc(p)}" alt="" draggable="false"></span>`;
+}
 
 // Recorta el centro en cuadrado y lo reduce: una foto del móvil pesa megas y el avatar cabe en unos 15 KB.
 async function shrinkPhoto(file) {

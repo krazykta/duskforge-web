@@ -6,6 +6,7 @@ import { refreshMissions } from './missions.js';
 import { claimMail } from './collection.js';
 import { isAction, runAction } from './actions.js';
 import { replayMatch } from './replay.js';
+import { FRIENDS, cleanName, parseFriendCode, publicProfile } from './social.js';
 
 const SAVE_TRIES = 5;
 const MIN_MS_PER_TURN = 150; // pasar turno sin parar con el rival rápido no baja de aquí: menos que esto solo lo hace un programa
@@ -16,8 +17,15 @@ const PER_MINUTE = 120; // jugando normal no se pasa de unas pocas por minuto
 
 const randomUint = () => crypto.getRandomValues(new Uint32Array(1))[0];
 const random = () => randomUint() / 2 ** 32;
+const ROOM_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const roomCode = () => Array.from({ length: 12 }, () => ROOM_LETTERS[randomUint() % ROOM_LETTERS.length]).join(''); // solo lo saben los dos
+const FRIEND_TEXT = {
+  sent: 'Petición enviada', accepted: '¡Ya sois amigos!', already: 'Ya le habías enviado una petición', self: 'Ese eres tú',
+  not_found: 'No hay nadie con ese nombre y número', limit: `Tienes el máximo de ${FRIENDS.max} amigos y peticiones`, no_name: 'Elige antes tu nombre',
+};
 
-// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit (ver supabase/functions/game/index.ts).
+// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit,
+// setName, social, addFriend, answerFriend, related, invite (ver supabase/functions/game/index.ts).
 export function createGame({ db, clock = () => new Date(), rng = random, perMinute = PER_MINUTE }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
@@ -66,6 +74,43 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     return change(uid, (p) => claimMail(p, mail, { now: clock(), rng }));
   }
 
+  // Amigos: nunca sale el perfil entero de otro jugador, solo publicProfile.
+  async function social(uid) {
+    const { me, friends } = await db.social(uid);
+    return { me, friends: friends.map(({ data, ...f }) => ({ ...f, ...publicProfile(data) })) };
+  }
+
+  async function friendOp(uid, op, args = {}) {
+    if (op === 'social') return social(uid);
+    if (op === 'setName') {
+      const name = cleanName(args.name);
+      if (!name) return { error: 'De 3 a 16 letras o números, sin espacios' };
+      if (!(await db.setName(uid, name))) return { error: 'Ese nombre está muy cogido: prueba otro' };
+      return social(uid);
+    }
+    if (op === 'addFriend') {
+      const code = parseFriendCode(args.code);
+      if (!code) return { error: 'Escribe el nombre y el número así: Nombre#1234' };
+      const status = await db.addFriend(uid, code.name, code.tag, FRIENDS.max);
+      if (status !== 'sent' && status !== 'accepted') return { error: FRIEND_TEXT[status] };
+      return { ...(await social(uid)), message: FRIEND_TEXT[status] };
+    }
+    if (typeof args.id !== 'string' || !UUID.test(args.id)) return { error: 'Jugador no encontrado' };
+    if (op === 'answerFriend') {
+      await db.answerFriend(uid, args.id, args.accept === true);
+      return social(uid);
+    }
+    if (op === 'viewPlayer') {
+      const r = await db.related(uid, args.id);
+      if (!r) return { error: 'Solo puedes ver el perfil de tus amigos' };
+      const { data, ...who } = r;
+      return { player: { ...who, ...publicProfile(data) } };
+    }
+    const code = roomCode(); // invite
+    if (!(await db.invite(uid, args.id, code))) return { error: 'Solo puedes invitar a tus amigos' };
+    return { code };
+  }
+
   // body: { v, op, args }. Los errores de juego se devuelven; los de infraestructura se lanzan.
   return async function handle(uid, body) {
     if (!(await db.hit(uid, perMinute))) return { error: 'Vas demasiado rápido: espera un minuto', code: 'busy' };
@@ -76,6 +121,7 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     if (op === 'finishMatch') return finishMatch(uid, args ?? {});
     if (op === 'mail') return { mail: await db.mail(uid, MAIL.shown) };
     if (op === 'claimMail') return collectMail(uid, args?.id);
+    if (['social', 'setName', 'addFriend', 'answerFriend', 'viewPlayer', 'invite'].includes(op)) return friendOp(uid, op, args ?? {});
     if (!isAction(op)) return { error: 'Acción no válida' };
     const owned = op === 'claimTier' && (await db.owned(uid)).includes(SEASON.sku);
     return change(uid, (p) => runAction(p, op, args, { now: clock(), rng, owned }));

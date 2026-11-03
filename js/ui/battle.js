@@ -18,7 +18,7 @@ const aiDelay = () => (getProfile().settings.fastAi ? 300 : 650);
 
 let battle = null;
 
-// net (partida con amigos): { room, seat, decks, seed, first }. Sin él se juega contra la IA.
+// net (partida con amigos): { room, seat, decks, seed, first, name? }. Sin él se juega contra la IA.
 // Con cuenta, la semilla, el rival y el mazo los da el servidor, que luego repite la partida con las jugadas guardadas.
 export async function startBattle(net = null) {
   if (net || !getCloudUser()) return setupBattle(net, null);
@@ -40,7 +40,7 @@ function setupBattle(net, ticket) {
   battle = {
     state,
     net,
-    rivalName: net ? 'Tu amigo' : AI_NAMES[rival],
+    rivalName: net ? net.name ?? 'Tu amigo' : AI_NAMES[rival],
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
     ticket, // con cuenta: la partida que abrió el servidor ({} si no se pudo)
     moves: [], // las jugadas propias, para que el servidor las repita

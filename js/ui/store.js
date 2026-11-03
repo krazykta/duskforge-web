@@ -9,6 +9,7 @@ import { cardText } from '../core/cards.js';
 import { RARITY_TEXT } from '../core/collection.js';
 import { runAction } from '../core/actions.js';
 import { callGame } from '../cloud.js';
+import { listenInvites } from '../online.js';
 import { CARD_ART } from './card-art.js';
 import { music } from './sound.js';
 import { icon } from './icons.js';
@@ -56,6 +57,8 @@ let prefsTimer = null;
 let entitlements = new Set();
 let updateAsked = false;
 let inbox = [];
+let stopInvites = null;
+let inviteHandler = null;
 
 const stored = (key) => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
 const store = (key, value) => {
@@ -87,6 +90,14 @@ async function request(op, args) {
   if (r.code === 'update') askUpdate();
   if (cloudUser) setCloudState(r.offline ? 'offline' : 'saved');
   return r;
+}
+
+// Amigos e invitaciones (ui/online.js): no tocan la partida guardada.
+export const friendsCall = (op, args) => request(op, args);
+export const onInvite = (fn) => (inviteHandler = fn);
+function startInvites(user) {
+  stopInvites?.();
+  stopInvites = listenInvites(user.id, (row) => inviteHandler?.(row));
 }
 
 // Hace una acción de core/actions.js. Devuelve lo mismo que runAction, o { error }.
@@ -198,6 +209,7 @@ export async function connectCloud(user) {
     if (stored(OWNER_KEY) !== user.id) return r;
     cloudUser = user;
     setCloudState('offline');
+    startInvites(user);
     return {};
   }
   cloudUser = user;
@@ -206,6 +218,7 @@ export async function connectCloud(user) {
   lastPull = Date.now();
   replaceProfile(r.profile);
   setCloudState('saved');
+  startInvites(user);
   await sendResult();
   loadInbox();
   return {};
@@ -213,6 +226,8 @@ export async function connectCloud(user) {
 
 export function disconnectCloud() {
   clearTimeout(prefsTimer);
+  stopInvites?.();
+  stopInvites = null;
   cloudUser = null;
   prefs = null;
   entitlements = new Set();
@@ -237,11 +252,12 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu' }; // pantallas que se abren encima de otra
+const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu', player: 'online' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;
 export const register = (name, fn) => (screens[name] = fn);
+export const currentScreen = () => screen;
 
 const tabbar = document.createElement('nav');
 tabbar.id = 'tabbar';

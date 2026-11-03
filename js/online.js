@@ -57,3 +57,12 @@ export async function openRoom(code) {
   await channel.track({});
   return room;
 }
+
+// Invitaciones de amigos (tabla invites, decisión 41): Realtime avisa de cada una nueva; RLS solo deja oír las tuyas.
+export function listenInvites(uid, onInvite) {
+  if (!sb) return () => {};
+  const channel = sb.channel(`invites-${uid}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'invites', filter: `to_id=eq.${uid}` }, ({ new: row }) => onInvite(row))
+    .subscribe();
+  return () => sb.removeChannel(channel);
+}

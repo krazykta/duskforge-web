@@ -12,7 +12,7 @@ import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showReveal, showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
-import { showOnline } from './ui/online.js';
+import { showOnline, showPlayer } from './ui/online.js';
 import { showMail } from './ui/mail.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction, escapeHtml } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
@@ -271,5 +271,6 @@ register('settings', showSettings);
 register('auth', showAuth);
 register('support', showSupport);
 register('online', showOnline);
+register('player', showPlayer);
 
 startApp();

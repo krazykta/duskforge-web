@@ -18,6 +18,7 @@ const PATHS = {
   hand: '<rect x="4" y="5" width="11" height="16" rx="2" fill="currentColor" opacity=".55" transform="rotate(-9 9 13)"/><rect x="9" y="3" width="11" height="16" rx="2" fill="currentColor" transform="rotate(7 15 11)"/>',
   deck: '<rect x="6" y="2.5" width="13" height="17" rx="2" fill="currentColor" opacity=".45"/><rect x="4" y="5" width="13" height="17" rx="2" fill="currentColor"/>',
   check: '<path d="m4.5 12.5 5 5 10-11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+  close: '<path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
   filter: '<path d="M3 5h18M7 12h10M10.5 19h3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   skull: '<path fill="#f8f4ea" d="M12 2.5c-5 0-8.5 3.3-8.5 8 0 2.7 1.3 4.7 3 6v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3c1.7-1.3 3-3.3 3-6 0-4.7-3.5-8-8.5-8z"/><circle cx="8.7" cy="11" r="2.3" fill="#1a1020"/><circle cx="15.3" cy="11" r="2.3" fill="#1a1020"/><path d="m12 14 1.3 2.3h-2.6z" fill="#1a1020"/>',
   warn: '<path d="M12 2.5 23 21.5H1z" fill="#f8b84a"/><path d="M12 9v6" stroke="#2a1400" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="#2a1400"/>',

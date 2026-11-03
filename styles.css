@@ -592,8 +592,8 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .auth-form { display: flex; flex-direction: column; gap: 12px; max-width: 380px; }
 .auth-form h3 { margin-bottom: 0; }
 .auth-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 550; color: var(--muted); }
-.auth-form input, .auth-form textarea, .code-input { font: inherit; font-size: 16px; color: var(--text); background: rgba(8, 6, 18, 0.72); border: 1px solid var(--line-soft); border-radius: 11px; padding: 12px; user-select: text; transition: border-color 0.2s; }
-.auth-form input:focus, .auth-form textarea:focus, .code-input:focus { outline: 0; border-color: var(--gold); }
+.auth-form input, .auth-form textarea, .code-input, .text-input { font: inherit; font-size: 16px; color: var(--text); background: rgba(8, 6, 18, 0.72); border: 1px solid var(--line-soft); border-radius: 11px; padding: 12px; user-select: text; transition: border-color 0.2s; }
+.auth-form input:focus, .auth-form textarea:focus, .code-input:focus, .text-input:focus { outline: 0; border-color: var(--gold); }
 .auth-form .btn { width: 100%; }
 .auth-form .warn:empty { display: none; }
 .auth-links { display: flex; flex-wrap: wrap; gap: 0 10px; align-items: center; justify-content: center; }
@@ -701,37 +701,63 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .room-code { margin: 4px 0; font-size: 38px; font-weight: 800; letter-spacing: 8px; padding-left: 8px; color: var(--gold); user-select: all; }
 .code-input { width: 100%; box-sizing: border-box; text-align: center; font-size: 24px; letter-spacing: 6px; text-transform: uppercase; user-select: text; }
 .field { display: grid; gap: 6px; margin-bottom: 10px; }
-.online-join .btn, .online-host .btn { width: 100%; }
+.online-code .btn { width: 100%; margin-bottom: 10px; }
+.online-code summary { display: flex; flex-direction: column; gap: 2px; cursor: pointer; margin-bottom: 4px; }
+.online-code[open] summary { margin-bottom: 12px; }
+/* Amigos (ui/online.js) */
+.btn.wide { width: 100%; }
+.friend-me { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.friend-me > span { display: grid; gap: 2px; min-width: 0; }
+.my-code { font-size: 20px; color: var(--gold); user-select: all; overflow-wrap: anywhere; }
+.friend-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.friend { display: flex; align-items: center; gap: 8px; }
+.friend-who { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 4px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.friend-who > span:last-child { display: grid; min-width: 0; }
+.friend-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-act { display: flex; align-items: center; gap: 6px; flex: none; }
+.player-area > .btn { width: 100%; margin-bottom: 8px; }
 .dot-wait { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--gold); animation: claim-glow 1.2s ease-in-out infinite; }
 
 body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 
-/* ---------- Avatar, marcos y estandartes (ui/avatar.js). El marco es el fondo que asoma alrededor de la imagen. ---------- */
-.avatar { --frame: linear-gradient(160deg, #f8b84a, #6b3f12 60%, #f8b84a); position: relative; flex: none; display: block; width: 42px; height: 42px; padding: 2px;
-  border-radius: 50%; overflow: hidden; isolation: isolate; }
-.avatar::before { content: ''; position: absolute; inset: -30%; background: var(--frame); z-index: -1; animation: var(--frame-move, none); }
-.avatar img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: 50% 15%; background: #10142a; }
-.avatar.big { width: 88px; height: 88px; padding: 4px; }
-.icon-btn .avatar { width: 34px; height: 34px; }
-.cos-preview.frame { border: 0; width: 48px; height: 48px; }
-.cos-preview.frame .avatar { width: 46px; height: 46px; padding: 3px; }
+/* ---------- Avatar, marcos y estandartes (ui/avatar.js). ---------- */
+/* --s es la caja que ocupa todo el avatar; la imagen mide --s / --k y el marco (img/frames) llena la caja. --k sale de scripts/frame_cut.py. */
+.avatar { --s: 42px; --k: 1; position: relative; flex: none; display: grid; place-items: center; width: var(--s); height: var(--s); isolation: isolate; }
+.avatar img { position: relative; display: block; width: calc(100% / var(--k)); height: calc(100% / var(--k)); border-radius: 50%; object-fit: cover; object-position: 50% 15%;
+  background: #10142a; border: 2px solid rgba(248, 184, 74, 0.75); }
+.avatar.framed { --s: 58px; margin: -8px; }
+.avatar.framed img { border: 0; }
+.avatar.framed::after { content: ''; position: absolute; inset: 0; background: var(--frame-img) center / contain no-repeat; pointer-events: none; }
+.avatar.big { --s: 88px; }
+.avatar.big.framed { --s: 132px; margin: -10px; }
+.icon-btn .avatar { --s: 34px; }
+.icon-btn .avatar.framed { --s: 50px; margin: -8px; }
+.cos-preview.frame { border: 0; width: 56px; height: 56px; }
+.cos-preview.frame .avatar { --s: 56px; margin: 0; }
+/* Efectos por rareza: común sin nada, raro brilla, épico late y legendario late con rayos de luz girando detrás. */
+.fr-rare::after { filter: drop-shadow(0 0 3px var(--glow)); }
+.fr-epic::after { animation: frame-pulse 2.4s ease-in-out infinite; }
+.fr-legendary::after { animation: frame-pulse 1.6s ease-in-out infinite; }
+.fr-legendary::before { content: ''; position: absolute; inset: -6%; border-radius: 50%; pointer-events: none; animation: frame-spin 12s linear infinite;
+  background: repeating-conic-gradient(var(--glow) 0 5deg, transparent 7deg 22deg); -webkit-mask: radial-gradient(closest-side, transparent 52%, #000 66%, transparent); mask: radial-gradient(closest-side, transparent 52%, #000 66%, transparent); }
 @keyframes frame-spin { to { transform: rotate(1turn); } }
-@keyframes frame-glow { 50% { box-shadow: 0 0 4px var(--glow); } }
-.c-frame_iron { --frame: linear-gradient(160deg, #b7bec7, #3b4148 55%, #8a929b); }
-.c-frame_bronze { --frame: linear-gradient(160deg, #f0b57a, #6b3d17 55%, #c98a4b); }
-.c-frame_bone { --frame: linear-gradient(160deg, #f6eed8, #8f7f5e 55%, #e3d6b5); }
-.c-frame_silver { --frame: conic-gradient(#f4f7fb, #8e99a8, #ffffff, #6f7a89, #f4f7fb); box-shadow: 0 0 8px rgba(220, 230, 255, 0.45); }
-.c-frame_frost { --frame: conic-gradient(#e0f7ff, #38bdf8, #ffffff, #0e7fb8, #e0f7ff); box-shadow: 0 0 9px rgba(56, 189, 248, 0.55); }
-.c-frame_jade { --frame: conic-gradient(#b9f5d0, #10985a, #e9fff2, #0b6b40, #b9f5d0); box-shadow: 0 0 9px rgba(16, 185, 105, 0.5); }
-.c-frame_amethyst { --frame: conic-gradient(#f0d9ff, #8b3fd9, #4a1580, #c084fc, #f0d9ff); --frame-move: frame-spin 7s linear infinite; box-shadow: 0 0 11px rgba(168, 85, 247, 0.6); }
-.c-frame_ember { --frame: conic-gradient(#ffe08a, #ff6a1a, #8a1a05, #ff9a3c, #ffe08a); --frame-move: frame-spin 5s linear infinite; --glow: rgba(255, 106, 26, 0.3);
-  box-shadow: 0 0 14px rgba(255, 106, 26, 0.75); animation: frame-glow 1.8s ease-in-out infinite; }
-.c-frame_abyss { --frame: conic-gradient(#5eead4, #0b1d3a, #6d28d9, #020617, #5eead4); --frame-move: frame-spin 9s linear infinite reverse; box-shadow: 0 0 12px rgba(94, 234, 212, 0.45); }
-.c-frame_dusk { --frame: conic-gradient(#fff3c4, #f5c542, #ff7a1a, #7c2d92, #f5c542, #fff3c4); --frame-move: frame-spin 4s linear infinite; --glow: rgba(245, 197, 66, 0.35);
-  box-shadow: 0 0 16px rgba(245, 197, 66, 0.85); animation: frame-glow 2.2s ease-in-out infinite; }
-.c-frame_forge { --frame: conic-gradient(#ffffff, #ffd27a, #ff5a0a, #ffffff, #f5c542, #b8340a, #ffffff); --frame-move: frame-spin 2.6s linear infinite; --glow: rgba(255, 140, 40, 0.4);
-  box-shadow: 0 0 18px rgba(255, 170, 60, 0.95), 0 0 4px #fff; animation: frame-glow 1.4s ease-in-out infinite; }
-.avatar.big[class*='c-frame_'] { padding: 5px; }
+@keyframes frame-pulse { 0%, 100% { filter: drop-shadow(0 0 2px var(--glow)); } 50% { filter: drop-shadow(0 0 9px var(--glow)) brightness(1.15); } }
+.c-frame_iron { --frame-img: url(img/frames/frame_iron.webp); --k: 1.56; --glow: #b7bec7; }
+.c-frame_bronze { --frame-img: url(img/frames/frame_bronze.webp); --k: 1.51; --glow: #f0b57a; }
+.c-frame_bone { --frame-img: url(img/frames/frame_bone.webp); --k: 1.60; --glow: #f6eed8; }
+.c-frame_wood { --frame-img: url(img/frames/frame_wood.webp); --k: 1.71; --glow: #8bd46a; }
+.c-frame_silver { --frame-img: url(img/frames/frame_silver.webp); --k: 1.78; --glow: #7dd3fc; }
+.c-frame_frost { --frame-img: url(img/frames/frame_frost.webp); --k: 1.67; --glow: #7dd3fc; }
+.c-frame_jade { --frame-img: url(img/frames/frame_jade.webp); --k: 2.28; --glow: #34d399; }
+.c-frame_rose { --frame-img: url(img/frames/frame_rose.webp); --k: 1.48; --glow: #f43f5e; }
+.c-frame_amethyst { --frame-img: url(img/frames/frame_amethyst.webp); --k: 1.53; --glow: #c084fc; }
+.c-frame_ember { --frame-img: url(img/frames/frame_ember.webp); --k: 1.71; --glow: #ff7a1a; }
+.c-frame_abyss { --frame-img: url(img/frames/frame_abyss.webp); --k: 1.94; --glow: #2dd4bf; }
+.c-frame_bat { --frame-img: url(img/frames/frame_bat.webp); --k: 1.78; --glow: #ef4444; }
+.c-frame_dragon { --frame-img: url(img/frames/frame_dragon.webp); --k: 1.96; --glow: #f5c542; }
+.c-frame_dusk { --frame-img: url(img/frames/frame_dusk.webp); --k: 2.02; --glow: #ffb340; }
+.c-frame_forge { --frame-img: url(img/frames/frame_forge.webp); --k: 1.81; --glow: #ff8a2a; }
+.c-frame_seraph { --frame-img: url(img/frames/frame_seraph.webp); --k: 1.66; --glow: #fff3c4; }
 .cos-preview.banner, .profile-card.banner { background: var(--banner); background-size: var(--banner-size, cover); animation: var(--banner-move, none); }
 .cos-preview.banner { width: 54px; height: 40px; }
 @keyframes banner-shine { to { background-position: -200% 0; } }
