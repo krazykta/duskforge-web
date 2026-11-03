@@ -317,9 +317,9 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .unit.silenced img { filter: grayscale(0.85); }
 .unit.frozen { filter: saturate(0.3) brightness(1.1) hue-rotate(180deg); box-shadow: 0 0 10px 2px #7dd3fc; }
 .unit.shield::after { content: ''; position: absolute; inset: -5px; border-radius: 12px; border: 2px solid #fde68a; box-shadow: 0 0 10px #fde68a; }
-.stat { position: absolute; bottom: -6px; font-size: 14px; font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; box-shadow: 0 1px 3px #0009; }
-.stat.atk { left: -6px; background: #b45309; }
-.stat.hp { right: -6px; background: #be123c; }
+.stat { position: absolute; font-size: 12px; font-weight: 800; display: grid; place-items: center; color: #fff; box-shadow: 0 1px 3px #0009; }
+.stat.atk { bottom: -6px; left: -6px; height: 17px; }
+.stat.hp { bottom: -7px; right: -6px; width: 19px; height: 19px; }
 .stat.hurt { color: #fecaca; }
 .kw { position: absolute; top: 2px; right: 3px; font-size: 11px; display: flex; gap: 1px; color: #fff; filter: drop-shadow(0 1px 2px #000); }
 .kw i { display: contents; font-style: normal; }
@@ -329,9 +329,9 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .k-frozen .ic { color: #7dd3fc; }
 .k-silenced .ic { color: #d8b4fe; }
 .crowded .unit { width: min(calc(20cqw - 6px), calc((50cqh - 7px) * 0.75)); }
-.crowded .stat { width: 18px; height: 18px; font-size: 12px; bottom: -4px; }
-.crowded .stat.atk { left: -4px; }
-.crowded .stat.hp { right: -4px; }
+.crowded .stat { font-size: 10px; }
+.crowded .stat.atk { bottom: -4px; left: -4px; height: 14px; }
+.crowded .stat.hp { bottom: -5px; right: -4px; width: 16px; height: 16px; }
 .crowded .kw { font-size: 9px; right: 2px; }
 .preview { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 15px; line-height: 1; white-space: nowrap; filter: drop-shadow(0 1px 2px #000); pointer-events: none; }
 
@@ -380,10 +380,13 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 @keyframes draw { from { transform: translate(90px, 40px) rotate(14deg) scale(0.7); opacity: 0; } }
 .card.unplayable { filter: brightness(0.55); }
 .card.playable { box-shadow: 0 0 10px 1px var(--green); }
-.card .cost { position: absolute; top: -8px; left: -8px; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #60a5fa, #1d4ed8); border: 2px solid #bfdbfe; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+.card .cost { position: absolute; top: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle, #60a5fa, #1d4ed8); border: 2px solid #bfdbfe; display: grid; place-items: center; font-weight: 800; font-size: 12px; }
 .card .art { font-size: 28px; margin-top: 8px; }
 .card .name { font-family: var(--title); font-size: min(10.5px, calc(163cqw / var(--n) + 2.5cqw)); font-weight: 600; text-align: center; line-height: 11px; height: 11px; margin-top: 4px; white-space: nowrap; }
 .card .type { font-size: 9px; color: var(--muted); }
+.card .type:has(.ic) { font-size: 11px; font-weight: 800; color: #fff; }
+.card .type .ic { color: #fb7185; }
+.card .type .ic:first-child { color: #fdba74; }
 
 .r-common { border-color: var(--common); }
 .r-rare { border-color: var(--rare); }
@@ -442,11 +445,11 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 
 /* --- Carta completa (colección, sobres) --- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; width: 100%; }
-.face { --name-max: 11px; --text-max: 9.6px; --text-k: 1cqw; --badge: 22px; container-type: inline-size; position: relative; aspect-ratio: 5 / 7.4; border-radius: 10px; border: 2px solid var(--common); padding: 5px 5px 18px;
+.face { --name-max: 11px; --text-max: 9.6px; --text-k: 1cqw; --badge: 20px; container-type: inline-size; position: relative; aspect-ratio: 5 / 7.4; border-radius: 10px; border: 2px solid var(--common); padding: 5px 5px 18px;
   background: linear-gradient(170deg, #2b2f5c, #121633 70%); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; overflow: hidden; transition: transform 0.12s var(--ease); }
 .grid > .face { content-visibility: auto; contain-intrinsic-block-size: 155px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35); }
 .grid > .face:active { transform: scale(0.96); }
-.face .cost { position: absolute; top: 3px; left: 3px; z-index: 1; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle, #60a5fa, #1d4ed8); box-shadow: 0 1px 3px #000a; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.face .cost { position: absolute; top: 3px; left: 3px; z-index: 1; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #60a5fa, #1d4ed8); box-shadow: 0 1px 3px #000a; display: grid; place-items: center; font-weight: 800; font-size: 11px; }
 .face .count { position: absolute; top: 4px; right: 4px; z-index: 1; font-size: 11px; font-weight: 700; color: var(--text); background: rgba(0, 0, 0, 0.6); padding: 1px 5px; border-radius: 7px; }
 .face .art { font-size: 30px; margin-top: 10px; }
 /* Título en una línea: cada uno baja su letra según su largo (--n) y la fila mide siempre lo mismo */
@@ -455,15 +458,21 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 /* La descripción ocupa el hueco hasta el borde y su letra baja según su largo (--f, en cqw): la carta no se mueve */
 .face .text { flex: 1 1 0; min-height: 0; margin-bottom: -15px; font-family: var(--read); font-weight: 500; font-size: min(var(--text-max), calc(var(--f) * var(--text-k))); text-align: center; line-height: 1.08; color: #cfd2ea; }
 /* Dos flotantes reservan las esquinas de ataque y vida: el texto baja entre ellas sin pisarlas */
-.face .text i { float: left; width: calc(var(--badge) + 3px); height: 100%; shape-outside: polygon(0 calc(100% - var(--badge)), 100% calc(100% - var(--badge)), 100% 100%, 0 100%); }
+.face .text i { float: left; width: calc(var(--badge) + 4px); height: 100%; shape-outside: polygon(0 calc(100% - var(--badge)), 100% calc(100% - var(--badge)), 100% 100%, 0 100%); }
 .face .text i + i { float: right; }
-.face .fatk, .face .fhp { position: absolute; bottom: 3px; font-weight: 800; font-size: 13px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
-.face .fatk { left: 3px; background: #b45309; }
-.face .fhp { right: 3px; background: #be123c; }
+.face .text i:first-child { width: calc(var(--badge) * 1.5); }
+.face .fatk, .face .fhp { position: absolute; font-weight: 800; font-size: 12px; display: grid; place-items: center; }
+.face .fatk { bottom: 3px; left: 3px; height: 18px; }
+.face .fhp { bottom: 2px; right: 3px; width: 20px; height: 20px; }
+/* Ataque y vida se distinguen por la forma: espada en pastilla y corazón */
+.face .fatk, .stat.atk { width: auto; padding: 0 0.35em 0 1.2em; border-radius: 1em; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(45 12 12)'%3E%3Cpath d='M12 .5 15 4v12.5H9V4z' fill='%23f3f6fb'/%3E%3Cpath d='M5.5 17.6a1.6 1.6 0 0 1 1.6-1.6h9.8a1.6 1.6 0 0 1 0 3.2h-3.3v4.3h-3.2v-4.3H7.1a1.6 1.6 0 0 1-1.6-1.6z' fill='%23ffd27a'/%3E%3C/g%3E%3C/svg%3E") 0.12em center / 1.08em no-repeat, linear-gradient(160deg, #8b2fd8, #5b1a99); box-shadow: inset 0 0 0 1px rgba(192, 132, 252, 0.65), 0 1px 3px #0009; }
+.face .fhp, .stat.hp { box-sizing: border-box; padding-top: 0.05em; border-radius: 0; box-shadow: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 22.5S.8 15.8.8 8A6.2 6.2 0 0 1 12 4.6 6.2 6.2 0 0 1 23.2 8C23.2 15.8 12 22.5 12 22.5z' fill='%23d3123f' stroke='%23ffb3c1' stroke-width='.9'/%3E%3C/svg%3E") center / contain no-repeat; filter: drop-shadow(0 1px 2px #0009); }
 .face.locked { filter: grayscale(0.9) brightness(0.55); }
-.face.big { --name-max: 18px; --text-max: 14px; --text-k: 0.81cqw; --badge: 32px; width: 220px; margin: 0 auto 10px; cursor: default; }
+.face.big { --name-max: 18px; --text-max: 14px; --text-k: 0.81cqw; --badge: 28px; width: 220px; margin: 0 auto 10px; cursor: default; }
 .face.big .art { font-size: 64px; }
-.face.big .cost, .face.big .fatk, .face.big .fhp { width: 32px; height: 32px; font-size: 18px; }
+.face.big .cost { width: 26px; height: 26px; font-size: 15px; }
+.face.big .fhp { width: 28px; height: 28px; font-size: 16px; }
+.face.big .fatk { height: 26px; font-size: 16px; }
 
 /* Mejora cosmética "brillante" */
 .foil { background: linear-gradient(120deg, #2b2f5c 20%, #5b4a9e 40%, #f5c54255 50%, #38bdf855 60%, #121633 80%) !important;

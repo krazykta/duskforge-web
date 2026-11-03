@@ -17,7 +17,7 @@ export function newProfile() {
   return {
     version: PROFILE_VERSION,
     coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
-    lastFirstWinDay: null, tutorialSeen: false, claimedMatches: [],
+    lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [],
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
     decks: [[...STARTER_DECK], [], []], // huecos de mazo guardados ([] = vacío)
@@ -85,6 +85,7 @@ export function sanitizeProfile(raw) {
     coins: int(raw.coins), fragments: int(raw.fragments), xp: int(raw.xp), wins: int(raw.wins), losses: int(raw.losses),
     lastFirstWinDay: typeof raw.lastFirstWinDay === 'string' ? raw.lastFirstWinDay : null,
     tutorialSeen: raw.tutorialSeen === true,
+    welcomeClaimed: raw.welcomeClaimed === true,
     claimedMatches: strList(raw.claimedMatches).slice(-MAX_REMEMBERED_MATCHES),
     collection,
     deck: decks[activeDeck], decks, activeDeck,

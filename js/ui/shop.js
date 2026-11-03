@@ -173,7 +173,7 @@ export async function showReveal(r, back = 'shop') {
   if (r.error) return toast(r.error);
   sfx('packOpen');
   app.innerHTML = `
-    <section class="screen">
+    <section class="screen ${r.results.length > 5 ? 'top' : ''}">
       <h2 class="opening-title">¡Toca las cartas para revelarlas!</h2>
       <div class="reveal ${r.results.length > 5 ? 'many' : ''}">
         ${r.results.map((x, i) => `

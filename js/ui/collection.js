@@ -159,7 +159,7 @@ export function showDeckBuilder() {
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Mazos')}
-      <div class="seg">${p.decks.map((d, i) => `<button class="${i === slot ? 'on' : ''}" data-slot="${i}" aria-label="Mazo ${i + 1}${i === p.activeDeck ? ', en uso' : ''}">Mazo ${i + 1}${i === p.activeDeck ? icon('swords') : ''}</button>`).join('')}</div>
+      <div class="seg">${p.decks.map((d, i) => `<button class="${i === slot ? 'on' : ''}" data-slot="${i}" aria-label="Mazo ${i + 1}${i === p.activeDeck ? ', en uso' : ''}">Mazo ${i + 1}${i === p.activeDeck ? icon('sword') : ''}</button>`).join('')}</div>
       <div class="panel deck-status">
         <div class="deck-head">
           <div><b class="${draft.length === RULES.deckSize ? 'ok' : ''}">${draft.length} / ${RULES.deckSize}</b><span class="sub">cartas</span></div>

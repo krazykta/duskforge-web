@@ -1,5 +1,5 @@
 // Colección, mazos, sobres, fabricación y mejoras cosméticas. Funciones puras sobre el perfil.
-import { COLLECTION, PACK, RULES, STARTER_DECK } from './config.js';
+import { COLLECTION, PACK, RULES, STARTER_DECK, WELCOME_GIFT } from './config.js';
 import { CARDS, CARD_BY_ID } from './cards.js';
 import { addProgress } from './missions.js';
 
@@ -80,6 +80,20 @@ export function openPack(profile, { rng = Math.random, now = new Date(), pack = 
   }
   p.packHistory = [...p.packHistory, { at: now.getTime(), cards: results.map((r) => r.id) }].slice(-cfg.historySize);
   return { profile: addProgress(p, { packs: 1 }, now), results };
+}
+
+export function claimWelcome(profile, { rng, now, gift = WELCOME_GIFT } = {}) {
+  if (profile.welcomeClaimed) return { profile, error: 'Ya has recogido tu regalo' };
+  let p = { ...profile, welcomeClaimed: true, coins: profile.coins + gift.coins };
+  const results = [];
+  for (const { pack, count } of gift.packs) {
+    for (let i = 0; i < count; i++) {
+      const r = openPack(p, { rng, now, pack: { ...pack, price: 0 } });
+      p = r.profile;
+      results.push(...r.results);
+    }
+  }
+  return { profile: p, results };
 }
 
 export function craftCard(profile, id, cfg = COLLECTION) {

@@ -121,7 +121,7 @@ function foeHandHtml() {
   return `<div class="foe-hand" aria-hidden="true">${cards.join('')}</div>`;
 }
 
-const KEYWORDS = [['swift', 'bolt'], ['drain', 'drop'], ['poison', 'skull'], ['fury', 'swords'], ['frozen', 'snow'], ['silenced', 'mute']];
+const KEYWORDS = [['swift', 'bolt'], ['drain', 'drop'], ['poison', 'skull'], ['fury', 'sword'], ['frozen', 'snow'], ['silenced', 'mute']];
 
 function unitHtml(u, p, targets) {
   const c = CARD_BY_ID[u.id];
@@ -152,7 +152,7 @@ function cardHtml(id, i) {
   const cls = ['card', `r-${c.rarity}`, getProfile().foils.includes(id) && 'foil', canPlay(err) ? 'playable' : 'unplayable',
     sel && sel.kind === 'hand' && sel.index === i && 'selected', i >= battle.prevHandLen && 'drawn'];
   const delay = i >= battle.prevHandLen ? `style="animation-delay: ${(i - battle.prevHandLen) * 70}ms"` : '';
-  const stats = c.type === 'unit' ? `${c.atk}/${c.hp}` : 'Hechizo';
+  const stats = c.type === 'unit' ? `${icon('sword')}${c.atk} ${icon('heart')}${c.hp}` : 'Hechizo';
   return `
     <div class="${cls.filter(Boolean).join(' ')}" data-hand="${i}" ${delay} role="button" aria-label="${c.name}, coste ${c.cost}">
       <span class="cost">${c.cost}</span>
@@ -163,7 +163,7 @@ function cardHtml(id, i) {
 }
 
 const STATUS = [['guard', 'shield', 'Guardián'], ['shield', 'spark', 'Escudo'], ['swift', 'bolt', 'Ímpetu'], ['drain', 'drop', 'Vampírico'], ['poison', 'skull', 'Letal'],
-  ['fury', 'swords', 'Furia'], ['stealth', 'fog', 'Sigilo'], ['frozen', 'snow', 'Congelada'], ['silenced', 'mute', 'Silenciada']];
+  ['fury', 'sword', 'Furia'], ['stealth', 'fog', 'Sigilo'], ['frozen', 'snow', 'Congelada'], ['silenced', 'mute', 'Silenciada']];
 
 // Zoom de la carta tocada. No recibe toques (salvo su botón): debajo se puede seguir eligiendo.
 function zoomHtml() {
@@ -237,7 +237,7 @@ function showLog() {
     if (e.card && e.uid !== undefined) names[e.uid] = CARD_BY_ID[e.card]?.name;
     switch (e.type) {
       case 'play': return `${icon('hand')} ${e.player === ME ? 'Tú' : battle.rivalName}: ${CARD_BY_ID[e.card].name}`;
-      case 'attack': return `${icon('swords')} ${who(e)} → ${who(e.target)}`;
+      case 'attack': return `${icon('sword')} ${who(e)} → ${who(e.target)}`;
       case 'damage': return `${icon('spark')} ${who(e)} −${e.amount}`;
       case 'heal': return `${icon('heart')} ${who(e)} +${e.amount}`;
       case 'death': return `${icon('skull')} ${who(e)}`;

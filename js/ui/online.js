@@ -92,7 +92,7 @@ export function showOnline() {
       <div class="panel online-host">
         <h3>Crear sala</h3>
         <p class="sub">Te damos un código para que se lo pases a quien quieras.</p>
-        <button class="btn gold" data-act="host">${icon('swords')}Crear sala</button>
+        <button class="btn gold" data-act="host">${icon('sword')}Crear sala</button>
       </div>
       <div class="panel online-join">
         <h3>Unirse a una sala</h3>

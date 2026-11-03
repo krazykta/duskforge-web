@@ -2,7 +2,7 @@
 // Sin cuenta lo ejecuta el móvil; con cuenta, el servidor (core/server.js) con este mismo código.
 import { PACKS } from './config.js';
 import { CARD_BY_ID } from './cards.js';
-import { craftCard, openPack, upgradeFoil } from './collection.js';
+import { claimWelcome, craftCard, openPack, upgradeFoil } from './collection.js';
 import { buyCard, buyCosmetic, buyOffer, buyUpgrade, equipCosmetic } from './shop.js';
 import { claimMission } from './missions.js';
 import { claimAchievement } from './achievements.js';
@@ -27,6 +27,7 @@ const ACTIONS = {
   buyCosmetic: (p, { id }) => buyCosmetic(p, id),
   equipCosmetic: (p, { id }) => equipCosmetic(p, id),
   buyUpgrade: (p, { id }) => buyUpgrade(p, id),
+  claimWelcome: (p, _, ctx) => claimWelcome(p, ctx),
   claimMission: (p, { id }, ctx) => claimMission(p, id, ctx.now),
   claimAchievement: (p, { id }) => claimAchievement(p, id),
   claimTier: (p, { n, premium }, ctx) => (Number.isInteger(n) ? claimTier(p, n, premium === true, ctx) : refuse(p, 'Casilla no válida')),

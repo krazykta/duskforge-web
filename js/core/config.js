@@ -5,9 +5,7 @@ export const GAME_NAME = 'DUSKFORGE';
 export const RULES = {
   startHp: 20,
   deckSize: 24,
-  startHand: 3,
-  secondPlayerExtraCards: 1, // compensa al jugador que empieza segundo
-  secondPlayerBonus: 'ember', // y además recibe esta carta (Ascua: +1 de energía un turno)
+  startHand: 4, // igual para los dos: quien empieza no roba en su primer turno
   maxHand: 7, // si robas con la mano llena, la carta se quema
   startEnergy: 1,
   maxEnergy: 5,
@@ -15,7 +13,7 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 1; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 2; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
 export const ECONOMY = {
   winCoins: 30,
@@ -76,6 +74,12 @@ export const LEGEND_PACK = {
   lastOdds: { common: 0, rare: 0, epic: 0, legendary: 1 },
 };
 export const PACKS = [PACK, BIG_PACK, CHEST, EPIC_PACK, LEGEND_PACK];
+
+// Regalo único de bienvenida y agradecimiento por probar el juego.
+export const WELCOME_GIFT = {
+  coins: 800,
+  packs: [{ pack: EPIC_PACK, count: 3, text: 'sobres épicos' }, { pack: LEGEND_PACK, count: 2, text: 'sobres legendarios' }],
+};
 
 // Escaparate del día: igual para todos y distinto cada día (ver core/shop.js). Cada artículo se compra una vez al día.
 export const SHOP = { slots: ['common', 'common', 'rare', 'rare', 'epic', 'legendary'], dealOff: 0.4, offersPerDay: 3 };

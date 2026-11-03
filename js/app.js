@@ -1,13 +1,13 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { ECONOMY, COSMETICS, SEASON } from './core/config.js';
+import { ECONOMY, COSMETICS, SEASON, WELCOME_GIFT } from './core/config.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
 import { passTier } from './core/pass.js';
-import { app, getProfile, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { act, app, getProfile, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
-import { showShop } from './ui/shop.js';
+import { showReveal, showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
 import { showOnline } from './ui/online.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction } from './ui/account.js';
@@ -71,6 +71,33 @@ function showMenu() {
     if (el.closest('[data-act="pass"]')) go('missions', 'pass');
   });
   if (!p.tutorialSeen) showRules();
+  else if (!p.welcomeClaimed) showWelcome();
+}
+
+// Sale al entrar hasta que se recoge. Si no hay conexión, vuelve la próxima vez que se abra el inicio.
+function showWelcome() {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal" role="dialog" aria-label="Regalo de bienvenida">
+      <h2>¡Gracias por probar DUSKFORGE!</h2>
+      <p>Te hacemos este regalo por ayudarnos a probar el juego, y para que tus primeras partidas sean más fáciles.</p>
+      <ul>
+        ${WELCOME_GIFT.packs.map((x) => `<li><b>${x.count}</b> ${x.text}</li>`).join('')}
+        <li><b>${WELCOME_GIFT.coins}</b> monedas ${icon('coin')}</li>
+      </ul>
+      <p>Si todo va bien y el juego sale adelante, quienes sigan aquí tendrán otra buena recompensa.</p>
+      <button class="btn gold" data-act="claim">Abrir mi regalo</button>
+    </div>`;
+  app.appendChild(bg);
+  bg.addEventListener('click', async (ev) => {
+    ev.stopPropagation();
+    if (!ev.target.closest('[data-act="claim"]')) return;
+    bg.remove();
+    const r = await act('claimWelcome');
+    if (r.error) toast(r.error);
+    else showReveal(r, 'menu');
+  });
 }
 
 function showRules() {
@@ -82,7 +109,7 @@ function showRules() {
       <ul>
         <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20, pero curarte puede llevarte por encima: la vida no tiene tope.</li>
         <li>Los mazos tienen <b>24 cartas</b> y cada jugador puede tener hasta <b>10 criaturas</b> en la mesa.</li>
-        <li>Cada turno ganas <b>energía</b> ${icon('gem')} (hasta 5). Las cartas cuestan energía. Quien empieza segundo roba una carta más y recibe un <b>Ascua</b> (+1 de energía un turno).</li>
+        <li>Cada turno ganas <b>energía</b> ${icon('gem')} (hasta 5). Las cartas cuestan energía. Los dos empezáis con 4 cartas.</li>
         <li>Toca una carta para verla en grande y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo. Las criaturas del rival también se pueden ampliar.</li>
         <li>Las criaturas con brillo verde pueden atacar: tócala y luego toca su objetivo. ${icon('skull')} significa que el objetivo caerá y ${icon('warn')} que caerá tu atacante. ${icon('sleep')} es que esa criatura ya no puede atacar este turno.</li>
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
@@ -98,6 +125,7 @@ function showRules() {
     if (!ev.target.closest('[data-act="close"]')) return;
     savePrefs({ tutorialSeen: true });
     bg.remove();
+    if (!getProfile().welcomeClaimed) showWelcome();
   });
 }
 
