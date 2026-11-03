@@ -13,7 +13,7 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 3; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 4; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
 export const ECONOMY = {
   winCoins: 30,
@@ -203,19 +203,19 @@ function fullAiDeck(list) {
 
 const ASSAULT_DECK = [
   'ash_bat', 'ash_bat', 'rune_squire', 'flame_acolyte', 'night_leech', 'doom_herald',
-  'storm_apprentice', 'lightning_rider', 'spark', 'dark_blessing', 'aegis', 'arcane_vision',
+  'mire_toad', 'lightning_rider', 'spark', 'dark_blessing', 'aegis', 'arcane_vision',
 ];
 
 // Mazos del rival: la partida elige uno al azar. Cada uno enseña un estilo de juego.
 export const AI_DECKS = [
   ASSAULT_DECK, // Asalto: criaturas rápidas y hechizos de apoyo
   [ // Cripta: muertos que vuelven y veneno
-    'grave_rat', 'ash_bat', 'cinder_imp', 'cinder_imp', 'bone_warden', 'tomb_scholar',
-    'venom_spitter', 'spore_mother', 'plague_bearer', 'soul_siphon', 'dusk_recruit', 'ash_bat',
+    'moon_potion', 'mire_toad', 'cinder_imp', 'cinder_imp', 'bone_warden', 'tomb_scholar',
+    'venom_spitter', 'spore_mother', 'plague_bearer', 'soul_siphon', 'dusk_recruit', 'mire_toad',
   ],
   [ // Escarcha: congelar, aguantar y rematar
     'frost_wisp', 'frost_wisp', 'frost_bolt', 'ironhide_boar', 'dusk_recruit', 'chapel_healer',
-    'tower_archer', 'ice_warden', 'firebolt', 'ironhide_boar', 'banish', 'bog_lurker',
+    'tower_archer', 'ice_warden', 'firebolt', 'ironhide_boar', 'firebolt', 'bog_lurker',
   ],
   [ // Sombras: sigilo, furia y proyectiles
     'shadow_cutpurse', 'shadow_cutpurse', 'ember_hound', 'ember_hound', 'phantom_thief', 'twin_blade',
@@ -241,7 +241,7 @@ export const AI_DECKS = [
     'cannon_shot', 'old_rum', 'powder_keg', 'low_tide', 'mountain_goat', 'dusk_fisher',
   ],
   [ // Montaña: enanos que aguantan y se curan
-    'dwarf_miner', 'dwarf_miner', 'anvil_guard', 'dwarf_brewer', 'low_tide', 'hammer_blow',
+    'dwarf_miner', 'dwarf_miner', 'anvil_guard', 'moon_potion', 'low_tide', 'hammer_blow',
     'old_rum', 'moon_acolyte', 'powder_keg', 'powder_keg', 'moonlight', 'dwarf_mason',
   ],
   [ // Bosque: setas y retoños que tapan el paso
@@ -261,8 +261,8 @@ export const AI_DECKS = [
     'frost_axe', 'pearl', 'riptide', 'merfolk_priestess', 'will_o_wisp', 'war_horn',
   ],
   [ // Jungla: serpientes venenosas y jaguares al acecho
-    'hunter_apprentice', 'toucan', 'pickpocket', 'jungle_shaman', 'jaguar', 'ruins_explorer',
-    'temple_guard', 'fence', 'jade_offering', 'smoke_bomb', 'river_crocodile', 'lockpick',
+    'hunter_apprentice', 'toucan', 'lockpick', 'jungle_shaman', 'jaguar', 'ruins_explorer',
+    'temple_guard', 'moon_potion', 'jade_offering', 'smoke_bomb', 'mire_toad', 'lockpick',
   ],
   [ // Estepa: centauros veloces y halcones
     'young_centaur', 'academy_student', 'steppe_rider', 'nomad_falconer', 'bola_thrower', 'archivist',
@@ -273,7 +273,7 @@ export const AI_DECKS = [
     'maze_warden', 'night_mare', 'horn_charge', 'dead_end', 'gem_light', 'bad_dream',
   ],
   [ // Micelio: esporas, setas venenosas y canciones
-    'glowcap', 'puffball', 'rot_beetle', 'mushroom_picker', 'drummer', 'stargazer',
+    'glowcap', 'puffball', 'rot_beetle', 'mushroom_picker', 'toadstool_sentry', 'stargazer',
     'toadstool_sentry', 'falling_star', 'spore_cloud', 'dissonance', 'mycelium_net', 'heroic_ballad',
   ],
   [ // Cosecha: calabazas, segadores y almas del río
@@ -281,15 +281,15 @@ export const AI_DECKS = [
     'mourner', 'soul_oarsman', 'river_wraith', 'pumpkin_patch', 'rose_oath', 'reaping',
   ],
   [ // Mascarada: enmascarados, venenos y trucos de salón
-    'masked_servant', 'sly_fox', 'night_owl', 'masked_guest', 'illusionist', 'ball_butler',
+    'masked_servant', 'bronze_sentinel', 'night_owl', 'masked_guest', 'illusionist', 'ball_butler',
     'masquerade_dancer', 'toast', 'false_face', 'poisoned_wine', 'fox_trick', 'quagmire',
   ],
   [ // Mitos: héroes griegos, genios del desierto y gnomos
     'satyr', 'spring_nymph', 'gnome_lookout', 'dervish', 'first_wish', 'amazon_archer',
-    'dune_viper', 'oasis_merchant', 'caravan_camel', 'gorgon_acolyte', 'javelin', 'hoplite',
+    'dune_viper', 'moon_potion', 'caravan_camel', 'gorgon_acolyte', 'javelin', 'hoplite',
   ],
   [ // Torneo: abejas, escuderos y monjes
-    'worker_bee', 'page_boy', 'beekeeper', 'drone_bee', 'herald', 'tourney_squire',
+    'worker_bee', 'page_boy', 'beekeeper', 'drone_bee', 'herald', 'aegis',
     'novice_monk', 'staff_monk', 'jousting_knight', 'honey_jar', 'iron_fist', 'meditation',
   ],
   [ // Arena: gladiadores, tritones y bandidos
@@ -297,8 +297,8 @@ export const AI_DECKS = [
     'highway_toll', 'triton_guard', 'bandit_archer', 'sand_in_eyes', 'stolen_purse', 'crowd_cheer',
   ],
   [ // Tumbas: momias, trampas y gatos del templo
-    'tomb_scarab', 'temple_cat', 'young_explorer', 'embalmer', 'tomb_robber', 'trapmaker',
-    'sun_priest', 'jackal_guard', 'sand_mummy', 'treasure_map', 'pit_trap', 'curse_of_tomb',
+    'tomb_scarab', 'temple_cat', 'dusk_recruit', 'embalmer', 'tomb_robber', 'trapmaker',
+    'moon_potion', 'jackal_guard', 'sand_mummy', 'treasure_map', 'pit_trap', 'curse_of_tomb',
   ],
   [ // Castillo: vampiros, gárgolas y asedio
     'fledgling', 'ghoul', 'castle_servant', 'gargoyle_whelp', 'sapper', 'ballista_crew',
