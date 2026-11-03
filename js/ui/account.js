@@ -39,7 +39,7 @@ async function enterWithUser(user) {
   if (r.error) {
     toast('No se pudo cargar tu partida. Juegas sin cuenta hasta que vuelva la conexión.');
   } else {
-    mySupport().then((s) => s.data?.some((m) => m.reply && !m.reply_seen) && toast('Te hemos respondido: míralo en Ajustes → Contacto'));
+    mySupport().then((s) => s.data?.some((m) => m.reply && !m.reply_seen) && toast('Te hemos respondido: míralo en Perfil → Contacto'));
   }
   setGuest(false);
   if (recovering) go('auth', 'newPassword');
@@ -156,14 +156,14 @@ function info(title, html) {
     </section>`;
 }
 
-const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+export const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 // ---------- Contacto: el jugador escribe y lee aquí la respuesta (la damos desde Supabase, docs/soporte.md) ----------
 export function showSupport() {
   const user = getCloudUser();
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Contacto', 'settings')}
+      ${topBar('Contacto', 'profile')}
       ${user ? `
       <form class="panel auth-form" novalidate>
         <h3>Contacta con nosotros</h3>

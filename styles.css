@@ -611,6 +611,25 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .support-list .panel p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
 .support-list .reply { border-left: 2px solid var(--ember-soft); padding-left: 10px; margin-top: 10px; }
 
+.profile-card { display: flex; align-items: center; gap: 12px; }
+.profile-card .sub { overflow-wrap: anywhere; }
+.profile-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
+.profile-stats b { display: block; font: 800 18px var(--display); color: var(--gold); }
+.profile-stats small { color: var(--muted); font-size: 11px; }
+.profile-menu { padding: 4px 14px; }
+.profile-row { font: inherit; color: var(--text); background: none; border: 0; border-top: 1px solid var(--line); width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 0; text-align: left; cursor: pointer; }
+.profile-row:first-child { border-top: 0; }
+.profile-row > span:first-of-type { flex: 1; min-width: 0; }
+.profile-row b { display: block; }
+.mail-list { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.letter h3 { margin: 6px 0 4px; }
+.letter p { margin: 0 0 10px; white-space: pre-line; overflow-wrap: anywhere; user-select: text; }
+.letter p:last-child { margin-bottom: 0; }
+.letter .kind { color: var(--gold); font-weight: 700; margin-right: 6px; }
+.letter[data-kind='offer'] .kind { color: var(--ember); }
+.letter .gift { list-style: none; margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.3); font-size: 14px; }
+.letter .gift .ic, .letter p .ic { width: 15px; height: 15px; vertical-align: -2px; }
+
 @media (max-height: 680px) {
   .logo img { width: min(300px, 74vw, 30dvh); }
   .board { min-height: 80px; }

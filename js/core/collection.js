@@ -1,5 +1,5 @@
 // Colección, mazos, sobres, fabricación y mejoras cosméticas. Funciones puras sobre el perfil.
-import { COLLECTION, PACK, RULES, STARTER_DECK, WELCOME_GIFT } from './config.js';
+import { COLLECTION, MAIL, PACK, PACKS, RULES, STARTER_DECK, WELCOME_GIFT } from './config.js';
 import { CARDS, CARD_BY_ID } from './cards.js';
 import { addProgress } from './missions.js';
 
@@ -82,18 +82,38 @@ export function openPack(profile, { rng = Math.random, now = new Date(), pack = 
   return { profile: addProgress(p, { packs: 1 }, now), results };
 }
 
-export function claimWelcome(profile, { rng, now, gift = WELCOME_GIFT } = {}) {
-  if (profile.welcomeClaimed) return { profile, error: 'Ya has recogido tu regalo' };
-  let p = { ...profile, welcomeClaimed: true, coins: profile.coins + gift.coins };
+function giftPacks(profile, packs, ctx) {
+  let p = profile;
   const results = [];
-  for (const { pack, count } of gift.packs) {
+  for (const { pack, count } of packs) {
     for (let i = 0; i < count; i++) {
-      const r = openPack(p, { rng, now, pack: { ...pack, price: 0 } });
+      const r = openPack(p, { ...ctx, pack: { ...pack, price: 0 } });
       p = r.profile;
       results.push(...r.results);
     }
   }
   return { profile: p, results };
+}
+
+export function claimWelcome(profile, { rng, now, gift = WELCOME_GIFT } = {}) {
+  if (profile.welcomeClaimed) return { profile, error: 'Ya has recogido tu regalo' };
+  return giftPacks({ ...profile, welcomeClaimed: true, coins: profile.coins + gift.coins }, gift.packs, { rng, now });
+}
+
+// mail: fila de la tabla mail, ya comprobado que es para este jugador. gift.packs[].pack es un índice de PACKS.
+export function claimMail(profile, mail, { rng, now } = {}) {
+  const { gift, id } = mail;
+  if (!gift) return { profile, error: 'Este mensaje no trae regalo' };
+  if (profile.mailClaimed.includes(id)) return { profile, error: 'Ya has recogido este regalo' };
+  const packs = (gift.packs ?? []).map((x) => ({ pack: PACKS[x.pack], count: x.count }));
+  if (packs.some((x) => !x.pack)) return { profile, error: 'Este regalo no es válido' };
+  const claimed = {
+    ...profile,
+    coins: profile.coins + (gift.coins ?? 0),
+    fragments: profile.fragments + (gift.fragments ?? 0),
+    mailClaimed: [...profile.mailClaimed, id].slice(-MAIL.remembered),
+  };
+  return giftPacks(claimed, packs, { rng, now });
 }
 
 export function craftCard(profile, id, cfg = COLLECTION) {

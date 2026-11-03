@@ -1,16 +1,18 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
 import { ECONOMY, COSMETICS, SEASON, WELCOME_GIFT } from './core/config.js';
+import { CARD_BY_ID } from './core/cards.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
 import { passTier } from './core/pass.js';
-import { act, app, getProfile, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { act, app, getCloudUser, getProfile, mailSlot, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showReveal, showShop } from './ui/shop.js';
 import { showMissions } from './ui/missions.js';
 import { showOnline } from './ui/online.js';
-import { startApp, showAuth, showSupport, accountPanel, accountAction } from './ui/account.js';
+import { showMail } from './ui/mail.js';
+import { startApp, showAuth, showSupport, accountPanel, accountAction, escapeHtml } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
 
 if ('serviceWorker' in navigator && location.hostname !== 'localhost') navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -46,8 +48,7 @@ function showMenu() {
       <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
       <header class="topbar">
         ${resources()}
-        <button class="icon-btn" data-act="rules" aria-label="Cómo jugar">${icon('help')}</button>
-        <button class="icon-btn gear" data-go="settings" aria-label="Ajustes">${icon('gear')}</button>
+        <button class="icon-btn gear" data-go="profile" aria-label="Perfil">${icon('user')}${mailSlot()}</button>
       </header>
       <h1 class="logo"><img src="img/ui/logo.webp" alt="DUSKFORGE"></h1>
       <div class="home-foot stagger">
@@ -67,7 +68,6 @@ function showMenu() {
       </div>
     </section>`;
   onTap((el) => {
-    if (el.closest('[data-act="rules"]')) showRules();
     if (el.closest('[data-act="pass"]')) go('missions', 'pass');
   });
   if (!p.tutorialSeen) showRules();
@@ -116,6 +116,8 @@ function showRules() {
         <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ${icon('snow')} no ataca en su siguiente turno.</li>
         <li>Una criatura <b>silenciada</b> ${icon('mute')} pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>
         <li>Gana monedas ${icon('coin')} jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos ${icon('shard')} para fabricar las que quieras.</li>
+        <li>Las cartas son <b>comunes</b>, <b>raras</b>, <b>épicas</b> o <b>legendarias</b>. En un mazo puedes llevar 2 copias de cada una, pero solo 1 de cada legendaria.</li>
+        <li>Mira tu <b>Buzón</b> ${icon('mail')} en el Perfil: ahí llegan noticias, ofertas y regalos.</li>
       </ul>
       <button class="btn gold" data-act="close">¡Entendido!</button>
     </div>`;
@@ -154,6 +156,44 @@ function showResult(won, rewards, draw, friendly, note) {
   app.querySelectorAll('[data-count]').forEach((el) => countUp(el, Number(el.dataset.count), '+'));
 }
 
+// ---------- Perfil ----------
+function showProfile() {
+  const p = getProfile();
+  const user = getCloudUser();
+  const into = xpIntoLevel(p.xp);
+  const title = COSMETICS.find((c) => c.id === p.cosmetics.title)?.name;
+  const owned = Object.keys(p.collection);
+  const row = (attrs, ic, label, hint, extra = '') => `
+    <button class="profile-row" ${attrs}>${icon(ic)}<span><b>${label}</b><span class="sub">${hint}</span></span>${extra}${icon('next')}</button>`;
+  app.innerHTML = `
+    <section class="screen top">
+      ${topBar('Perfil', 'menu')}
+      <div class="panel profile-card">
+        <span class="lvl"><b>${levelOf(p.xp)}</b></span>
+        <span class="summary-text">
+          <b>${title ?? `Nivel ${levelOf(p.xp)}`}</b>
+          <span class="sub">${user ? escapeHtml(user.email) : 'Sin cuenta'}</span>
+          <span class="xpbar" title="${into} / ${ECONOMY.xpPerLevel} XP"><span style="width:${(into / ECONOMY.xpPerLevel) * 100}%"></span></span>
+        </span>
+      </div>
+      <div class="panel profile-stats">
+        <span><b>${p.wins}</b><small>Victorias</small></span>
+        <span><b>${p.losses}</b><small>Derrotas</small></span>
+        <span><b>${owned.length}</b><small>Cartas</small></span>
+        <span><b>${owned.filter((id) => CARD_BY_ID[id].rarity === 'legendary').length}</b><small>Legendarias</small></span>
+      </div>
+      <nav class="panel profile-menu" aria-label="Perfil">
+        ${row('data-go="mail"', 'mail', 'Buzón', 'Noticias, ofertas y regalos', mailSlot())}
+        ${row('data-act="rules"', 'help', 'Cómo jugar', 'Las normas del juego')}
+        ${row('data-go="settings"', 'gear', 'Ajustes', 'Sonido, animaciones y cuenta')}
+        ${row('data-go="support"', 'scroll', 'Contacto', '¿Dudas, errores o ideas? Escríbenos')}
+      </nav>
+    </section>`;
+  onTap((el) => {
+    if (el.closest('[data-act="rules"]')) showRules();
+  });
+}
+
 // ---------- Ajustes ----------
 function showSettings() {
   const s = getProfile().settings;
@@ -162,7 +202,7 @@ function showSettings() {
       <input type="checkbox" role="switch" data-setting="${key}" ${s[key] ? 'checked' : ''}></label>`;
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Ajustes', 'menu')}
+      ${topBar('Ajustes', 'profile')}
       <div class="panel">
         <h3>Juego</h3>
         ${toggle('reducedMotion', 'Animaciones reducidas', 'Menos movimiento en pantalla.')}
@@ -171,9 +211,6 @@ function showSettings() {
         ${toggle('music', 'Música', 'Música de fondo en los menús y en combate.')}
       </div>
       ${accountPanel()}
-      <div class="panel"><h3>Contacto</h3>
-        <p class="sub">¿Dudas, errores o ideas? Escríbenos y te responderemos dentro del juego.</p>
-        <button class="btn small ghost" data-go="support">Contacta con nosotros</button></div>
     </section>`;
   onTap((el) => {
     const act = el.closest('[data-act]')?.dataset.act;
@@ -192,6 +229,8 @@ register('collection', showCollection);
 register('deck', () => { resetDeckDraft(); showDeckBuilder(); });
 register('shop', showShop);
 register('missions', showMissions);
+register('profile', showProfile);
+register('mail', showMail);
 register('settings', showSettings);
 register('auth', showAuth);
 register('support', showSupport);

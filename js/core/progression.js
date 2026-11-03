@@ -1,6 +1,6 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // Con cuenta las ejecuta el servidor (core/server.js); sin cuenta, el móvil, y ese progreso no sale de él.
-import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, SEASON, UPGRADES } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, MAIL, SEASON, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
@@ -17,7 +17,7 @@ export function newProfile() {
   return {
     version: PROFILE_VERSION,
     coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
-    lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [],
+    lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [], mailClaimed: [],
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
     decks: [[...STARTER_DECK], [], []], // huecos de mazo guardados ([] = vacío)
@@ -87,6 +87,7 @@ export function sanitizeProfile(raw) {
     tutorialSeen: raw.tutorialSeen === true,
     welcomeClaimed: raw.welcomeClaimed === true,
     claimedMatches: strList(raw.claimedMatches).slice(-MAX_REMEMBERED_MATCHES),
+    mailClaimed: strList(raw.mailClaimed).slice(-MAIL.remembered),
     collection,
     deck: decks[activeDeck], decks, activeDeck,
     foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],

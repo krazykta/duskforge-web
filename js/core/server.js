@@ -1,8 +1,9 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
-import { AI_DECKS, API_VERSION, ECONOMY, SEASON } from './config.js';
+import { AI_DECKS, API_VERSION, ECONOMY, MAIL, SEASON } from './config.js';
 import { claimMatchRewards, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions } from './missions.js';
+import { claimMail } from './collection.js';
 import { isAction, runAction } from './actions.js';
 import { replayMatch } from './replay.js';
 
@@ -14,7 +15,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const randomUint = () => crypto.getRandomValues(new Uint32Array(1))[0];
 const random = () => randomUint() / 2 ** 32;
 
-// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch (ver supabase/functions/game/index.ts).
+// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail (ver supabase/functions/game/index.ts).
 export function createGame({ db, clock = () => new Date(), rng = random }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
@@ -56,6 +57,13 @@ export function createGame({ db, clock = () => new Date(), rng = random }) {
     return { profile: done.profile, rewards: done.rewards ?? null };
   }
 
+  // El mensaje se busca entre los de este jugador: un id ajeno o caducado no sirve aunque exista.
+  async function collectMail(uid, id) {
+    const mail = (await db.mail(uid, MAIL.shown)).find((m) => m.id === id);
+    if (!mail) return { error: 'Este mensaje ya no está disponible' };
+    return change(uid, (p) => claimMail(p, mail, { now: clock(), rng }));
+  }
+
   // body: { v, op, args }. Los errores de juego se devuelven; los de infraestructura se lanzan.
   return async function handle(uid, body) {
     if (body?.v !== API_VERSION) return { error: 'Actualiza el juego para seguir', code: 'update' };
@@ -63,6 +71,8 @@ export function createGame({ db, clock = () => new Date(), rng = random }) {
     if (op === 'load') return { profile: (await read(uid)).profile, owned: await db.owned(uid) };
     if (op === 'startMatch') return startMatch(uid);
     if (op === 'finishMatch') return finishMatch(uid, args ?? {});
+    if (op === 'mail') return { mail: await db.mail(uid, MAIL.shown) };
+    if (op === 'claimMail') return collectMail(uid, args?.id);
     if (!isAction(op)) return { error: 'Acción no válida' };
     const owned = op === 'claimTier' && (await db.owned(uid)).includes(SEASON.sku);
     return change(uid, (p) => runAction(p, op, args, { now: clock(), rng, owned }));

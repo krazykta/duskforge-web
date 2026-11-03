@@ -13,7 +13,7 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 2; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 3; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
 export const ECONOMY = {
   winCoins: 30,
@@ -80,6 +80,9 @@ export const WELCOME_GIFT = {
   coins: 800,
   packs: [{ pack: EPIC_PACK, count: 3, text: 'sobres épicos' }, { pack: LEGEND_PACK, count: 2, text: 'sobres legendarios' }],
 };
+
+// Solo se recoge lo que se muestra, así que recordar más de lo que se muestra impide cobrar dos veces un mensaje antiguo.
+export const MAIL = { shown: 30, remembered: 100 };
 
 // Escaparate del día: igual para todos y distinto cada día (ver core/shop.js). Cada artículo se compra una vez al día.
 export const SHOP = { slots: ['common', 'common', 'rare', 'rare', 'epic', 'legendary'], dealOff: 0.4, offersPerDay: 3 };

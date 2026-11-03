@@ -23,6 +23,7 @@ const STORAGE_KEY = 'duskforge.profile';
 const OLD_KEY = 'cardclash.profile'; // nombre anterior del juego: se lee una vez para no perder el progreso
 const OWNER_KEY = 'duskforge.owner'; // de qué cuenta es el perfil guardado en este dispositivo
 const PENDING_KEY = 'duskforge.pending'; // resultado de una partida que aún no ha llegado al servidor
+const MAIL_SEEN_KEY = 'duskforge.mailSeen'; // fecha del último mensaje leído en este dispositivo
 
 function load() {
   try { return sanitizeProfile(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(OLD_KEY))); } catch { return newProfile(); }
@@ -53,6 +54,7 @@ let prefs = null; // ajustes y mazos aún por enviar
 let prefsTimer = null;
 let entitlements = new Set();
 let updateAsked = false;
+let inbox = [];
 
 const stored = (key) => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
 const store = (key, value) => {
@@ -128,6 +130,31 @@ export async function flushPrefs() {
   return true;
 }
 
+// ---------- Buzón ----------
+export const getInbox = () => inbox;
+export const mailClaimable = (m) => Boolean(m.gift) && !profile.mailClaimed.includes(m.id);
+const unreadMail = () => {
+  const seen = stored(MAIL_SEEN_KEY) ?? '';
+  return inbox.filter((m) => mailClaimable(m) || m.created_at > seen).length;
+};
+const mailBadge = () => { const n = unreadMail(); return n ? `<span class="badge">${n}</span>` : ''; };
+export const mailSlot = () => `<span data-mail-slot>${mailBadge()}</span>`;
+const paintMail = () => document.querySelectorAll('[data-mail-slot]').forEach((el) => { el.innerHTML = mailBadge(); });
+
+// Un buzón que no carga no debe molestar: el juego sigue y se reintenta al volver a la app.
+export async function loadInbox() {
+  if (!cloudUser) return { error: 'Sin cuenta' };
+  const r = await request('mail');
+  if (r.mail && cloudUser) inbox = r.mail;
+  paintMail();
+  return r;
+}
+
+export function markMailSeen() {
+  if (inbox[0]) store(MAIL_SEEN_KEY, inbox[0].created_at);
+  paintMail();
+}
+
 // Pide al servidor una partida contra la IA. Sin respuesta devuelve {}: se juega igual, sin recompensa.
 export async function beginMatch() {
   await flushPrefs();
@@ -159,6 +186,7 @@ async function pullCloud() {
   entitlements = new Set(r.owned);
   replaceProfile(r.profile);
   if (screen === 'menu') go('menu'); // shortcut: en otras pantallas lo nuevo se ve al volver a entrar
+  loadInbox();
 }
 
 // Al entrar: manda lo que tenga el servidor. Sin conexión se sigue viendo la copia, si es de esta cuenta.
@@ -178,6 +206,7 @@ export async function connectCloud(user) {
   replaceProfile(r.profile);
   setCloudState('saved');
   await sendResult();
+  loadInbox();
   return {};
 }
 
@@ -186,7 +215,9 @@ export function disconnectCloud() {
   cloudUser = null;
   prefs = null;
   entitlements = new Set();
+  inbox = [];
   store(OWNER_KEY, null);
+  store(MAIL_SEEN_KEY, null);
   setCloudState('off');
   replaceProfile(null); // este dispositivo vuelve a empezar; la partida sigue en la cuenta (salvo si se borró)
 }
@@ -204,7 +235,7 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { settings: 'menu', support: 'settings', auth: 'menu', online: 'menu' }; // pantallas que se abren encima de otra
+const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;
