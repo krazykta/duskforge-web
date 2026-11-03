@@ -503,18 +503,24 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .curve { flex: 1; display: flex; gap: 4px; justify-content: center; align-items: flex-end; height: 36px; font-size: 9px; color: var(--muted); }
 .curve span { width: 16px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; }
 .curve i { display: block; flex: none; width: 100%; max-height: calc(100% - 13px); min-height: 2px; border-radius: 2px 2px 0 0; background: linear-gradient(180deg, var(--blue), #1d6fb0); transition: height 0.3s var(--ease); }
-.deck-list { width: 100%; display: flex; flex-direction: column; gap: 4px; }
-.deck-row { font: inherit; display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px; border-radius: 10px; border: 1px solid var(--line-soft); border-left: 3px solid var(--common);
-  background: rgba(30, 22, 56, 0.7); color: var(--text); text-align: left; cursor: pointer; min-height: 44px; transition: transform 0.12s var(--ease); }
-.deck-row:active { transform: scale(0.98); }
-.deck-row .thumb { width: 36px; height: 36px; flex: none; border-radius: 7px; overflow: hidden; display: grid; place-items: center; background: #12162c; font-size: 20px; }
+.screen.top > .deck-status { position: sticky; top: 46px; z-index: 5; background: rgba(24, 17, 44, 0.97); }
+.tray { position: relative; display: flex; gap: 6px; overflow-x: auto; min-height: 72px; align-items: flex-start; scrollbar-width: none; }
+.tray::-webkit-scrollbar { display: none; }
+.tray > .sub { margin: auto; text-align: center; }
+.tray-card { position: relative; flex: none; width: 56px; padding: 0; font: inherit; color: var(--text); background: none; border: 0; cursor: pointer; display: flex; flex-direction: column; gap: 2px; transition: transform 0.12s var(--ease); }
+.tray-card:active { transform: scale(0.92); }
+.tray-card .thumb { width: 56px; height: 56px; border-radius: 9px; overflow: hidden; display: grid; place-items: center; background: #12162c; font-size: 24px; border: 2px solid var(--common); }
 .thumb img, .mini img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; }
-.deck-row .name { flex: 1; min-width: 0; font-size: 14px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.deck-row .n { color: var(--muted); font-size: 13px; }
-.deck-row .cost { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, #60a5fa, #1d4ed8); font-size: 12px; font-weight: 800; }
-.deck-row.r-rare { border-left-color: var(--rare); }
-.deck-row.r-epic { border-left-color: var(--epic); }
-.deck-row.r-legendary { border-left-color: var(--legendary); box-shadow: none; }
+.tray-card.r-rare .thumb { border-color: var(--rare); }
+.tray-card.r-epic .thumb { border-color: var(--epic); }
+.tray-card.r-legendary .thumb { border-color: var(--legendary); }
+.tray-card .cost { position: absolute; top: -3px; left: -3px; width: 19px; height: 19px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, #60a5fa, #1d4ed8); box-shadow: 0 1px 3px #000a; font-size: 11px; font-weight: 800; }
+.tray-card .n { position: absolute; top: 38px; right: 2px; padding: 0 4px; border-radius: 6px; background: rgba(0, 0, 0, 0.75); font-size: 11px; font-weight: 750; }
+.tray-card .tname { font-size: 9.5px; line-height: 1.1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+.tray-hint { margin: -4px 0 0; text-align: center; font-size: 12px; }
+/* En la lista de cartas, las que ya están en el mazo llevan una marca con cuántas */
+.grid > .face[data-in]::after { content: '✓ ' attr(data-in); position: absolute; top: 4px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 1px 7px; border-radius: 8px;
+  background: linear-gradient(180deg, #ffdf9c, #e39a35); color: #2b1602; font-size: 10.5px; font-weight: 800; box-shadow: 0 1px 4px #000a; }
 .empty { padding: 20px 8px; text-align: center; }
 
 /* --- Tienda y sobres --- */

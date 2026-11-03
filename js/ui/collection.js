@@ -130,16 +130,17 @@ function showCardDetail(id) {
 }
 
 // ---------- Constructor de mazos ----------
+// Todo en una pantalla: el mazo va fijo arriba (tocar quita una copia) y debajo las cartas que tienes (tocar añade).
 let draft = null; // mazo en edición (sin guardar)
 let slot = null; // hueco de mazo que se está editando
-const builder = { query: '', cost: 'all', view: 'deck' };
+const builder = { query: '', cost: 'all' };
 const CURVE_TOP = 5; // el coste 5 o más va en la misma barra
 
 function poolGrid(inDeck) {
   const p = getProfile();
   return COLLECTIBLE.filter((c) => p.collection[c.id] && costMatch(c, builder.cost) && matches(c, builder.query)).sort(sortCards).map((c) => {
     const left = Math.min(p.collection[c.id], maxCopies(c)) - (inDeck[c.id] || 0);
-    return cardFace(c, { count: left, foil: p.foils.includes(c.id), locked: left <= 0, attrs: `data-add="${c.id}"` });
+    return cardFace(c, { count: left, foil: p.foils.includes(c.id), locked: left <= 0, attrs: `data-add="${c.id}" ${inDeck[c.id] ? `data-in="${inDeck[c.id]}"` : ''}` });
   }).join('') || '<p class="sub">Ninguna carta coincide.</p>';
 }
 
@@ -150,9 +151,9 @@ export function showDeckBuilder() {
   const inDeck = countCards(draft);
   const errors = deckErrors(draft, p.collection);
   const changed = draft.slice().sort().join() !== p.decks[slot].slice().sort().join();
-  const deckRows = Object.keys(inDeck).map((id) => CARD_BY_ID[id]).sort(sortCards).map((c) => `
-    <button class="deck-row r-${c.rarity}" data-remove="${c.id}" aria-label="Quitar ${c.name}">
-      <span class="thumb">${artHtml(c)}</span><span class="name">${c.name}</span><span class="n">x${inDeck[c.id]}</span><span class="cost">${c.cost}</span>
+  const trayCards = Object.keys(inDeck).map((id) => CARD_BY_ID[id]).sort(sortCards).map((c) => `
+    <button class="tray-card r-${c.rarity}" data-remove="${c.id}" aria-label="Quitar ${c.name}">
+      <span class="thumb">${artHtml(c)}</span><span class="cost">${c.cost}</span>${inDeck[c.id] > 1 ? `<span class="n">x${inDeck[c.id]}</span>` : ''}<span class="tname">${c.name}</span>
     </button>`).join('');
   const curve = Array.from({ length: CURVE_TOP + 1 }, (_, n) => draft.filter((id) => (n === CURVE_TOP ? CARD_BY_ID[id].cost >= n : CARD_BY_ID[id].cost === n)).length);
   const tallest = Math.max(1, ...curve);
@@ -160,25 +161,20 @@ export function showDeckBuilder() {
     <section class="screen top">
       ${topBar('Mazos')}
       <div class="seg">${p.decks.map((d, i) => `<button class="${i === slot ? 'on' : ''}" data-slot="${i}" aria-label="Mazo ${i + 1}${i === p.activeDeck ? ', en uso' : ''}">Mazo ${i + 1}${i === p.activeDeck ? icon('sword') : ''}</button>`).join('')}</div>
+      ${slot === p.activeDeck ? '' : p.decks[slot].length ? `<button class="btn small ghost" data-act="use">${icon('sword')}Usar este mazo en combate</button>` : ''}
       <div class="panel deck-status">
         <div class="deck-head">
           <div><b class="${draft.length === RULES.deckSize ? 'ok' : ''}">${draft.length} / ${RULES.deckSize}</b><span class="sub">cartas</span></div>
           <div class="curve" title="Cartas por coste">${curve.map((n, i) => `<span><i style="height:${(n / tallest) * 100}%"></i>${i === CURVE_TOP ? `${i}+` : i}</span>`).join('')}</div>
           <button class="btn small gold" data-act="save" ${errors.length || !changed ? 'disabled' : ''}>Guardar</button>
         </div>
-        <div class="xpbar"><div style="width:${(draft.length / RULES.deckSize) * 100}%"></div></div>
+        <div class="tray">${trayCards || '<p class="sub">Mazo vacío: toca las cartas de abajo para añadirlas.</p>'}</div>
         ${errors.length && draft.length >= RULES.deckSize ? `<p class="warn">${errors[0]}</p>` : ''}
-        ${slot === p.activeDeck ? '<p class="sub">Es el mazo con el que juegas.</p>' : p.decks[slot].length ? '<button class="btn small ghost" data-act="use">Usar en combate</button>' : ''}
         ${changed ? '<button class="link" data-act="reset">Descartar cambios</button>' : ''}
       </div>
-      <div class="seg">
-        <button class="${builder.view === 'deck' ? 'on' : ''}" data-view="deck">En el mazo</button>
-        <button class="${builder.view === 'pool' ? 'on' : ''}" data-view="pool">Añadir cartas</button>
-      </div>
-      ${builder.view === 'deck' ? `
-      <div class="deck-list">${deckRows || '<p class="sub empty">Mazo vacío. Ve a «Añadir cartas» para llenarlo.</p>'}</div>` : `
+      <p class="sub tray-hint">Toca una carta para añadirla · toca arriba para quitarla</p>
       <div class="filters">${searchBox(builder.query)}<div class="rail">${costChips(builder)}</div></div>
-      <div class="grid">${poolGrid(inDeck)}</div>`}
+      <div class="grid">${poolGrid(inDeck)}</div>
     </section>`;
   bindSearch(builder, () => (app.querySelector('.grid').innerHTML = poolGrid(inDeck)));
   onTap((el) => {
@@ -187,9 +183,7 @@ export function showDeckBuilder() {
     const act = el.closest('[data-act]')?.dataset.act;
     const f = el.closest('[data-filter]');
     const tab = el.closest('[data-slot]');
-    const view = el.closest('[data-view]');
-    if (view) builder.view = view.dataset.view;
-    else if (tab) {
+    if (tab) {
       slot = Number(tab.dataset.slot);
       draft = [...p.decks[slot]]; // cambiar de hueco descarta lo no guardado
     } else if (f) builder.cost = f.dataset.filter.split(':')[1];
@@ -209,13 +203,16 @@ export function showDeckBuilder() {
     } else if (act === 'reset') draft = [...p.decks[slot]];
     else return;
     const y = app.querySelector('.screen').scrollTop; // seguir en el mismo sitio de la lista al añadir o quitar
+    const x = app.querySelector('.tray').scrollLeft;
     showDeckBuilder();
     app.querySelector('.screen').scrollTop = y;
+    app.querySelector('.tray').scrollLeft = x;
+    const added = add && app.querySelector(`.tray [data-remove="${add.dataset.add}"]`); // a mano: scrollIntoView movería también la lista
+    if (added) added.parentNode.scrollLeft = added.offsetLeft - added.parentNode.clientWidth / 2;
   });
 }
 
 // Al salir del constructor sin guardar, se descartan los cambios.
 export function resetDeckDraft() {
   draft = slot = null;
-  builder.view = 'deck';
 }
