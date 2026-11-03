@@ -16,6 +16,7 @@ import { showOnline, showPlayer } from './ui/online.js';
 import { showMail } from './ui/mail.js';
 import { showArena } from './ui/arena.js';
 import { showDaily, shareDaily } from './ui/daily.js';
+import { showForge } from './ui/forge.js';
 import { arenaIndex } from './core/arena.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction, escapeHtml } from './ui/account.js';
 import { updateMusic } from './ui/sound.js';
@@ -69,6 +70,7 @@ function showMenu() {
         <div class="home-extra">
           <button class="btn small ghost arena-btn" data-go="arena">${icon('trophy')}Arena<small>${p.trophies}</small></button>
           <button class="btn small ghost arena-btn" data-go="daily">${icon('flag')}Reto<small>${p.dailyDone === localDay(new Date()) ? icon('check') : `+${DAILY.coins}`}</small></button>
+          <button class="btn small ghost arena-btn" data-go="forge">${icon('shield')}Forja${p.forge ? `<small>${p.forge.wins}-${p.forge.losses}</small>` : ''}</button>
           <button class="btn small ghost" data-go="online">${icon('heart')}Con amigos</button>
           <button class="btn small ghost" data-act="pass">${icon('spark')}Pase ${passTier(p)}/${SEASON.tiers.length}</button>
         </div>
@@ -141,7 +143,8 @@ function showRules() {
 // ---------- Resultado ----------
 // mode: 'arena' | 'daily' | null. daily: { day, turns } si se ha ganado el reto.
 function showResult(won, rewards, draw, friendly, note, mode = null, daily = null) {
-  const back = friendly ? ['online', 'Jugar otra vez'] : mode === 'arena' ? ['arena', 'Volver a la Arena'] : mode === 'daily' ? ['daily', 'Volver al reto'] : ['battle', 'Jugar otra vez'];
+  const back = friendly ? ['online', 'Jugar otra vez'] : mode === 'arena' ? ['arena', 'Volver a la Arena'] : mode === 'daily' ? ['daily', 'Volver al reto']
+    : mode === 'forge' ? ['forge', 'Volver al desafío'] : ['battle', 'Jugar otra vez'];
   const levelUp = rewards && rewards.levelAfter > rewards.levelBefore;
   const art = won ? 'victory' : 'defeat';
   app.innerHTML = `
@@ -158,6 +161,7 @@ function showResult(won, rewards, draw, friendly, note, mode = null, daily = nul
         ${rewards.firstWinBonus ? `<p class="bonus">Primera victoria del día: incluye +${rewards.firstWinBonus} monedas</p>` : ''}
         ${rewards.arenaBonus ? `<p class="bonus">Premio de la arena: incluye +${rewards.arenaBonus} monedas</p>` : ''}
         ${rewards.daily ? `<p class="bonus">Reto del día: incluye +${rewards.daily} monedas</p>` : ''}
+        ${rewards.forge ? `<p class="bonus">Desafío de la Forja: ${rewards.forge.wins} V · ${rewards.forge.losses} D</p>` : ''}
       </div>` : `<p class="sub">${note || (friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.')}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
       ${daily ? `<p class="sub">Reto ganado en <b>${daily.turns}</b> turnos</p>` : ''}
@@ -291,5 +295,6 @@ register('online', showOnline);
 register('player', showPlayer);
 register('arena', showArena);
 register('daily', showDaily);
+register('forge', showForge);
 
 startApp();

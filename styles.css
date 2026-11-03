@@ -683,9 +683,14 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .c-back_s1p { --back-filter: sepia(0.9) saturate(2.4) brightness(1.1); }
 .reveal.many { gap: 8px 6px; }
 .reveal.many .flip { width: calc(25% - 6px); }
-.home-extra { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.home-extra .btn { width: 100%; gap: 6px; }
-.home-extra .arena-btn { gap: 8px; }
+.home-extra { width: 100%; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.home-extra .btn { width: 100%; gap: 6px; grid-column: span 3; }
+.home-extra .arena-btn { grid-column: span 2; gap: 5px; padding-left: 6px; padding-right: 6px; }
+.forge-pips { display: flex; gap: 6px; justify-content: center; }
+.pip { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--gold); opacity: 0.45; }
+.pip.loss { border-color: var(--red); }
+.pip.on { opacity: 1; background: var(--gold); }
+.pip.loss.on { background: var(--red); }
 .arena-btn small { font: 700 13px var(--display); color: var(--gold); }
 .arena-card { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
 .arena-trophies { display: inline-flex; align-items: center; gap: 8px; color: var(--gold); font-size: 34px; }

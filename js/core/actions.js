@@ -7,6 +7,7 @@ import { buyCard, buyCosmetic, buyOffer, buyUpgrade, equipCosmetic } from './sho
 import { claimMission } from './missions.js';
 import { claimAchievement } from './achievements.js';
 import { claimTier } from './pass.js';
+import { claimForge, enterForge } from './forge.js';
 import { sanitizeProfile } from './progression.js';
 
 const refuse = (profile, error) => ({ profile, error });
@@ -28,6 +29,8 @@ const ACTIONS = {
   equipCosmetic: (p, { id }) => equipCosmetic(p, id),
   buyUpgrade: (p, { id }) => buyUpgrade(p, id),
   claimWelcome: (p, _, ctx) => claimWelcome(p, ctx),
+  enterForge: (p) => enterForge(p),
+  claimForge: (p, _, ctx) => claimForge(p, ctx),
   claimMission: (p, { id }, ctx) => claimMission(p, id, ctx.now),
   claimAchievement: (p, { id }) => claimAchievement(p, id),
   claimTier: (p, { n, premium }, ctx) => (Number.isInteger(n) ? claimTier(p, n, premium === true, ctx) : refuse(p, 'Casilla no válida')),

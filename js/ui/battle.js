@@ -21,15 +21,16 @@ let battle = null;
 // net (partida con amigos): { room, seat, decks, seed, first, name? }. Sin él se juega contra la IA.
 // Con cuenta, la semilla, el rival y el mazo los da el servidor, que luego repite la partida con las jugadas guardadas.
 // mode (solo con cuenta): { arena: true }, el rival es el mazo de otro jugador y hay trofeos en juego (core/arena.js);
-// { daily: true }, el reto del día (core/daily.js).
+// { daily: true }, el reto del día (core/daily.js); { forge: true }, un combate del Desafío de la Forja (core/forge.js).
 export async function startBattle(net = null, mode = undefined) {
   if (net || !getCloudUser()) return setupBattle(net, null);
   app.innerHTML = `<section class="screen"><p class="sub preparing">${mode?.arena ? 'Buscando rival…' : 'Preparando la partida…'}</p></section>`;
   onTap(() => {});
   const ticket = await beginMatch(mode);
   if (mode && !ticket.seed) {
-    toast(mode.arena ? 'Sin conexión: la Arena necesita internet' : 'Sin conexión: el reto necesita internet');
-    return go(mode.arena ? 'arena' : 'daily');
+    const [what, screen] = mode.arena ? ['la Arena', 'arena'] : mode.forge ? ['el desafío', 'forge'] : ['el reto', 'daily'];
+    toast(`Sin conexión: ${what} necesita internet`);
+    return go(screen);
   }
   if (!ticket.id) toast(ticket.seed ? 'Has llegado al tope de hoy: esta partida no da recompensa' : 'Sin conexión: esta partida no da recompensa');
   setupBattle(null, ticket);
@@ -648,6 +649,7 @@ async function finishMatch() {
     daily = r.daily ?? null;
     note = r.pending ? 'Sin conexión: el resultado se sumará a tu cuenta cuando vuelva.' : r.error ?? '';
     if (!rewards && !r.pending && ticket.stake) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} Pierdes ${ticket.stake} trofeos.`;
+    if (!rewards && !r.pending && ticket.forge) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} En el desafío cuenta como derrota.`;
   } else if (ticket) note = 'Esta partida no da recompensa.';
   else if (!abandoned && !net) { // sin cuenta. Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
     const claim = claimMatchRewards(getProfile(), matchId, won, new Date(), matchStats(log, won, ME));
@@ -655,5 +657,5 @@ async function finishMatch() {
     rewards = claim.rewards;
   }
   battle = null;
-  go('result', won, rewards, draw, Boolean(net), note, ticket?.arena ? 'arena' : ticket?.daily ? 'daily' : null, daily);
+  go('result', won, rewards, draw, Boolean(net), note, ticket?.arena ? 'arena' : ticket?.daily ? 'daily' : ticket?.forge ? 'forge' : null, daily);
 }

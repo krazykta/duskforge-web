@@ -82,7 +82,7 @@ export function openPack(profile, { rng = Math.random, now = new Date(), pack = 
   return { profile: addProgress(p, { packs: 1 }, now), results };
 }
 
-function giftPacks(profile, packs, ctx) {
+export function giftPacks(profile, packs, ctx) {
   let p = profile;
   const results = [];
   for (const { pack, count } of packs) {

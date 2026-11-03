@@ -37,6 +37,17 @@ export const ARENA = {
 // Reto diario (decisión 43, core/daily.js): la misma partida para todos cada día; gana quien lo haga en menos turnos.
 export const DAILY = { coins: 100, top: 10, url: 'https://krazykta.github.io/duskforge-web/' };
 
+// Desafío de la Forja (decisión 44, core/forge.js): entrada, hasta maxWins victorias o maxLosses derrotas y premio por victorias.
+// Cada victoria busca rivales de la Arena con trophyStep trofeos más y les da levelsPerWin niveles de vida más.
+// prizes[n] es el premio con n victorias; pack es un índice de PACKS.
+export const FORGE = {
+  price: 300, maxWins: 7, maxLosses: 3, trophyStep: 150, levelsPerWin: 2,
+  prizes: [
+    { coins: 0, pack: 0 }, { coins: 50, pack: 0 }, { coins: 0, pack: 1 }, { coins: 150, pack: 1 },
+    { coins: 100, pack: 2 }, { coins: 150, pack: 3 }, { coins: 300, pack: 3 }, { coins: 300, pack: 4 },
+  ],
+};
+
 export const ECONOMY = {
   winCoins: 30,
   lossCoins: 15,

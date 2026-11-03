@@ -1,6 +1,6 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // Con cuenta las ejecuta el servidor (core/server.js); sin cuenta, el móvil, y ese progreso no sale de él.
-import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, COSMETIC_KINDS, MAIL, SEASON, UPGRADES } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, COSMETIC_KINDS, FORGE, MAIL, SEASON, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
@@ -19,6 +19,7 @@ export function newProfile() {
     coins: 0, fragments: 0, xp: 0, wins: 0, losses: 0,
     trophies: 0, bestTrophies: 0, // Arena (core/arena.js)
     dailyDone: null, // último día con el reto diario cobrado (core/daily.js)
+    forge: null, forgeRuns: 0, // Desafío de la Forja en marcha y cuántos se han empezado (core/forge.js)
     lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [], mailClaimed: [],
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
@@ -88,6 +89,8 @@ export function sanitizeProfile(raw) {
     coins: int(raw.coins), fragments: int(raw.fragments), xp: int(raw.xp), wins: int(raw.wins), losses: int(raw.losses),
     trophies: int(raw.trophies), bestTrophies: int(raw.bestTrophies),
     dailyDone: typeof raw.dailyDone === 'string' ? raw.dailyDone : null,
+    forge: isObj(raw.forge) ? { run: int(raw.forge.run), wins: int(raw.forge.wins, FORGE.maxWins), losses: int(raw.forge.losses, FORGE.maxLosses) } : null,
+    forgeRuns: int(raw.forgeRuns),
     lastFirstWinDay: typeof raw.lastFirstWinDay === 'string' ? raw.lastFirstWinDay : null,
     tutorialSeen: raw.tutorialSeen === true,
     welcomeClaimed: raw.welcomeClaimed === true,

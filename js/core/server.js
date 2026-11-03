@@ -3,6 +3,7 @@
 import { AI_DECKS, AI_HP, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON } from './config.js';
 import { arenaLevel, claimArena, validFoeDeck } from './arena.js';
 import { claimDaily, dailyChallenge, ownTurns } from './daily.js';
+import { claimForgeMatch, forgeLevel, forgeOver, forgeTrophies, markForgeStart } from './forge.js';
 import { claimMatchRewards, levelOf, localDay, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions } from './missions.js';
 import { claimMail } from './collection.js';
@@ -49,20 +50,28 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
   // Con id null la partida se juega igual, sin recompensa: se ha llegado al tope del día.
   // En la Arena el rival es el mazo de otro jugador (o la IA si no hay nadie cerca) y los trofeos en juego se quitan ya.
   // En el reto diario la partida es la del día (core/daily.js), igual para todos y con el rival a vida normal.
-  async function startMatch(uid, { arena = false, daily = false } = {}) {
+  // En el Desafío de la Forja el rival sale de la Arena, más fuerte con cada victoria, y se apunta ya una derrota.
+  async function startMatch(uid, { arena = false, daily = false, forge = false } = {}) {
     const { profile } = await read(uid);
-    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp), arena, foe: null, stake: 0, daily: null };
+    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp), arena, foe: null, stake: 0, daily: null, forge: null };
+    const foeNear = async (trophies) => {
+      const found = await db.arenaRival(uid, trophies, ARENA.spread);
+      return found && validFoeDeck(found.deck) ? { deck: found.deck, name: found.name ?? null, trophies: found.trophies } : null;
+    };
     if (daily) {
       const c = dailyChallenge(localDay(clock()));
       Object.assign(match, { seed: c.seed, first: c.first, rival: c.rival, deck: c.deck, level: AI_HP.fullAt, arena: false, daily: c.day });
+    } else if (forge) {
+      if (!profile.forge || forgeOver(profile.forge)) return { error: 'No tienes un desafío en marcha' };
+      Object.assign(match, { arena: false, foe: await foeNear(forgeTrophies(profile.forge)), level: forgeLevel(profile.forge), forge: profile.forge.run });
     } else if (arena) {
-      const found = await db.arenaRival(uid, profile.trophies, ARENA.spread);
-      match.foe = found && validFoeDeck(found.deck) ? { deck: found.deck, name: found.name ?? null, trophies: found.trophies } : null;
+      match.foe = await foeNear(profile.trophies);
       match.level = arenaLevel(profile.trophies, match.foe);
       match.stake = Math.min(ARENA.loss, profile.trophies);
     }
     const id = await db.startMatch(uid, match, ECONOMY.dailyMatches);
     if (id && match.stake) await change(uid, (p) => ({ profile: { ...p, trophies: Math.max(0, p.trophies - match.stake) } }));
+    if (id && match.forge) await change(uid, (p) => markForgeStart(p, match.forge));
     return { match: { ...match, id } };
   }
 
@@ -81,6 +90,7 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     const claim = (p) => {
       const c = claimMatchRewards(p, id, r.won, now, r.stats);
       if (day) return claimDaily(c, day, r.won);
+      if (m.forge) return claimForgeMatch(c, m.forge, r.won);
       return m.arena ? claimArena(c, m.stake, r.won) : c;
     };
     const done = r.counts ? await change(uid, claim) : { profile: (await read(uid)).profile };
@@ -140,7 +150,7 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     if (body?.v !== API_VERSION) return { error: 'Actualiza el juego para seguir', code: 'update' };
     const { op, args } = body;
     if (op === 'load') return { profile: (await read(uid)).profile, owned: await db.owned(uid) };
-    if (op === 'startMatch') return startMatch(uid, { arena: args?.arena === true, daily: args?.daily === true });
+    if (op === 'startMatch') return startMatch(uid, { arena: args?.arena === true, daily: args?.daily === true, forge: args?.forge === true });
     if (op === 'dailyBoard') {
       const day = localDay(clock());
       return { day, ...(await db.dailyBoard(uid, day, DAILY.top)) };
