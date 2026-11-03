@@ -164,7 +164,7 @@ function friendsHtml() {
 export function showOnline() {
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Amigos', 'menu')}
+      ${topBar('Amigos', 'modes')}
       <div class="friends-area">${friendsHtml()}</div>
       <details class="panel online-code">
         <summary><b>Sala con código</b><span class="sub">Para jugar sin cuenta</span></summary>

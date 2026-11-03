@@ -12,7 +12,7 @@ export function showArena() {
   const pct = next ? ((p.trophies - here.from) / (next.from - here.from)) * 100 : 100;
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Arena', 'menu')}
+      ${topBar('Arena', 'modes')}
       <div class="panel arena-card">
         <span class="arena-trophies">${icon('trophy')}<b>${p.trophies}</b></span>
         <b class="arena-name">${here.name}</b>

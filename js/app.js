@@ -1,17 +1,18 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { ARENA, DAILY, ECONOMY, COSMETICS, COSMETIC_KINDS, SEASON, WELCOME_GIFT } from './core/config.js';
+import { ARENA, ECONOMY, COSMETICS, COSMETIC_KINDS, SEASON, WELCOME_GIFT } from './core/config.js';
 import { COLLECTIBLE, RARITIES } from './core/collection.js';
 import { achievementList } from './core/achievements.js';
-import { levelOf, localDay, xpIntoLevel } from './core/progression.js';
+import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
-import { passTier } from './core/pass.js';
+import { claimableTiers, passTier } from './core/pass.js';
 import { avatarHtml, showAvatarPicker } from './ui/avatar.js';
 import { act, app, getCloudUser, getProfile, hasPremiumPass, mailSlot, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
 import { showReveal, showShop } from './ui/shop.js';
-import { showMissions } from './ui/missions.js';
+import { rewardText, showMissions } from './ui/missions.js';
+import { MODES, modesReady, showModes } from './ui/modes.js';
 import { showOnline, showPlayer } from './ui/online.js';
 import { showMail } from './ui/mail.js';
 import { showArena } from './ui/arena.js';
@@ -49,6 +50,9 @@ function showMenu() {
   const p = getProfile();
   const into = xpIntoLevel(p.xp);
   const title = COSMETICS.find((c) => c.id === p.cosmetics.title)?.name;
+  const tier = passTier(p);
+  const passInto = tier >= SEASON.tiers.length ? SEASON.xpPerTier : p.pass.xp % SEASON.xpPerTier;
+  const passReady = claimableTiers(p, hasPremiumPass());
   app.innerHTML = `
     <section class="screen scenic home">
       <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
@@ -67,13 +71,20 @@ function showMenu() {
           </span>
         </button>
         <button class="btn gold big-play" data-go="battle"><img src="img/ui/icon_play.webp" alt=""><span>Jugar<small>Mazo ${p.activeDeck + 1}</small></span></button>
-        <div class="home-extra">
-          <button class="btn small ghost arena-btn" data-go="arena">${icon('trophy')}Arena<small>${p.trophies}</small></button>
-          <button class="btn small ghost arena-btn" data-go="daily">${icon('flag')}Reto<small>${p.dailyDone === localDay(new Date()) ? icon('check') : `+${DAILY.coins}`}</small></button>
-          <button class="btn small ghost arena-btn" data-go="forge">${icon('shield')}Forja${p.forge ? `<small>${p.forge.wins}-${p.forge.losses}</small>` : ''}</button>
-          <button class="btn small ghost" data-go="online">${icon('heart')}Con amigos</button>
-          <button class="btn small ghost" data-act="pass">${icon('spark')}Pase ${passTier(p)}/${SEASON.tiers.length}</button>
-        </div>
+        <button class="panel home-link" data-go="modes">
+          <span class="modes-thumbs" aria-hidden="true">${MODES.slice(0, 4).map((m) => `<img src="img/cards/${m.art}.webp" alt="">`).join('')}</span>
+          <span class="summary-text"><b>Modos de juego</b><span class="sub">${MODES.map((m) => m.name).join(' · ')}</span></span>
+          ${modesReady(p) ? `<span class="badge">${modesReady(p)}</span>` : ''}${icon('next')}
+        </button>
+        <button class="panel home-link pass-link" data-act="pass">
+          <span class="tier-medal small"><b>${tier}</b></span>
+          <span class="summary-text">
+            <b>Pase de temporada</b>
+            <span class="xpbar"><span style="width:${(passInto / SEASON.xpPerTier) * 100}%"></span></span>
+            <span class="sub">${SEASON.tiers[tier] ? `Siguiente: ${rewardText(SEASON.tiers[tier].free)}` : '¡Pase completado!'}</span>
+          </span>
+          ${passReady ? `<span class="badge">${passReady}</span>` : ''}${icon('next')}
+        </button>
       </div>
     </section>`;
   onTap((el) => {
@@ -296,5 +307,6 @@ register('player', showPlayer);
 register('arena', showArena);
 register('daily', showDaily);
 register('forge', showForge);
+register('modes', showModes);
 
 startApp();

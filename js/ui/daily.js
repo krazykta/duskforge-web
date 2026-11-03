@@ -25,7 +25,7 @@ export async function showDaily() {
   const done = getProfile().dailyDone === c.day;
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Reto del día', 'menu')}
+      ${topBar('Reto del día', 'modes')}
       <div class="panel arena-card">
         <span class="arena-trophies">${icon('flag')}</span>
         <b class="arena-name">${dailyTitle(c)}</b>

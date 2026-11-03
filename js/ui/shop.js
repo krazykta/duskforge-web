@@ -96,7 +96,7 @@ function cardsView(p) {
 
 const COSMETIC_RARITY = { common: 'Común', rare: 'Raro', epic: 'Épico', legendary: 'Legendario' }; // dorso, título, marco y estandarte son masculinos
 
-const cosmeticPreview = (p, c) => (c.kind === 'frame' ? avatarHtml({ ...p, cosmetics: { ...p.cosmetics, frame: c.id } })
+export const cosmeticPreview = (p, c) => (c.kind === 'frame' ? avatarHtml({ ...p, cosmetics: { ...p.cosmetics, frame: c.id } })
   : c.kind === 'title' ? icon('flag') : '');
 
 function cosmeticRow(p, c) {

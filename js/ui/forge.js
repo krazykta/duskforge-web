@@ -16,7 +16,7 @@ export function showForge() {
   const over = forgeOver(f);
   app.innerHTML = `
     <section class="screen top">
-      ${topBar('Desafío de la Forja', 'menu')}
+      ${topBar('Desafío de la Forja', 'modes')}
       <div class="panel arena-card">
         <span class="arena-trophies">${icon('shield')}</span>
         ${f ? `

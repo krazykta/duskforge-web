@@ -161,6 +161,8 @@ export const COSMETICS = [
   { id: 'banner_abyss', kind: 'banner', name: 'Abismo', rarity: 'epic', price: 900 },
   { id: 'banner_blood', kind: 'banner', name: 'Luna de sangre', rarity: 'epic', price: 900 },
   { id: 'banner_gold', kind: 'banner', name: 'Oro de la forja', rarity: 'legendary', price: 1800 },
+  { id: 'banner_s1', kind: 'banner', name: 'Estandarte de ascuas', rarity: 'epic' },
+  { id: 'banner_s1p', kind: 'banner', name: 'Ocaso en llamas', rarity: 'legendary' },
   { id: 'back_ember', kind: 'back', name: 'Dorso de ascuas', rarity: 'common', price: 300 },
   { id: 'back_jade', kind: 'back', name: 'Dorso de jade', rarity: 'common', price: 300 },
   { id: 'back_abyss', kind: 'back', name: 'Dorso del abismo', rarity: 'common', price: 300 },
@@ -192,13 +194,17 @@ export const COSMETICS = [
 export const COSMETIC_KINDS = { frame: 'Marcos de avatar', banner: 'Estandartes del perfil', back: 'Dorsos de carta', title: 'Títulos' };
 
 // Pase de temporada: las casillas se ganan con la XP de las partidas. pack es un índice de PACKS.
-// Las casillas reclamadas se guardan como logros (s1_5, s1p_5) y el servidor las paga igual: al cambiar
-// o sumar temporada hay que copiar sus recompensas en el guard (lo comprueba test/server-guard.test.js).
+// Las casillas reclamadas se guardan como logros (s1_5, s1p_5). Una casilla puede juntar monedas, sobre y coleccionable.
+// Cada 5 casillas, un gran premio; cada 3, un sobre; el resto, monedas y fragmentos alternos (decisión 45).
 function seasonTier(n) {
-  const free = { 15: { cosmetic: 'title_s1' }, 30: { cosmetic: 'back_s1' } }[n]
-    ?? (n % 5 === 0 ? { pack: 1 } : n % 2 ? { coins: 40 } : { fragments: 30 });
-  const premium = { 10: { cosmetic: 'back_s1f' }, 20: { cosmetic: 'title_s1p' }, 30: { cosmetic: 'back_s1p' } }[n]
-    ?? (n % 5 === 0 ? { pack: 3 } : n % 2 ? { coins: 80 } : { fragments: 60 });
+  const free = {
+    5: { pack: 1 }, 10: { pack: 2 }, 15: { pack: 3, cosmetic: 'title_s1' }, 20: { pack: 2, coins: 200 },
+    25: { pack: 3, cosmetic: 'banner_s1' }, 30: { pack: 4, cosmetic: 'back_s1' },
+  }[n] ?? (n % 3 === 0 ? { pack: 0 } : n % 2 ? { coins: 75 } : { fragments: 50 });
+  const premium = {
+    5: { pack: 3 }, 10: { pack: 4, cosmetic: 'back_s1f' }, 15: { pack: 3, coins: 300 }, 20: { pack: 4, cosmetic: 'title_s1p' },
+    25: { pack: 4, cosmetic: 'banner_s1p' }, 30: { pack: 4, coins: 1000, cosmetic: 'back_s1p' },
+  }[n] ?? (n % 3 === 0 ? { pack: 1 } : n % 2 ? { coins: 150 } : { fragments: 100 });
   return { free, premium };
 }
 export const SEASON = {
