@@ -6,6 +6,7 @@ import { localDay, nextDayStart } from '../core/missions.js';
 import { dailyShop, isBought } from '../core/shop.js';
 import { act, app, getProfile, onTap, topBar, cardFace, artHtml, toast, wait } from './store.js';
 import { icon } from './icons.js';
+import { avatarHtml } from './avatar.js';
 import { sfx } from './sound.js';
 
 const pct = (x) => `${(x * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
@@ -93,6 +94,11 @@ function cardsView(p) {
     </div>`;
 }
 
+const COSMETIC_RARITY = { common: 'Común', rare: 'Raro', epic: 'Épico', legendary: 'Legendario' }; // dorso, título, marco y estandarte son masculinos
+
+const cosmeticPreview = (p, c) => (c.kind === 'frame' ? avatarHtml({ ...p, cosmetics: { ...p.cosmetics, frame: c.id } })
+  : c.kind === 'title' ? icon('flag') : '');
+
 function cosmeticRow(p, c) {
   const owned = p.cosmetics.owned.includes(c.id);
   const on = p.cosmetics[c.kind] === c.id;
@@ -101,8 +107,8 @@ function cosmeticRow(p, c) {
     : '<span class="sub">Del pase</span>';
   return `
     <div class="mission">
-      <span class="cos-preview ${c.kind} c-${c.id}" aria-hidden="true">${c.kind === 'title' ? icon('flag') : ''}</span>
-      <div class="mission-info"><b>${c.name}</b></div>
+      <span class="cos-preview ${c.kind} r-${c.rarity} c-${c.id}" aria-hidden="true">${cosmeticPreview(p, c)}</span>
+      <div class="mission-info"><b>${c.name}</b><span class="sub t-${c.rarity}">${COSMETIC_RARITY[c.rarity]}</span></div>
       ${action}
     </div>`;
 }
@@ -129,7 +135,9 @@ function upgradesView(p) {
 
 const RENDER = { offers: offersView, packs: packsView, cards: cardsView, extras: extrasView, upgrades: upgradesView };
 
-export function showShop() {
+// next: pestaña con la que abrir (el perfil lleva directo a Estilo).
+export function showShop(next) {
+  if (next) view = next;
   const p = getProfile();
   app.innerHTML = `
     <section class="screen top">

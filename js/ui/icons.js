@@ -7,6 +7,8 @@ const PATHS = {
   gear: '<path fill="currentColor" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 3-2 1.7a7 7 0 0 1 0 2l2 1.7-1.7 3-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6a7 7 0 0 1-1.7-.9l-2.5.9-1.7-3 2-1.7a7 7 0 0 1 0-2l-2-1.7 1.7-3 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z" transform="translate(0 1.5)"/>',
   help: '<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.3 9.4a2.8 2.8 0 1 1 4.3 2.4c-1 .6-1.6 1.2-1.6 2.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.4" r="1.3" fill="currentColor"/>',
   user: '<circle cx="12" cy="8" r="4.5" fill="currentColor"/><path fill="currentColor" d="M3.5 21.5c.6-5 4-8 8.5-8s7.9 3 8.5 8z"/>',
+  camera: '<path fill="currentColor" d="M8.5 4h7l1.5 2.5h3A1.5 1.5 0 0 1 21.5 8v10.5A1.5 1.5 0 0 1 20 20H4a1.5 1.5 0 0 1-1.5-1.5V8A1.5 1.5 0 0 1 4 6.5h3zM12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>',
+  image: '<rect x="2.5" y="4" width="19" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="9.5" r="2" fill="currentColor"/><path fill="currentColor" d="m4 18 5-5.5 3.5 3.5 3-3 4.5 5z"/>',
   mail: '<rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m3.5 7 8.5 6.5L20.5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
   next: '<path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   sword: '<path fill="currentColor" transform="rotate(45 12 12)" d="M12 .5 15 4v12.5H9V4zM5.5 17.6A1.6 1.6 0 0 1 7.1 16h9.8a1.6 1.6 0 0 1 0 3.2h-3.3v4.3h-3.2v-4.3H7.1a1.6 1.6 0 0 1-1.6-1.6z"/>',

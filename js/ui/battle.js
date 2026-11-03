@@ -4,10 +4,11 @@ import { CARD_BY_ID } from '../core/cards.js';
 import { attackStyle, fxElement, RANGED } from '../core/cardfx.js';
 import { createMatch, playCard, playError, cardTargets, attack, attackTargets, endTurn, concede, takeEvents, findUnit, actionError, stateSignature, HERO } from '../core/engine.js';
 import { aiAction, MIN_TURNS_TO_COUNT, setupMatch } from '../core/replay.js';
-import { claimMatchRewards } from '../core/progression.js';
+import { claimMatchRewards, levelOf } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
 import { app, beginMatch, endMatch, getCloudUser, getProfile, setProfile, go, onTap, wait, ask, artHtml, cardFace, toast } from './store.js';
 import { icon } from './icons.js';
+import { avatarHtml } from './avatar.js';
 import { sfx, eventSound } from './sound.js';
 import { motionOn, strikeFx, shootFx, castFx, healFx, auraFx, deathFx, landFx, shake } from './fx.js';
 
@@ -34,7 +35,7 @@ function setupBattle(net, ticket) {
   const rival = ticket?.rival ?? Math.floor(Math.random() * AI_DECKS.length);
   const state = net
     ? createMatch({ decks: net.decks, seed: net.seed, firstPlayer: net.first })
-    : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival });
+    : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival, level: ticket?.level ?? levelOf(getProfile().xp) });
   takeEvents(state);
   battle = {
     state,
@@ -100,7 +101,7 @@ function heroHtml(p, targets) {
   const life = pl.hp > battle.state.rules.startHp ? 'over' : pl.hp <= 5 ? 'low' : '';
   return `
     <div class="hero ${targets.has(k) ? 'targetable' : ''}" data-t="${k}" role="button" aria-label="${p === ME ? 'Tu héroe' : 'Héroe rival'}, ${pl.hp} de vida">
-      <img class="portrait" src="img/ui/${p === ME ? 'hero_player' : 'hero_foe'}.webp" alt="">
+      ${p === ME ? avatarHtml() : '<img class="portrait" src="img/ui/hero_foe.webp" alt="">'}
       <div class="who"><b>${p === ME ? 'Tú' : battle.rivalName}</b><div class="hp ${life}">${icon('heart')}${pl.hp}</div></div>
       <div class="meta">
         <div class="energy" aria-label="Energía ${pl.energy} de ${pl.maxEnergy}"><b>${pl.energy}/${pl.maxEnergy}</b>${gems}</div>

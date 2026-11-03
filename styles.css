@@ -62,7 +62,7 @@ body {
 .screen.scenic { background: linear-gradient(180deg, rgba(13, 9, 24, 0.3), rgba(13, 9, 24, 0.1) 30%, rgba(13, 9, 24, 0.7) 68%, rgba(13, 9, 24, 0.96)), url(img/ui/menu_bg.webp) center / cover; }
 /* Resto de pantallas de menú: el mismo paisaje, más oscuro para que se lean listas y cartas */
 .screen.top { background: linear-gradient(rgba(13, 9, 24, 0.9), rgba(13, 9, 24, 0.95)), url(img/ui/menu_bg.webp) center / cover; }
-.screen.battle, .cos-preview.board { background: linear-gradient(var(--board-tint, rgba(13, 10, 24, 0.6)), var(--board-tint, rgba(13, 10, 24, 0.6))), url(img/ui/battle_bg.webp) center / cover; }
+.screen.battle { background: linear-gradient(var(--board-tint, rgba(13, 10, 24, 0.6)), var(--board-tint, rgba(13, 10, 24, 0.6))), url(img/ui/battle_bg.webp) center / cover; }
 
 /* Logo con fondo transparente; se encoge en pantallas bajas para que quepa el menú entero */
 .logo { margin: 0; line-height: 0; }
@@ -671,12 +671,16 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .c-back_jade { --back-filter: sepia(1) saturate(2) hue-rotate(105deg); }
 .c-back_abyss { --back-filter: sepia(1) saturate(2.2) hue-rotate(170deg) brightness(0.85); }
 .c-back_blood { --back-filter: sepia(1) saturate(3.2) hue-rotate(-45deg) brightness(0.8); }
+.c-back_ash { --back-filter: grayscale(1) contrast(1.15) brightness(0.9); }
+.c-back_frost { --back-filter: sepia(1) saturate(1.6) hue-rotate(160deg) brightness(1.2); }
+.c-back_venom { --back-filter: sepia(1) saturate(3) hue-rotate(50deg); }
+.c-back_rose { --back-filter: sepia(1) saturate(2.4) hue-rotate(275deg); }
+.c-back_storm { --back-filter: sepia(1) saturate(4) hue-rotate(150deg) brightness(1.15); }
+.c-back_void { --back-filter: sepia(1) saturate(1.5) hue-rotate(220deg) brightness(0.5) contrast(1.7); }
+.c-back_sun { --back-filter: sepia(1) saturate(4) hue-rotate(5deg) brightness(1.25); }
+.c-back_s1f { --back-filter: sepia(1) saturate(2) hue-rotate(-5deg) contrast(1.35) brightness(0.9); }
 .c-back_s1 { --back-filter: sepia(1) saturate(2.6) hue-rotate(235deg); }
 .c-back_s1p { --back-filter: sepia(0.9) saturate(2.4) brightness(1.1); }
-.c-board_frost { --board-tint: rgba(16, 48, 84, 0.62); }
-.c-board_forest { --board-tint: rgba(14, 54, 36, 0.62); }
-.c-board_crimson { --board-tint: rgba(78, 12, 24, 0.62); }
-.c-board_s1p { --board-tint: rgba(92, 48, 8, 0.6); }
 .reveal.many { gap: 8px 6px; }
 .reveal.many .flip { width: calc(25% - 6px); }
 .home-extra { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -701,3 +705,51 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 .dot-wait { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--gold); animation: claim-glow 1.2s ease-in-out infinite; }
 
 body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+
+/* ---------- Avatar, marcos y estandartes (ui/avatar.js). El marco es el fondo que asoma alrededor de la imagen. ---------- */
+.avatar { --frame: linear-gradient(160deg, #f8b84a, #6b3f12 60%, #f8b84a); position: relative; flex: none; display: block; width: 42px; height: 42px; padding: 2px;
+  border-radius: 50%; overflow: hidden; isolation: isolate; }
+.avatar::before { content: ''; position: absolute; inset: -30%; background: var(--frame); z-index: -1; animation: var(--frame-move, none); }
+.avatar img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; object-position: 50% 15%; background: #10142a; }
+.avatar.big { width: 88px; height: 88px; padding: 4px; }
+.icon-btn .avatar { width: 34px; height: 34px; }
+.cos-preview.frame { border: 0; width: 48px; height: 48px; }
+.cos-preview.frame .avatar { width: 46px; height: 46px; padding: 3px; }
+@keyframes frame-spin { to { transform: rotate(1turn); } }
+@keyframes frame-glow { 50% { box-shadow: 0 0 4px var(--glow); } }
+.c-frame_iron { --frame: linear-gradient(160deg, #b7bec7, #3b4148 55%, #8a929b); }
+.c-frame_bronze { --frame: linear-gradient(160deg, #f0b57a, #6b3d17 55%, #c98a4b); }
+.c-frame_bone { --frame: linear-gradient(160deg, #f6eed8, #8f7f5e 55%, #e3d6b5); }
+.c-frame_silver { --frame: conic-gradient(#f4f7fb, #8e99a8, #ffffff, #6f7a89, #f4f7fb); box-shadow: 0 0 8px rgba(220, 230, 255, 0.45); }
+.c-frame_frost { --frame: conic-gradient(#e0f7ff, #38bdf8, #ffffff, #0e7fb8, #e0f7ff); box-shadow: 0 0 9px rgba(56, 189, 248, 0.55); }
+.c-frame_jade { --frame: conic-gradient(#b9f5d0, #10985a, #e9fff2, #0b6b40, #b9f5d0); box-shadow: 0 0 9px rgba(16, 185, 105, 0.5); }
+.c-frame_amethyst { --frame: conic-gradient(#f0d9ff, #8b3fd9, #4a1580, #c084fc, #f0d9ff); --frame-move: frame-spin 7s linear infinite; box-shadow: 0 0 11px rgba(168, 85, 247, 0.6); }
+.c-frame_ember { --frame: conic-gradient(#ffe08a, #ff6a1a, #8a1a05, #ff9a3c, #ffe08a); --frame-move: frame-spin 5s linear infinite; --glow: rgba(255, 106, 26, 0.3);
+  box-shadow: 0 0 14px rgba(255, 106, 26, 0.75); animation: frame-glow 1.8s ease-in-out infinite; }
+.c-frame_abyss { --frame: conic-gradient(#5eead4, #0b1d3a, #6d28d9, #020617, #5eead4); --frame-move: frame-spin 9s linear infinite reverse; box-shadow: 0 0 12px rgba(94, 234, 212, 0.45); }
+.c-frame_dusk { --frame: conic-gradient(#fff3c4, #f5c542, #ff7a1a, #7c2d92, #f5c542, #fff3c4); --frame-move: frame-spin 4s linear infinite; --glow: rgba(245, 197, 66, 0.35);
+  box-shadow: 0 0 16px rgba(245, 197, 66, 0.85); animation: frame-glow 2.2s ease-in-out infinite; }
+.c-frame_forge { --frame: conic-gradient(#ffffff, #ffd27a, #ff5a0a, #ffffff, #f5c542, #b8340a, #ffffff); --frame-move: frame-spin 2.6s linear infinite; --glow: rgba(255, 140, 40, 0.4);
+  box-shadow: 0 0 18px rgba(255, 170, 60, 0.95), 0 0 4px #fff; animation: frame-glow 1.4s ease-in-out infinite; }
+.avatar.big[class*='c-frame_'] { padding: 5px; }
+.cos-preview.banner, .profile-card.banner { background: var(--banner); background-size: var(--banner-size, cover); animation: var(--banner-move, none); }
+.cos-preview.banner { width: 54px; height: 40px; }
+@keyframes banner-shine { to { background-position: -200% 0; } }
+.c-banner_night { --banner: radial-gradient(1px 1px at 18% 28%, #fff, transparent), radial-gradient(1px 1px at 64% 18%, #fff, transparent), radial-gradient(1.5px 1.5px at 42% 72%, #ffe9b0, transparent),
+  radial-gradient(1px 1px at 86% 58%, #fff, transparent), radial-gradient(1px 1px at 8% 82%, #cfe3ff, transparent), radial-gradient(1.5px 1.5px at 76% 88%, #fff, transparent), linear-gradient(180deg, #0d1233, #24184a); }
+.c-banner_moss { --banner: radial-gradient(circle at 15% 110%, rgba(120, 200, 90, 0.35), transparent 55%), linear-gradient(160deg, #173a24, #0b1a12 60%, #23401f); }
+.c-banner_ember { --banner: radial-gradient(circle at 80% 125%, rgba(255, 120, 30, 0.6), transparent 60%), radial-gradient(circle at 10% 120%, rgba(255, 60, 20, 0.35), transparent 50%), linear-gradient(180deg, #2a1022, #120814); }
+.c-banner_frost { --banner: radial-gradient(circle at 20% -25%, rgba(190, 235, 255, 0.5), transparent 60%), linear-gradient(180deg, #16385a, #0b1626); }
+.c-banner_abyss { --banner: radial-gradient(circle at 50% 60%, rgba(80, 45, 180, 0.55), transparent 70%), radial-gradient(circle at 90% 0%, rgba(94, 234, 212, 0.2), transparent 45%), linear-gradient(180deg, #05060f, #120a2a); }
+.c-banner_blood { --banner: radial-gradient(circle at 88% 28%, #e23b3b 0 11px, rgba(226, 59, 59, 0.35) 12px, transparent 42%), linear-gradient(180deg, #2c0a14, #12060a); }
+.c-banner_gold { --banner: linear-gradient(110deg, #2e1e08 20%, #8a5a12 38%, #c9952e 50%, #8a5a12 62%, #2e1e08 80%); --banner-size: 200% 100%; --banner-move: banner-shine 5s linear infinite; }
+/* Perfil */
+.avatar-btn { position: relative; flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+.avatar-btn .lvl { position: absolute; right: -4px; bottom: -4px; width: 32px; height: 32px; font-size: 14px; }
+.progress-row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin: 10px 0 5px; }
+.progress-row b { font-weight: 700; }
+.profile-more { width: 100%; margin-top: 14px; }
+.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.avatar-opt { aspect-ratio: 1; padding: 0; border-radius: 50%; overflow: hidden; border-width: 2px; border-style: solid; background: #10142a; cursor: pointer; } /* el color lo pone .r-<rareza> */
+.avatar-opt img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; display: block; }
+.avatar-opt.on, .avatar-picker .btn.on { outline: 3px solid var(--gold); outline-offset: 2px; }

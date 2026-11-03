@@ -1,6 +1,6 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // Con cuenta las ejecuta el servidor (core/server.js); sin cuenta, el móvil, y ese progreso no sale de él.
-import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, MAIL, SEASON, UPGRADES } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, COSMETIC_KINDS, MAIL, SEASON, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
@@ -25,7 +25,8 @@ export function newProfile() {
     foils: [],
     achievements: [], // logros (core/achievements.js) y casillas del pase (core/pass.js) ya reclamados
     upgrades: { deck: 0, purse: 0 }, // nivel de cada mejora comprada
-    cosmetics: { owned: [], back: null, board: null, title: null },
+    cosmetics: { owned: [], ...Object.fromEntries(Object.keys(COSMETIC_KINDS).map((k) => [k, null])) },
+    avatar: null, // null: el héroe de siempre; 'card:<id>': una carta que se tiene; 'photo': la foto guardada en el móvil
     pass: { season: SEASON.id, xp: 0 },
     shop: { day: null, bought: [] }, // lo comprado hoy en el escaparate
     packHistory: [],
@@ -93,7 +94,8 @@ export function sanitizeProfile(raw) {
     foils: [...new Set(strList(raw.foils).filter((id) => collection[id]))],
     achievements: [...new Set(strList(raw.achievements).filter((id) => KNOWN_ACHIEVEMENTS.has(id) || isTierClaim(id)))],
     upgrades,
-    cosmetics: { owned, back: equipped('back'), board: equipped('board'), title: equipped('title') },
+    cosmetics: { owned, ...Object.fromEntries(Object.keys(COSMETIC_KINDS).map((k) => [k, equipped(k)])) },
+    avatar: raw.avatar === 'photo' || (typeof raw.avatar === 'string' && raw.avatar.startsWith('card:') && collection[raw.avatar.slice(5)]) ? raw.avatar : null,
     pass: { season: SEASON.id, xp: raw.pass?.season === SEASON.id ? int(raw.pass.xp) : 0 }, // cada temporada empieza de cero
     shop: { day: typeof raw.shop?.day === 'string' ? raw.shop.day : null, bought: strList(raw.shop?.bought) },
     packHistory: Array.isArray(raw.packHistory)

@@ -1,10 +1,12 @@
 // Punto de entrada: menú, cómo jugar, resultado y ajustes. Registra el resto de pantallas.
-import { ECONOMY, COSMETICS, SEASON, WELCOME_GIFT } from './core/config.js';
-import { CARD_BY_ID } from './core/cards.js';
+import { ECONOMY, COSMETICS, COSMETIC_KINDS, SEASON, WELCOME_GIFT } from './core/config.js';
+import { COLLECTIBLE, RARITIES } from './core/collection.js';
+import { achievementList } from './core/achievements.js';
 import { levelOf, xpIntoLevel } from './core/progression.js';
 import { refreshMissions, missionDef } from './core/missions.js';
 import { passTier } from './core/pass.js';
-import { act, app, getCloudUser, getProfile, mailSlot, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
+import { avatarHtml, showAvatarPicker } from './ui/avatar.js';
+import { act, app, getCloudUser, getProfile, hasPremiumPass, mailSlot, savePrefs, register, go, onTap, topBar, resources, countUp, toast } from './ui/store.js';
 import { icon } from './ui/icons.js';
 import { startBattle } from './ui/battle.js';
 import { showCollection, showDeckBuilder, resetDeckDraft } from './ui/collection.js';
@@ -48,7 +50,7 @@ function showMenu() {
       <div class="embers" aria-hidden="true">${'<i></i>'.repeat(10)}</div>
       <header class="topbar">
         ${resources()}
-        <button class="icon-btn gear" data-go="profile" aria-label="Perfil">${icon('user')}${mailSlot()}</button>
+        <button class="icon-btn gear" data-go="profile" aria-label="Perfil">${avatarHtml(p)}${mailSlot()}</button>
       </header>
       <h1 class="logo"><img src="img/ui/logo.webp" alt="DUSKFORGE"></h1>
       <div class="home-foot stagger">
@@ -107,7 +109,7 @@ function showRules() {
     <div class="modal" role="dialog" aria-label="Cómo jugar">
       <h2>Cómo jugar</h2>
       <ul>
-        <li>Deja la vida del rival en <b>0</b> para ganar. Ambos empezáis con 20, pero curarte puede llevarte por encima: la vida no tiene tope.</li>
+        <li>Deja la vida del rival en <b>0</b> para ganar. Empiezas con 20, y curarte puede llevarte por encima: la vida no tiene tope. Hasta el nivel 10 el rival empieza con menos; después, con más a medida que subes.</li>
         <li>Los mazos tienen <b>24 cartas</b> y cada jugador puede tener hasta <b>10 criaturas</b> en la mesa.</li>
         <li>Cada turno ganas <b>energía</b> ${icon('gem')} (hasta 5). Las cartas cuestan energía. Los dos empezáis con 4 cartas.</li>
         <li>Toca una carta para verla en grande y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo. Las criaturas del rival también se pueden ampliar.</li>
@@ -157,30 +159,62 @@ function showResult(won, rewards, draw, friendly, note) {
 }
 
 // ---------- Perfil ----------
+const RARITY_PLURAL = { common: 'Comunes', rare: 'Raras', epic: 'Épicas', legendary: 'Legendarias' };
+const bar = (n, total) => `<span class="xpbar"><span style="width:${total ? Math.min(100, (n / total) * 100) : 0}%"></span></span>`;
+const progress = (label, n, total, cls = '') => `
+  <div class="progress-row"><span class="${cls}">${label}</span><b>${n} / ${total}</b></div>${bar(n, total)}`;
+
+// Todo lo conseguido de un vistazo. Los trofeos de la Arena se añadirán aquí cuando exista.
 function showProfile() {
   const p = getProfile();
   const user = getCloudUser();
   const into = xpIntoLevel(p.xp);
   const title = COSMETICS.find((c) => c.id === p.cosmetics.title)?.name;
-  const owned = Object.keys(p.collection);
+  const owned = new Set(Object.keys(p.collection).filter((id) => p.collection[id] > 0));
+  const played = p.wins + p.losses;
+  const achievements = achievementList(p);
+  const { banner } = p.cosmetics;
   const row = (attrs, ic, label, hint, extra = '') => `
     <button class="profile-row" ${attrs}>${icon(ic)}<span><b>${label}</b><span class="sub">${hint}</span></span>${extra}${icon('next')}</button>`;
+  const stat = (n, label) => `<span><b>${n}</b><small>${label}</small></span>`;
   app.innerHTML = `
     <section class="screen top">
       ${topBar('Perfil', 'menu')}
-      <div class="panel profile-card">
-        <span class="lvl"><b>${levelOf(p.xp)}</b></span>
+      <div class="panel profile-card ${banner ? `banner c-${banner}` : ''}">
+        <button class="avatar-btn" data-act="avatar" aria-label="Cambiar avatar">${avatarHtml(p, 'big')}<span class="lvl"><b>${levelOf(p.xp)}</b></span></button>
         <span class="summary-text">
           <b>${title ?? `Nivel ${levelOf(p.xp)}`}</b>
           <span class="sub">${user ? escapeHtml(user.email) : 'Sin cuenta'}</span>
-          <span class="xpbar" title="${into} / ${ECONOMY.xpPerLevel} XP"><span style="width:${(into / ECONOMY.xpPerLevel) * 100}%"></span></span>
+          <span class="sub">Nivel ${levelOf(p.xp)} · ${into} / ${ECONOMY.xpPerLevel} XP</span>
+          ${bar(into, ECONOMY.xpPerLevel)}
         </span>
       </div>
-      <div class="panel profile-stats">
-        <span><b>${p.wins}</b><small>Victorias</small></span>
-        <span><b>${p.losses}</b><small>Derrotas</small></span>
-        <span><b>${owned.length}</b><small>Cartas</small></span>
-        <span><b>${owned.filter((id) => CARD_BY_ID[id].rarity === 'legendary').length}</b><small>Legendarias</small></span>
+      <div class="panel">
+        <h3>Combates</h3>
+        <div class="profile-stats">
+          ${stat(played, 'Partidas')}${stat(p.wins, 'Victorias')}${stat(p.losses, 'Derrotas')}${stat(played ? `${Math.round((p.wins / played) * 100)} %` : '–', 'Ganadas')}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Colección</h3>
+        ${progress('Cartas distintas', owned.size, COLLECTIBLE.length)}
+        ${RARITIES.map((r) => progress(RARITY_PLURAL[r], COLLECTIBLE.filter((c) => c.rarity === r && owned.has(c.id)).length, COLLECTIBLE.filter((c) => c.rarity === r).length, `t-${r}`)).join('')}
+        <div class="progress-row"><span>Brillantes</span><b>${p.foils.length}</b></div>
+      </div>
+      <div class="panel">
+        <h3>Logros y temporada</h3>
+        ${progress('Logros conseguidos', achievements.filter((a) => a.claimed).length, achievements.length)}
+        ${progress(`Pase «${SEASON.name}»${hasPremiumPass() ? ' · premium' : ''}`, passTier(p), SEASON.tiers.length)}
+        <div class="progress-row"><span>Huecos de mazo</span><b>${p.decks.length}</b></div>
+        <div class="progress-row"><span>Bolsa de botín</span><b>Nivel ${p.upgrades.purse}</b></div>
+      </div>
+      <div class="panel">
+        <h3>Estilo</h3>
+        ${Object.entries(COSMETIC_KINDS).map(([kind, label]) => {
+          const all = COSMETICS.filter((c) => c.kind === kind);
+          return progress(label, all.filter((c) => p.cosmetics.owned.includes(c.id)).length, all.length);
+        }).join('')}
+        <button class="btn small ghost profile-more" data-act="style">${icon('spark')}Ver marcos, estandartes y más</button>
       </div>
       <nav class="panel profile-menu" aria-label="Perfil">
         ${row('data-go="mail"', 'mail', 'Buzón', 'Noticias, ofertas y regalos', mailSlot())}
@@ -191,6 +225,8 @@ function showProfile() {
     </section>`;
   onTap((el) => {
     if (el.closest('[data-act="rules"]')) showRules();
+    if (el.closest('[data-act="avatar"]')) showAvatarPicker(showProfile);
+    if (el.closest('[data-act="style"]')) go('shop', 'extras');
   });
 }
 

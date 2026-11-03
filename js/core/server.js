@@ -1,7 +1,7 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
 import { AI_DECKS, API_VERSION, ECONOMY, MAIL, SEASON } from './config.js';
-import { claimMatchRewards, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
+import { claimMatchRewards, levelOf, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions } from './missions.js';
 import { claimMail } from './collection.js';
 import { isAction, runAction } from './actions.js';
@@ -39,7 +39,7 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
   // Con id null la partida se juega igual, sin recompensa: se ha llegado al tope del día.
   async function startMatch(uid) {
     const { profile } = await read(uid);
-    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck };
+    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp) };
     return { match: { ...match, id: await db.startMatch(uid, match, ECONOMY.dailyMatches) } };
   }
 

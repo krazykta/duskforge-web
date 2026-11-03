@@ -24,6 +24,7 @@ const OLD_KEY = 'cardclash.profile'; // nombre anterior del juego: se lee una ve
 const OWNER_KEY = 'duskforge.owner'; // de qué cuenta es el perfil guardado en este dispositivo
 const PENDING_KEY = 'duskforge.pending'; // resultado de una partida que aún no ha llegado al servidor
 const MAIL_SEEN_KEY = 'duskforge.mailSeen'; // fecha del último mensaje leído en este dispositivo
+export const PHOTO_KEY = 'duskforge.photo'; // foto del avatar (ui/avatar.js): nunca sale del dispositivo
 
 function load() {
   try { return sanitizeProfile(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(OLD_KEY))); } catch { return newProfile(); }
@@ -36,8 +37,8 @@ export function setProfile(next) {
   profile = next;
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch { /* sin almacenamiento: se juega igual */ }
   document.body.classList.toggle('reduced-motion', profile.settings.reducedMotion);
-  const { back, board } = profile.cosmetics;
-  document.documentElement.className = [back, board].filter(Boolean).map((id) => `c-${id}`).join(' ');
+  const { back } = profile.cosmetics;
+  document.documentElement.className = back ? `c-${back}` : '';
   paintTabs();
 }
 
@@ -218,6 +219,7 @@ export function disconnectCloud() {
   inbox = [];
   store(OWNER_KEY, null);
   store(MAIL_SEEN_KEY, null);
+  store(PHOTO_KEY, null); // en un móvil compartido, la siguiente cuenta no hereda la foto
   setCloudState('off');
   replaceProfile(null); // este dispositivo vuelve a empezar; la partida sigue en la cuenta (salvo si se borró)
 }

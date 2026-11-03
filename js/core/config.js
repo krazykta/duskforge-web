@@ -13,7 +13,11 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 4; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 5; // súbelo si cambia lo que el juego y la función de Supabase se envían
+
+// Vida inicial del rival según el nivel del jugador (ver aiHp en core/replay.js). Del nivel 1 al fullAt sube de start
+// a RULES.startHp: el mazo inicial gana el 74 % con 8 y el 46 % con 20. Después, +1 cada everyLevels niveles hasta max.
+export const AI_HP = { start: 8, fullAt: 10, everyLevels: 2, max: 30 };
 
 export const ECONOMY = {
   winCoins: 30,
@@ -102,25 +106,55 @@ export const UPGRADES = [
 ];
 
 // Coleccionables: no cambian el combate. Sin precio solo se consiguen en el pase. Su aspecto está en styles.css (.c-<id>).
+// La rareza es como la de las cartas y sube con el precio.
 export const COSMETICS = [
-  { id: 'back_ember', kind: 'back', name: 'Dorso de ascuas', price: 300 },
-  { id: 'back_jade', kind: 'back', name: 'Dorso de jade', price: 300 },
-  { id: 'back_abyss', kind: 'back', name: 'Dorso del abismo', price: 300 },
-  { id: 'back_blood', kind: 'back', name: 'Dorso de sangre', price: 500 },
-  { id: 'back_s1', kind: 'back', name: 'Dorso de la temporada' },
-  { id: 'back_s1p', kind: 'back', name: 'Dorso dorado' },
-  { id: 'board_frost', kind: 'board', name: 'Mesa de escarcha', price: 400 },
-  { id: 'board_forest', kind: 'board', name: 'Mesa del bosque', price: 400 },
-  { id: 'board_crimson', kind: 'board', name: 'Mesa carmesí', price: 600 },
-  { id: 'board_s1p', kind: 'board', name: 'Mesa de la forja' },
-  { id: 'title_wander', kind: 'title', name: 'Errante del Ocaso', price: 150 },
-  { id: 'title_forge', kind: 'title', name: 'Alma de la Forja', price: 250 },
-  { id: 'title_abyss', kind: 'title', name: 'Voz del Abismo', price: 400 },
-  { id: 'title_legend', kind: 'title', name: 'Leyenda Viva', price: 1000 },
-  { id: 'title_s1', kind: 'title', name: 'Ascua Eterna' },
-  { id: 'title_s1p', kind: 'title', name: 'Corona de Ascuas' },
+  { id: 'frame_iron', kind: 'frame', name: 'Marco de hierro', rarity: 'common', price: 200 },
+  { id: 'frame_bronze', kind: 'frame', name: 'Marco de bronce', rarity: 'common', price: 200 },
+  { id: 'frame_bone', kind: 'frame', name: 'Marco de hueso', rarity: 'common', price: 250 },
+  { id: 'frame_silver', kind: 'frame', name: 'Marco de plata', rarity: 'rare', price: 450 },
+  { id: 'frame_frost', kind: 'frame', name: 'Marco de escarcha', rarity: 'rare', price: 450 },
+  { id: 'frame_jade', kind: 'frame', name: 'Marco de jade', rarity: 'rare', price: 500 },
+  { id: 'frame_amethyst', kind: 'frame', name: 'Marco de amatista', rarity: 'epic', price: 900 },
+  { id: 'frame_ember', kind: 'frame', name: 'Marco de brasas', rarity: 'epic', price: 900 },
+  { id: 'frame_abyss', kind: 'frame', name: 'Marco del abismo', rarity: 'epic', price: 1000 },
+  { id: 'frame_dusk', kind: 'frame', name: 'Marco del Ocaso', rarity: 'legendary', price: 1800 },
+  { id: 'frame_forge', kind: 'frame', name: 'Marco de la Forja Eterna', rarity: 'legendary', price: 2000 },
+  { id: 'banner_night', kind: 'banner', name: 'Noche estrellada', rarity: 'common', price: 200 },
+  { id: 'banner_moss', kind: 'banner', name: 'Bosque de musgo', rarity: 'common', price: 200 },
+  { id: 'banner_ember', kind: 'banner', name: 'Brasas', rarity: 'rare', price: 450 },
+  { id: 'banner_frost', kind: 'banner', name: 'Ventisca', rarity: 'rare', price: 450 },
+  { id: 'banner_abyss', kind: 'banner', name: 'Abismo', rarity: 'epic', price: 900 },
+  { id: 'banner_blood', kind: 'banner', name: 'Luna de sangre', rarity: 'epic', price: 900 },
+  { id: 'banner_gold', kind: 'banner', name: 'Oro de la forja', rarity: 'legendary', price: 1800 },
+  { id: 'back_ember', kind: 'back', name: 'Dorso de ascuas', rarity: 'common', price: 300 },
+  { id: 'back_jade', kind: 'back', name: 'Dorso de jade', rarity: 'common', price: 300 },
+  { id: 'back_abyss', kind: 'back', name: 'Dorso del abismo', rarity: 'common', price: 300 },
+  { id: 'back_ash', kind: 'back', name: 'Dorso de ceniza', rarity: 'common', price: 300 },
+  { id: 'back_frost', kind: 'back', name: 'Dorso de escarcha', rarity: 'common', price: 300 },
+  { id: 'back_venom', kind: 'back', name: 'Dorso de veneno', rarity: 'rare', price: 400 },
+  { id: 'back_rose', kind: 'back', name: 'Dorso de rosas', rarity: 'rare', price: 400 },
+  { id: 'back_blood', kind: 'back', name: 'Dorso de sangre', rarity: 'rare', price: 500 },
+  { id: 'back_storm', kind: 'back', name: 'Dorso de tormenta', rarity: 'rare', price: 500 },
+  { id: 'back_void', kind: 'back', name: 'Dorso del vacío', rarity: 'epic', price: 700 },
+  { id: 'back_sun', kind: 'back', name: 'Dorso solar', rarity: 'epic', price: 800 },
+  { id: 'back_s1', kind: 'back', name: 'Dorso de la temporada', rarity: 'rare' },
+  { id: 'back_s1f', kind: 'back', name: 'Dorso de la forja', rarity: 'epic' },
+  { id: 'back_s1p', kind: 'back', name: 'Dorso dorado', rarity: 'legendary' },
+  { id: 'title_wander', kind: 'title', name: 'Errante del Ocaso', rarity: 'common', price: 150 },
+  { id: 'title_ember', kind: 'title', name: 'Llama Indómita', rarity: 'common', price: 200 },
+  { id: 'title_forge', kind: 'title', name: 'Alma de la Forja', rarity: 'common', price: 250 },
+  { id: 'title_dusk', kind: 'title', name: 'Eco del Crepúsculo', rarity: 'common', price: 300 },
+  { id: 'title_ash', kind: 'title', name: 'Filo de Ceniza', rarity: 'rare', price: 350 },
+  { id: 'title_abyss', kind: 'title', name: 'Voz del Abismo', rarity: 'rare', price: 400 },
+  { id: 'title_nameless', kind: 'title', name: 'Sombra sin Nombre', rarity: 'rare', price: 500 },
+  { id: 'title_heart', kind: 'title', name: 'Corazón de Brasa', rarity: 'epic', price: 600 },
+  { id: 'title_legend', kind: 'title', name: 'Leyenda Viva', rarity: 'legendary', price: 1000 },
+  { id: 'title_myth', kind: 'title', name: 'Mito del Ocaso', rarity: 'legendary', price: 1500 },
+  { id: 'title_s1', kind: 'title', name: 'Ascua Eterna', rarity: 'epic' },
+  { id: 'title_s1p', kind: 'title', name: 'Corona de Ascuas', rarity: 'legendary' },
 ];
-export const COSMETIC_KINDS = { back: 'Dorsos de carta', board: 'Mesas de combate', title: 'Títulos' };
+// La mesa de combate no es un coleccionable: la elige el juego (más adelante, según la arena).
+export const COSMETIC_KINDS = { frame: 'Marcos de avatar', banner: 'Estandartes del perfil', back: 'Dorsos de carta', title: 'Títulos' };
 
 // Pase de temporada: las casillas se ganan con la XP de las partidas. pack es un índice de PACKS.
 // Las casillas reclamadas se guardan como logros (s1_5, s1p_5) y el servidor las paga igual: al cambiar
@@ -128,7 +162,7 @@ export const COSMETIC_KINDS = { back: 'Dorsos de carta', board: 'Mesas de combat
 function seasonTier(n) {
   const free = { 15: { cosmetic: 'title_s1' }, 30: { cosmetic: 'back_s1' } }[n]
     ?? (n % 5 === 0 ? { pack: 1 } : n % 2 ? { coins: 40 } : { fragments: 30 });
-  const premium = { 10: { cosmetic: 'board_s1p' }, 20: { cosmetic: 'title_s1p' }, 30: { cosmetic: 'back_s1p' } }[n]
+  const premium = { 10: { cosmetic: 'back_s1f' }, 20: { cosmetic: 'title_s1p' }, 30: { cosmetic: 'back_s1p' } }[n]
     ?? (n % 5 === 0 ? { pack: 3 } : n % 2 ? { coins: 80 } : { fragments: 60 });
   return { free, premium };
 }

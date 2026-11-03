@@ -12,10 +12,10 @@ import { sanitizeProfile } from './progression.js';
 const refuse = (profile, error) => ({ profile, error });
 const onCard = (fn) => (p, { id }) => (CARD_BY_ID[id] ? fn(p, id) : refuse(p, 'Carta no válida'));
 
-// Ajustes y mazos no dan ventaja por sí solos: sanitizeProfile descarta cualquier mazo con cartas que no se tengan.
-function savePrefs(p, { settings = p.settings, decks = p.decks, activeDeck = p.activeDeck, tutorialSeen = false }) {
+// Ajustes, mazos y avatar no dan ventaja por sí solos: sanitizeProfile descarta los mazos y avatares con cartas que no se tengan.
+function savePrefs(p, { settings = p.settings, decks = p.decks, activeDeck = p.activeDeck, tutorialSeen = false, avatar = p.avatar }) {
   const list = Array.isArray(decks) ? decks : p.decks;
-  return { profile: sanitizeProfile({ ...p, settings, decks: list, activeDeck, deck: list[activeDeck], tutorialSeen: p.tutorialSeen || tutorialSeen }) };
+  return { profile: sanitizeProfile({ ...p, settings, decks: list, activeDeck, deck: list[activeDeck], tutorialSeen: p.tutorialSeen || tutorialSeen, avatar }) };
 }
 
 const ACTIONS = {
