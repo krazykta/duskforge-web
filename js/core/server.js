@@ -11,12 +11,14 @@ const SAVE_TRIES = 5;
 const MIN_MS_PER_TURN = 150; // pasar turno sin parar con el rival rápido no baja de aquí: menos que esto solo lo hace un programa
 const MAX_BODY = 200000; // una partida de MAX_MOVES jugadas cabe de sobra
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// shortcut: límite por cuenta en Postgres (0007), provisional hasta pasar a un VPS; no protege la cuota de llamadas de Supabase.
+const PER_MINUTE = 120; // jugando normal no se pasa de unas pocas por minuto
 
 const randomUint = () => crypto.getRandomValues(new Uint32Array(1))[0];
 const random = () => randomUint() / 2 ** 32;
 
-// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail (ver supabase/functions/game/index.ts).
-export function createGame({ db, clock = () => new Date(), rng = random }) {
+// db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit (ver supabase/functions/game/index.ts).
+export function createGame({ db, clock = () => new Date(), rng = random, perMinute = PER_MINUTE }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
     if (row.data.version > PROFILE_VERSION) throw new Error('perfil más nuevo que esta función'); // sanitizeProfile lo pondría a cero
@@ -66,6 +68,7 @@ export function createGame({ db, clock = () => new Date(), rng = random }) {
 
   // body: { v, op, args }. Los errores de juego se devuelven; los de infraestructura se lanzan.
   return async function handle(uid, body) {
+    if (!(await db.hit(uid, perMinute))) return { error: 'Vas demasiado rápido: espera un minuto', code: 'busy' };
     if (body?.v !== API_VERSION) return { error: 'Actualiza el juego para seguir', code: 'update' };
     const { op, args } = body;
     if (op === 'load') return { profile: (await read(uid)).profile, owned: await db.owned(uid) };
@@ -97,7 +100,8 @@ export function httpHandler({ handle, userOf, origins }) {
       if (!uid) return reply({ error: 'Vuelve a entrar en tu cuenta', code: 'auth' }, 401);
       const text = await req.text();
       if (text.length > MAX_BODY) return reply({ error: 'Demasiados datos' }, 413);
-      return reply(await handle(uid, JSON.parse(text)));
+      const r = await handle(uid, JSON.parse(text));
+      return reply(r, r.code === 'busy' ? 429 : 200); // el juego trata el 429 como falta de red y reintenta más tarde
     } catch (err) {
       if (err instanceof SyntaxError) return reply({ error: 'Petición no válida' }, 400);
       console.error(err);
