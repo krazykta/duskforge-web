@@ -1,6 +1,7 @@
 // Modos de juego (decisión 45): cada modo con su ilustración, qué es y cómo va. Un modo nuevo solo añade una entrada a MODES.
-import { ARENA, DAILY, FORGE } from '../core/config.js';
+import { ARENA, DAILY, FORGE, TOURNAMENT } from '../core/config.js';
 import { arenaIndex } from '../core/arena.js';
+import { weekLeft } from './tournament.js';
 import { localDay } from '../core/progression.js';
 import { app, getCloudUser, getProfile, topBar } from './store.js';
 import { icon } from './icons.js';
@@ -12,6 +13,9 @@ export const MODES = [
   { id: 'arena', section: 'Competir', name: 'Arena', icon: 'trophy', art: 'chained_gladiator', account: true,
     text: 'Mazos reales de otros jugadores. Gana trofeos y sube de arena.',
     status: (p) => [`${ARENA.arenas[arenaIndex(p.trophies)].name} · ${p.trophies}`, false] },
+  { id: 'tournament', section: 'Competir', name: 'Torneo semanal', icon: 'crown', art: 'knight_commander', account: true,
+    text: `Cada victoria en la Arena suma puntos. El lunes, los ${TOURNAMENT.top} mejores cobran en el buzón.`,
+    status: () => [`Termina en ${weekLeft()}`, false] },
   { id: 'daily', section: 'Desafíos', name: 'Reto del día', icon: 'flag', art: 'great_clockmaker', account: true,
     text: 'La misma partida para todos. Gana en menos turnos y entra en la tabla.',
     status: (p) => (p.dailyDone === today() ? ['Hecho hoy', false] : [`+${DAILY.coins} monedas hoy`, true]) },

@@ -17,6 +17,7 @@ import { showOnline, showPlayer } from './ui/online.js';
 import { showMail } from './ui/mail.js';
 import { showArena } from './ui/arena.js';
 import { showDaily, shareDaily } from './ui/daily.js';
+import { showTournament } from './ui/tournament.js';
 import { showForge } from './ui/forge.js';
 import { arenaIndex } from './core/arena.js';
 import { startApp, showAuth, showSupport, accountPanel, accountAction, escapeHtml } from './ui/account.js';
@@ -172,6 +173,7 @@ function showResult(won, rewards, draw, friendly, note, mode = null, daily = nul
         ${rewards.firstWinBonus ? `<p class="bonus">Primera victoria del día: incluye +${rewards.firstWinBonus} monedas</p>` : ''}
         ${rewards.arenaBonus ? `<p class="bonus">Premio de la arena: incluye +${rewards.arenaBonus} monedas</p>` : ''}
         ${rewards.daily ? `<p class="bonus">Reto del día: incluye +${rewards.daily} monedas</p>` : ''}
+        ${rewards.tournament ? `<p class="bonus">Torneo semanal: +${rewards.tournament} puntos</p>` : ''}
         ${rewards.forge ? `<p class="bonus">Desafío de la Forja: ${rewards.forge.wins} V · ${rewards.forge.losses} D</p>` : ''}
       </div>` : `<p class="sub">${note || (friendly ? 'Las partidas con amigos no dan recompensa.' : 'Terminó demasiado pronto: no cuenta como partida ni da recompensa.')}</p>`}
       ${levelUp ? `<div class="levelup">${icon('up')} ¡Has subido a nivel ${rewards.levelAfter}!</div>` : ''}
@@ -308,5 +310,6 @@ register('arena', showArena);
 register('daily', showDaily);
 register('forge', showForge);
 register('modes', showModes);
+register('tournament', showTournament);
 
 startApp();

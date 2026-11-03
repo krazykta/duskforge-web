@@ -95,6 +95,7 @@ async function request(op, args) {
 // Amigos e invitaciones (ui/online.js): no tocan la partida guardada.
 export const friendsCall = (op, args) => request(op, args);
 export const dailyBoard = () => request('dailyBoard'); // la tabla del reto diario (ui/daily.js)
+export const tournamentBoard = () => request('tournamentBoard'); // la tabla del torneo semanal (ui/tournament.js)
 export const onInvite = (fn) => (inviteHandler = fn);
 function startInvites(user) {
   stopInvites?.();
@@ -254,7 +255,7 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'modes', player: 'online', modes: 'menu', arena: 'modes', daily: 'modes', forge: 'modes' }; // pantallas que se abren encima de otra
+const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'modes', player: 'online', modes: 'menu', arena: 'modes', daily: 'modes', forge: 'modes', tournament: 'modes' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;

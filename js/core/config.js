@@ -48,6 +48,18 @@ export const FORGE = {
   ],
 };
 
+// Torneo semanal (decisión 46, migración 0013): cada victoria de Arena da points[arena] puntos a la semana del lunes (UTC).
+// El lunes, cada puesto hasta upTo recibe su gift por el buzón (mismo formato que public.mail.gift; pack es un índice de PACKS).
+export const TOURNAMENT = {
+  points: [10, 12, 15, 20], top: 10,
+  prizes: [
+    { upTo: 1, gift: { coins: 1000, packs: [{ pack: 4, count: 2 }] } },
+    { upTo: 2, gift: { coins: 700, packs: [{ pack: 4, count: 1 }] } },
+    { upTo: 3, gift: { coins: 500, packs: [{ pack: 3, count: 1 }] } },
+    { upTo: 10, gift: { coins: 250, packs: [{ pack: 2, count: 1 }] } },
+  ],
+};
+
 export const ECONOMY = {
   winCoins: 30,
   lossCoins: 15,

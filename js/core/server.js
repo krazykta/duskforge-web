@@ -1,11 +1,11 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
-import { AI_DECKS, AI_HP, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON } from './config.js';
-import { arenaLevel, claimArena, validFoeDeck } from './arena.js';
+import { AI_DECKS, AI_HP, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON, TOURNAMENT } from './config.js';
+import { arenaIndex, arenaLevel, claimArena, validFoeDeck } from './arena.js';
 import { claimDaily, dailyChallenge, ownTurns } from './daily.js';
 import { claimForgeMatch, forgeLevel, forgeOver, forgeTrophies, markForgeStart } from './forge.js';
 import { claimMatchRewards, levelOf, localDay, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
-import { refreshMissions } from './missions.js';
+import { refreshMissions, weekKey } from './missions.js';
 import { claimMail } from './collection.js';
 import { isAction, runAction } from './actions.js';
 import { replayMatch } from './replay.js';
@@ -28,7 +28,8 @@ const FRIEND_TEXT = {
 };
 
 // db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit,
-// setName, social, addFriend, answerFriend, related, invite, arenaRival, dailyRecord, dailyBoard (ver supabase/functions/game/index.ts).
+// setName, social, addFriend, answerFriend, related, invite, arenaRival, dailyRecord, dailyBoard,
+// tournamentAdd, tournamentBoard, tournamentPay (ver supabase/functions/game/index.ts).
 export function createGame({ db, clock = () => new Date(), rng = random, perMinute = PER_MINUTE }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
@@ -96,9 +97,15 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     const done = r.counts ? await change(uid, claim) : { profile: (await read(uid)).profile };
     const turns = ownTurns(r.turns, m.first);
     if (day && r.won) await db.dailyRecord(uid, day, turns); // también sin recompensa: la marca vale aunque se pase del tope
+    const points = m.arena && r.won && r.counts ? TOURNAMENT.points[arenaIndex(done.profile.trophies)] : 0;
+    if (points) await db.tournamentAdd(uid, weekKey(now), points);
     await db.closeMatch(uid, id);
-    return { profile: done.profile, rewards: done.rewards ?? null, ...(day && r.won && { daily: { day, turns } }) };
+    const rewards = done.rewards && points ? { ...done.rewards, tournament: points } : done.rewards ?? null;
+    return { profile: done.profile, rewards, ...(day && r.won && { daily: { day, turns } }) };
   }
+
+  // shortcut: solo paga la semana anterior; si una semana entera nadie abre el juego, la de antes se queda sin pagar.
+  const payLastWeek = () => db.tournamentPay(weekKey(new Date(clock().getTime() - 7 * 864e5)), TOURNAMENT.prizes);
 
   // El mensaje se busca entre los de este jugador: un id ajeno o caducado no sirve aunque exista.
   async function collectMail(uid, id) {
@@ -155,8 +162,16 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
       const day = localDay(clock());
       return { day, ...(await db.dailyBoard(uid, day, DAILY.top)) };
     }
+    if (op === 'tournamentBoard') {
+      await payLastWeek();
+      const week = weekKey(clock());
+      return { week, ...(await db.tournamentBoard(uid, week, TOURNAMENT.top)) };
+    }
     if (op === 'finishMatch') return finishMatch(uid, args ?? {});
-    if (op === 'mail') return { mail: await db.mail(uid, MAIL.shown) };
+    if (op === 'mail') {
+      await payLastWeek(); // el buzón se mira al abrir el juego: así el premio llega el lunes sin tareas programadas
+      return { mail: await db.mail(uid, MAIL.shown) };
+    }
     if (op === 'claimMail') return collectMail(uid, args?.id);
     if (['social', 'setName', 'addFriend', 'answerFriend', 'viewPlayer', 'invite'].includes(op)) return friendOp(uid, op, args ?? {});
     if (!isAction(op)) return { error: 'Acción no válida' };
