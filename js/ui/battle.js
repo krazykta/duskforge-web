@@ -20,15 +20,16 @@ let battle = null;
 
 // net (partida con amigos): { room, seat, decks, seed, first, name? }. Sin él se juega contra la IA.
 // Con cuenta, la semilla, el rival y el mazo los da el servidor, que luego repite la partida con las jugadas guardadas.
-// arena: el rival es el mazo de otro jugador y hay trofeos en juego (core/arena.js); solo con cuenta.
-export async function startBattle(net = null, { arena = false } = {}) {
+// mode (solo con cuenta): { arena: true }, el rival es el mazo de otro jugador y hay trofeos en juego (core/arena.js);
+// { daily: true }, el reto del día (core/daily.js).
+export async function startBattle(net = null, mode = undefined) {
   if (net || !getCloudUser()) return setupBattle(net, null);
-  app.innerHTML = `<section class="screen"><p class="sub preparing">${arena ? 'Buscando rival…' : 'Preparando la partida…'}</p></section>`;
+  app.innerHTML = `<section class="screen"><p class="sub preparing">${mode?.arena ? 'Buscando rival…' : 'Preparando la partida…'}</p></section>`;
   onTap(() => {});
-  const ticket = await beginMatch(arena);
-  if (arena && !ticket.seed) {
-    toast('Sin conexión: la Arena necesita internet');
-    return go('arena');
+  const ticket = await beginMatch(mode);
+  if (mode && !ticket.seed) {
+    toast(mode.arena ? 'Sin conexión: la Arena necesita internet' : 'Sin conexión: el reto necesita internet');
+    return go(mode.arena ? 'arena' : 'daily');
   }
   if (!ticket.id) toast(ticket.seed ? 'Has llegado al tope de hoy: esta partida no da recompensa' : 'Sin conexión: esta partida no da recompensa');
   setupBattle(null, ticket);
@@ -638,11 +639,13 @@ async function finishMatch() {
   document.querySelector('.log-bg')?.remove();
   let rewards = null;
   let note = '';
+  let daily = null;
   if (ticket?.id) {
     battle.message = 'Guardando la partida…';
     renderBattle();
     const r = await endMatch(ticket.id, moves);
     rewards = r.rewards ?? null;
+    daily = r.daily ?? null;
     note = r.pending ? 'Sin conexión: el resultado se sumará a tu cuenta cuando vuelva.' : r.error ?? '';
     if (!rewards && !r.pending && ticket.stake) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} Pierdes ${ticket.stake} trofeos.`;
   } else if (ticket) note = 'Esta partida no da recompensa.';
@@ -652,5 +655,5 @@ async function finishMatch() {
     rewards = claim.rewards;
   }
   battle = null;
-  go('result', won, rewards, draw, Boolean(net), note, Boolean(ticket?.arena));
+  go('result', won, rewards, draw, Boolean(net), note, ticket?.arena ? 'arena' : ticket?.daily ? 'daily' : null, daily);
 }

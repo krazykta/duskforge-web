@@ -34,6 +34,9 @@ export const ARENA = {
   ],
 };
 
+// Reto diario (decisión 43, core/daily.js): la misma partida para todos cada día; gana quien lo haga en menos turnos.
+export const DAILY = { coins: 100, top: 10, url: 'https://krazykta.github.io/duskforge-web/' };
+
 export const ECONOMY = {
   winCoins: 30,
   lossCoins: 15,

@@ -94,6 +94,7 @@ async function request(op, args) {
 
 // Amigos e invitaciones (ui/online.js): no tocan la partida guardada.
 export const friendsCall = (op, args) => request(op, args);
+export const dailyBoard = () => request('dailyBoard'); // la tabla del reto diario (ui/daily.js)
 export const onInvite = (fn) => (inviteHandler = fn);
 function startInvites(user) {
   stopInvites?.();
@@ -167,11 +168,12 @@ export function markMailSeen() {
   paintMail();
 }
 
-// Pide al servidor una partida contra la IA, o de Arena. Sin respuesta devuelve {}: se juega igual, sin recompensa.
-export async function beginMatch(arena = false) {
+// Pide al servidor una partida contra la IA, de Arena ({ arena: true }) o del reto diario ({ daily: true }).
+// Sin respuesta devuelve {}: se juega igual, sin recompensa.
+export async function beginMatch(mode) {
   await flushPrefs();
   await sendResult();
-  return (await request('startMatch', arena ? { arena } : undefined)).match ?? {};
+  return (await request('startMatch', mode)).match ?? {};
 }
 
 // El resultado se guarda antes de enviarlo: si no hay red o se cierra la app, se reenvía después.
@@ -252,7 +254,7 @@ export const replaceProfile = (raw) => setProfile(refreshMissions(raw ? sanitize
 const screens = {};
 const TABS = [['collection', 'Colección', 'collection'], ['deck', 'Mazos', 'deck'], ['menu', 'Jugar'], ['shop', 'Tienda', 'shop'], ['missions', 'Misiones', 'missions']];
 const tabOf = (name) => TABS.findIndex(([id]) => id === name);
-const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu', player: 'online', arena: 'menu' }; // pantallas que se abren encima de otra
+const PARENT = { profile: 'menu', settings: 'profile', support: 'profile', mail: 'profile', auth: 'menu', online: 'menu', player: 'online', arena: 'menu', daily: 'menu' }; // pantallas que se abren encima de otra
 let screen = null;
 let cameFrom = null;
 let tapHandler = null;

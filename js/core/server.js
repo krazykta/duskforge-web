@@ -1,8 +1,9 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
-import { AI_DECKS, API_VERSION, ARENA, ECONOMY, MAIL, SEASON } from './config.js';
+import { AI_DECKS, AI_HP, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON } from './config.js';
 import { arenaLevel, claimArena, validFoeDeck } from './arena.js';
-import { claimMatchRewards, levelOf, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
+import { claimDaily, dailyChallenge, ownTurns } from './daily.js';
+import { claimMatchRewards, levelOf, localDay, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions } from './missions.js';
 import { claimMail } from './collection.js';
 import { isAction, runAction } from './actions.js';
@@ -26,7 +27,7 @@ const FRIEND_TEXT = {
 };
 
 // db: getProfile, insertProfile, saveProfile, owned, startMatch, getMatch, closeMatch, mail, hit,
-// setName, social, addFriend, answerFriend, related, invite, arenaRival (ver supabase/functions/game/index.ts).
+// setName, social, addFriend, answerFriend, related, invite, arenaRival, dailyRecord, dailyBoard (ver supabase/functions/game/index.ts).
 export function createGame({ db, clock = () => new Date(), rng = random, perMinute = PER_MINUTE }) {
   async function read(uid) {
     const row = await db.getProfile(uid) ?? await db.insertProfile(uid, newProfile());
@@ -47,10 +48,14 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
 
   // Con id null la partida se juega igual, sin recompensa: se ha llegado al tope del día.
   // En la Arena el rival es el mazo de otro jugador (o la IA si no hay nadie cerca) y los trofeos en juego se quitan ya.
-  async function startMatch(uid, arena) {
+  // En el reto diario la partida es la del día (core/daily.js), igual para todos y con el rival a vida normal.
+  async function startMatch(uid, { arena = false, daily = false } = {}) {
     const { profile } = await read(uid);
-    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp), arena, foe: null, stake: 0 };
-    if (arena) {
+    const match = { seed: randomUint(), first: randomUint() % 2, rival: randomUint() % AI_DECKS.length, deck: profile.deck, level: levelOf(profile.xp), arena, foe: null, stake: 0, daily: null };
+    if (daily) {
+      const c = dailyChallenge(localDay(clock()));
+      Object.assign(match, { seed: c.seed, first: c.first, rival: c.rival, deck: c.deck, level: AI_HP.fullAt, arena: false, daily: c.day });
+    } else if (arena) {
       const found = await db.arenaRival(uid, profile.trophies, ARENA.spread);
       match.foe = found && validFoeDeck(found.deck) ? { deck: found.deck, name: found.name ?? null, trophies: found.trophies } : null;
       match.level = arenaLevel(profile.trophies, match.foe);
@@ -72,13 +77,17 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
       return { error: 'Esta partida no se pudo verificar' };
     }
     // Se paga antes de cerrar y claimMatchRewards es idempotente: un fallo entre medias se arregla reenviando.
+    const day = m.daily; // 'YYYY-MM-DD' o null
     const claim = (p) => {
       const c = claimMatchRewards(p, id, r.won, now, r.stats);
+      if (day) return claimDaily(c, day, r.won);
       return m.arena ? claimArena(c, m.stake, r.won) : c;
     };
     const done = r.counts ? await change(uid, claim) : { profile: (await read(uid)).profile };
+    const turns = ownTurns(r.turns, m.first);
+    if (day && r.won) await db.dailyRecord(uid, day, turns); // también sin recompensa: la marca vale aunque se pase del tope
     await db.closeMatch(uid, id);
-    return { profile: done.profile, rewards: done.rewards ?? null };
+    return { profile: done.profile, rewards: done.rewards ?? null, ...(day && r.won && { daily: { day, turns } }) };
   }
 
   // El mensaje se busca entre los de este jugador: un id ajeno o caducado no sirve aunque exista.
@@ -131,7 +140,11 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     if (body?.v !== API_VERSION) return { error: 'Actualiza el juego para seguir', code: 'update' };
     const { op, args } = body;
     if (op === 'load') return { profile: (await read(uid)).profile, owned: await db.owned(uid) };
-    if (op === 'startMatch') return startMatch(uid, args?.arena === true);
+    if (op === 'startMatch') return startMatch(uid, { arena: args?.arena === true, daily: args?.daily === true });
+    if (op === 'dailyBoard') {
+      const day = localDay(clock());
+      return { day, ...(await db.dailyBoard(uid, day, DAILY.top)) };
+    }
     if (op === 'finishMatch') return finishMatch(uid, args ?? {});
     if (op === 'mail') return { mail: await db.mail(uid, MAIL.shown) };
     if (op === 'claimMail') return collectMail(uid, args?.id);
