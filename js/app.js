@@ -136,6 +136,7 @@ function showRules() {
         <li><b>Guardián</b> debe ser atacado primero. <b>Ímpetu</b> ataca al entrar. <b>Escudo</b> anula un golpe. <b>Vampírico</b> te cura al atacar.</li>
         <li><b>Letal</b> destruye a la criatura que dañe. <b>Sigilo</b>: nadie puede atacarla ni apuntarla hasta que ataque. <b>Furia</b>: ataca dos veces por turno. Una criatura <b>congelada</b> ${icon('snow')} no ataca en su siguiente turno.</li>
         <li>Una criatura <b>silenciada</b> ${icon('mute')} pierde sus palabras clave y su habilidad. <b>Debilitar</b> le quita ataque; con 0 de ataque no puede atacar. <b>Transformar</b> la convierte en otra criatura (como un Sapito Maldito 0/1).</li>
+        <li><b>Combo</b> ${icon('bolt')}: el efecto extra solo se cumple si ya jugaste otra carta ese turno, así que juega antes una barata. Algunas criaturas reaccionan <b>cuando muere otra criatura aliada</b>, y algunas cartas solo mejoran a las que tienen una palabra clave, como Guardián o Furia.</li>
         <li>Gana monedas ${icon('coin')} jugando y con misiones para comprar sobres. Las cartas repetidas dan fragmentos ${icon('shard')} para fabricar las que quieras.</li>
         <li>Las cartas son <b>comunes</b>, <b>raras</b>, <b>épicas</b> o <b>legendarias</b>. En un mazo puedes llevar 2 copias de cada una, pero solo 1 de cada legendaria.</li>
         <li>Mira tu <b>Buzón</b> ${icon('mail')} en el Perfil: ahí llegan noticias, ofertas y regalos.</li>

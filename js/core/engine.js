@@ -37,7 +37,7 @@ export function createMatch({ decks, seed = Date.now(), firstPlayer = 0, rules =
     players: decks.map((deck) => {
       if (deck.length !== rules.deckSize) throw new Error(`El mazo debe tener ${rules.deckSize} cartas`);
       for (const id of deck) if (!CARD_BY_ID[id]) throw new Error(`Carta desconocida: ${id}`);
-      return { hp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [] };
+      return { hp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [], played: 0 }; // played: cartas jugadas este turno (Combo)
     }),
   };
   state.players.forEach((pl, i) => (pl.deck = shuffle(state, [...decks[i]])));
@@ -65,6 +65,7 @@ function startTurn(state, p, drawCard = true) {
   state.turnNumber++;
   pl.maxEnergy = Math.min(state.rules.maxEnergy, pl.maxEnergy + 1);
   pl.energy = pl.maxEnergy;
+  pl.played = 0;
   pl.board.forEach((u) => { u.ready = !u.frozen; u.frozen = false; u.furyUsed = false; });
   emit(state, { type: 'turn', player: p });
   if (drawCard) draw(state, p);
@@ -126,6 +127,11 @@ function resolveDeaths(state) {
       emit(state, { type: 'death', player: p, uid: u.uid, card: u.id });
       const e = unitEffect(u);
       if (e && e.trigger === 'death') applyEffect(state, p, e, null, null);
+      // Sinergia: criaturas que reaccionan cuando cae otra aliada.
+      for (const ally of [...state.players[p].board]) {
+        const ae = unitEffect(ally);
+        if (ae && ae.trigger === 'allyDeath' && ally.hp > 0) applyEffect(state, p, ae, null, ally);
+      }
     }
   }
   checkGameOver(state);
@@ -192,7 +198,7 @@ function applyEffect(state, p, effect, target, source) {
     }
     case 'buffAll':
       for (const u of state.players[p].board) {
-        if (u === source) continue;
+        if (u === source || (effect.only && !u[effect.only])) continue; // only: solo las que tienen esa palabra clave
         u.atk += a; u.hp += a; u.maxHp += a;
         emit(state, { type: 'buff', player: p, uid: u.uid });
       }
@@ -215,7 +221,7 @@ function applyEffect(state, p, effect, target, source) {
       break;
     case 'shieldAll':
       for (const u of state.players[p].board) {
-        if (u === source) continue;
+        if (u === source || (effect.only && !u[effect.only])) continue;
         u.shield = true;
         emit(state, { type: 'buff', player: p, uid: u.uid });
       }
@@ -324,9 +330,12 @@ export function playCard(state, p, handIndex, target = null) {
   const card = CARD_BY_ID[id];
   pl.energy -= card.cost;
   emit(state, { type: 'play', player: p, card: id });
+  const combo = card.combo && pl.played > 0; // Combo: ya habías jugado otra carta este turno
+  pl.played++;
+  let u = null;
 
   if (card.type === 'unit') {
-    const u = summon(state, p, id);
+    u = summon(state, p, id);
     if (card.effect && card.effect.trigger === 'play') applyEffect(state, p, card.effect, target, u);
   } else {
     applyEffect(state, p, card.effect, target, null);
@@ -335,6 +344,10 @@ export function playCard(state, p, handIndex, target = null) {
       const e = unitEffect(u);
       if (e && e.trigger === 'spell' && u.hp > 0) applyEffect(state, p, e, null, u);
     }
+  }
+  if (combo) {
+    emit(state, { type: 'combo', player: p, card: id });
+    applyEffect(state, p, card.combo, null, u);
   }
   resolveDeaths(state);
   return { ok: true };

@@ -53,12 +53,12 @@ function isUseful(state, p, card) {
   const foeBoard = state.players[other(p)].board;
   if (e.kind === 'damageAllEnemies') return foeBoard.length > 0;
   if (e.kind === 'damageAll') return foeBoard.length > me.board.length; // solo si sale ganando
-  if (e.kind === 'buffAll') return me.board.length >= 2;
+  if (e.kind === 'buffAll') return me.board.filter((u) => !e.only || u[e.only]).length >= (e.only ? 1 : 2);
   if (e.kind === 'silence') return foeBoard.some((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.drain || CARD_BY_ID[u.id].effect));
   if (e.kind === 'silenceAll') return foeBoard.filter((u) => !u.silenced && (u.guard || u.shield || u.poison || u.fury || u.stealth || CARD_BY_ID[u.id].effect)).length >= 2;
   if (e.kind === 'grant') return me.board.some((u) => !u[e.keyword]);
   if (e.kind === 'freezeAll') return foeBoard.filter((u) => !u.frozen && u.atk > 0).length >= 2;
-  if (e.kind === 'shieldAll') return me.board.filter((u) => !u.shield).length >= 2;
+  if (e.kind === 'shieldAll') return me.board.filter((u) => !u.shield && (!e.only || u[e.only])).length >= (e.only ? 1 : 2);
   if (e.kind === 'weaken') return foeBoard.some((u) => u.atk >= 2);
   if (e.kind === 'summon') return me.board.length < state.rules.boardSize;
   if (e.kind === 'energy') {
@@ -72,9 +72,13 @@ function isUseful(state, p, card) {
 function choosePlay(state, p) {
   const hand = state.players[p].hand;
   const order = hand.map((id, i) => i).sort((a, b) => CARD_BY_ID[hand[b]].cost - CARD_BY_ID[hand[a]].cost);
+  const me = state.players[p];
+  // Una carta con Combo espera si otra carta útil cabe antes que ella este mismo turno.
+  const waits = (i) => CARD_BY_ID[hand[i]].combo && me.played === 0 && hand.some((id, j) => j !== i
+    && CARD_BY_ID[id].cost + CARD_BY_ID[hand[i]].cost <= me.energy && isUseful(state, p, CARD_BY_ID[id]) && !playError(state, p, j, cardTargets(state, p, j)[0] ?? null));
   for (const i of order) {
     const card = CARD_BY_ID[hand[i]];
-    if (!isUseful(state, p, card)) continue;
+    if (!isUseful(state, p, card) || waits(i)) continue;
     const targets = cardTargets(state, p, i);
     const target = targets.length ? chooseCardTarget(state, p, card, targets) : null;
     if (!playError(state, p, i, target)) return { type: 'play', handIndex: i, target };
