@@ -322,23 +322,7 @@ export function go(name, ...args) {
   change.finished.catch(() => {}).finally(() => delete document.documentElement.dataset.motion);
 }
 
-// Deslizar el dedo cambia de pestaña. Los carriles de filtros, los campos y las ventanas conservan su gesto.
-let swipe = null;
-addEventListener('touchstart', (ev) => {
-  const t = ev.touches[0];
-  swipe = tabOf(screen) < 0 || ev.touches.length > 1 || ev.target.closest?.('.rail, input, textarea, .modal-bg, [data-noswipe]') ? null : { x: t.clientX, y: t.clientY, at: Date.now() };
-}, { passive: true });
-addEventListener('touchend', (ev) => {
-  if (!swipe) return;
-  const t = ev.changedTouches[0];
-  const dx = t.clientX - swipe.x;
-  const dy = t.clientY - swipe.y;
-  const quick = Date.now() - swipe.at < 500;
-  swipe = null;
-  if (!quick || Math.abs(dx) < 70 || Math.abs(dx) < 2 * Math.abs(dy)) return;
-  const next = TABS[tabOf(screen) + (dx < 0 ? 1 : -1)];
-  if (next) go(next[0]);
-});
+// Las pestañas solo cambian con sus botones: deslizar el dedo no hace nada (decisión 48).
 
 // El botón Atrás de Android cierra la ventana abierta o vuelve atrás; en el menú sale de la app.
 history.replaceState({ df: 'root' }, '');
