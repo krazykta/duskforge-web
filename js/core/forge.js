@@ -1,10 +1,9 @@
 // Desafío de la Forja (decisión 44): pagas la entrada y juegas hasta 7 victorias o 3 derrotas. Funciones puras.
 // profile.forge es { run, wins, losses } mientras hay un desafío, null si no; run lo distingue de los anteriores.
-import { AI_HP, FORGE, PACKS } from './config.js';
+import { FORGE, PACKS } from './config.js';
 import { giftPacks } from './collection.js';
 
 export const forgeOver = (f) => Boolean(f) && (f.wins >= FORGE.maxWins || f.losses >= FORGE.maxLosses);
-export const forgeLevel = (f) => AI_HP.fullAt + f.wins * FORGE.levelsPerWin;
 export const forgeTrophies = (f) => f.wins * FORGE.trophyStep;
 
 export function enterForge(p) {

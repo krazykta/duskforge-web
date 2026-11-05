@@ -36,7 +36,7 @@ export function showForge() {
       <div class="panel">
         <h3>Cómo funciona</h3>
         <ul class="arena-rules">
-          <li>Pagas la entrada y juegas contra <b>mazos de otros jugadores</b>, cada vez con más trofeos y más vida.</li>
+          <li>Pagas la entrada y juegas contra <b>mazos de otros jugadores</b>, cada vez con más trofeos.</li>
           <li>Termina al llegar a <b>${FORGE.maxWins} victorias</b> o a <b>${FORGE.maxLosses} derrotas</b>. Cada combate da además su recompensa normal.</li>
           <li>Salir a media partida cuenta como derrota.</li>
         </ul>

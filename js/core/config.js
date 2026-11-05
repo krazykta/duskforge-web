@@ -13,11 +13,11 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 7; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 8; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
-// Vida inicial del rival según el nivel del jugador (ver aiHp en core/replay.js): 20 hasta fullAt y después
-// +1 cada everyLevels niveles hasta max. Los primeros niveles se facilitan con AI_EASY, no con menos vida.
-export const AI_HP = { start: 20, fullAt: 10, everyLevels: 2, max: 30 };
+// El rival empieza siempre con RULES.startHp de vida (decisión 52). Desde este nivel la IA juega con todo (antes, AI_EASY);
+// es el que usan la arena, la forja, el reto diario y las partidas guardadas sin nivel.
+export const AI_FULL_LEVEL = 10;
 // Rival más fácil hasta el nivel 8 sin bajarle la vida: la IA deja energía sin gastar. Uno por nivel, desde el 1:
 // [energía que guarda al principio, hasta qué turno de la partida, energía que guarda después]. Medido en la decisión 51.
 export const AI_EASY = [[2, 8, 1], [2, 6, 1], [2, 4, 1], [1, 99, 0], [1, 14, 0], [1, 10, 0], [1, 8, 0], [1, 6, 0]];
@@ -29,7 +29,6 @@ export const ARENA = {
   win: 30,
   loss: 20,
   spread: 150, // trofeos de diferencia con el rival, como mucho
-  fallbackLevels: 6, // sin rivales cerca, la IA de siempre: +3 de vida por cada arena (ver aiHp)
   arenas: [
     { name: 'Forja de Novatos', from: 0, winBonus: 0 },
     { name: 'Cripta Olvidada', from: 300, winBonus: 10 },
@@ -42,10 +41,10 @@ export const ARENA = {
 export const DAILY = { coins: 100, top: 10, url: 'https://krazykta.github.io/duskforge-web/' };
 
 // Desafío de la Forja (decisión 44, core/forge.js): entrada, hasta maxWins victorias o maxLosses derrotas y premio por victorias.
-// Cada victoria busca rivales de la Arena con trophyStep trofeos más y les da levelsPerWin niveles de vida más.
+// Cada victoria busca rivales de la Arena con trophyStep trofeos más.
 // prizes[n] es el premio con n victorias; pack es un índice de PACKS.
 export const FORGE = {
-  price: 300, maxWins: 7, maxLosses: 3, trophyStep: 150, levelsPerWin: 2,
+  price: 300, maxWins: 7, maxLosses: 3, trophyStep: 150,
   prizes: [
     { coins: 0, pack: 0 }, { coins: 50, pack: 0 }, { coins: 0, pack: 1 }, { coins: 150, pack: 1 },
     { coins: 100, pack: 2 }, { coins: 150, pack: 3 }, { coins: 300, pack: 3 }, { coins: 300, pack: 4 },

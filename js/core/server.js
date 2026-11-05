@@ -1,9 +1,9 @@
 // Reglas del servidor (supabase/functions/game). El móvil solo pide acciones: el servidor pone la hora, el azar y las cuentas.
 // No hay ningún secreto aquí: las claves viven en la función de Supabase.
-import { AI_DECKS, AI_HP, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON, TOURNAMENT } from './config.js';
-import { arenaIndex, arenaLevel, claimArena, validFoeDeck } from './arena.js';
+import { AI_DECKS, AI_FULL_LEVEL, API_VERSION, ARENA, DAILY, ECONOMY, MAIL, SEASON, TOURNAMENT } from './config.js';
+import { arenaIndex, claimArena, validFoeDeck } from './arena.js';
 import { claimDaily, dailyChallenge, ownTurns } from './daily.js';
-import { claimForgeMatch, forgeLevel, forgeOver, forgeTrophies, markForgeStart } from './forge.js';
+import { claimForgeMatch, forgeOver, forgeTrophies, markForgeStart } from './forge.js';
 import { claimMatchRewards, levelOf, localDay, newProfile, PROFILE_VERSION, sanitizeProfile } from './progression.js';
 import { refreshMissions, weekKey } from './missions.js';
 import { claimMail } from './collection.js';
@@ -61,13 +61,13 @@ export function createGame({ db, clock = () => new Date(), rng = random, perMinu
     };
     if (daily) {
       const c = dailyChallenge(localDay(clock()));
-      Object.assign(match, { seed: c.seed, first: c.first, rival: c.rival, deck: c.deck, level: AI_HP.fullAt, arena: false, daily: c.day });
+      Object.assign(match, { seed: c.seed, first: c.first, rival: c.rival, deck: c.deck, level: AI_FULL_LEVEL, arena: false, daily: c.day });
     } else if (forge) {
       if (!profile.forge || forgeOver(profile.forge)) return { error: 'No tienes un desafío en marcha' };
-      Object.assign(match, { arena: false, foe: await foeNear(forgeTrophies(profile.forge)), level: forgeLevel(profile.forge), forge: profile.forge.run });
+      Object.assign(match, { arena: false, foe: await foeNear(forgeTrophies(profile.forge)), level: AI_FULL_LEVEL, forge: profile.forge.run });
     } else if (arena) {
       match.foe = await foeNear(profile.trophies);
-      match.level = arenaLevel(profile.trophies, match.foe);
+      match.level = AI_FULL_LEVEL;
       match.stake = Math.min(ARENA.loss, profile.trophies);
     }
     const id = await db.startMatch(uid, match, ECONOMY.dailyMatches);

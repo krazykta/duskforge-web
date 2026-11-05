@@ -1,6 +1,6 @@
 // Partidas contra la IA. El motor y la IA son deterministas: con la semilla, los mazos y las jugadas del jugador,
 // el servidor repite la partida entera y sabe quién ganó sin fiarse de lo que diga el móvil.
-import { AI_DECKS, AI_EASY, AI_HP, RULES } from './config.js';
+import { AI_DECKS, AI_EASY, AI_FULL_LEVEL } from './config.js';
 import { actionError, attack, concede, createMatch, endTurn, playCard, takeEvents } from './engine.js';
 import { nextAction } from './ai.js';
 import { matchStats } from './missions.js';
@@ -11,18 +11,10 @@ const MAX_AI_ACTIONS = 60; // red de seguridad: un fallo de la IA no puede dejar
 export const MIN_TURNS_TO_COUNT = 4; // rendirse antes no cuenta como partida
 export const MAX_MOVES = 1500;
 
-// Más fácil en los primeros niveles y cada vez más duro después.
-export function aiHp(level) {
-  const { start, fullAt, everyLevels, max } = AI_HP;
-  if (level < fullAt) return Math.round(start + ((level - 1) * (RULES.startHp - start)) / (fullAt - 1));
-  return Math.min(max, RULES.startHp + Math.floor((level - fullAt) / everyLevels));
-}
-
-// level es el nivel del jugador al empezar; las partidas de antes de guardarlo se juegan con la vida normal.
+// level es el nivel del jugador al empezar: hasta el 8 la IA juega peor (AI_EASY). La vida del rival es siempre la normal.
 // foe (Arena): { deck } de otro jugador en lugar del mazo de la IA.
-export function setupMatch({ deck, seed, first, rival, level = AI_HP.fullAt, foe = null }) {
+export function setupMatch({ deck, seed, first, rival, level = AI_FULL_LEVEL, foe = null }) {
   const state = createMatch({ decks: [deck, foe?.deck ?? AI_DECKS[rival]], seed, firstPlayer: first });
-  state.players[FOE].hp = aiHp(level);
   if (!foe && AI_EASY[level - 1]) state.players[FOE].easy = AI_EASY[level - 1];
   return state;
 }
