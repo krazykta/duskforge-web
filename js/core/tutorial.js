@@ -43,16 +43,16 @@ export const LESSONS = [
     ],
   },
   {
-    title: 'Combos',
-    intro: 'Algunas cartas hacen algo extra si antes jugaste otra en el mismo turno.',
+    title: 'Habilidades',
+    intro: 'Muchas criaturas hacen algo al jugarlas: dañar, congelar o mejorar a tus criaturas.',
     hand: ['dusk_recruit', 'ash_bat', 'spark', 'tower_archer'],
-    draws: ['deckhand', 'deckhand', 'night_leech', 'bog_lurker', 'arcane_librarian', 'dusk_recruit'],
+    draws: ['forge_apprentice', 'skald', 'night_leech', 'bog_lurker', 'arcane_librarian', 'dusk_recruit'],
     foe: { hp: 10, hand: ['dusk_recruit', 'mire_toad', 'cinder_imp'], draws: ['dusk_recruit', 'cinder_imp', 'mire_toad', 'dusk_recruit'] },
     steps: [
-      { text: 'Juega una carta y toca «Fin de turno».', glow: PLAYABLE, done: (s, log) => passed(log) },
-      { text: 'Has robado un Grumete Pirata. Su Combo hace 2 de daño al héroe rival si ya jugaste otra carta este turno: juega antes una carta de 1 y después el Grumete.',
-        glow: PLAYABLE, done: (s, log) => log.some((e) => e.type === 'combo' && e.player === ME) },
-      { text: '¡Combo! Ya sabes lo básico. «Cómo jugar», en el Perfil, explica el resto. Gana la partida.', glow: '.unit.ready', done: never },
+      { text: 'Juega una criatura y toca «Fin de turno».', glow: PLAYABLE, done: (s, log) => passed(log) },
+      { text: 'Has robado un Aprendiz de la Forja: al jugarlo da +1/+1 a una criatura aliada. Juégalo, toca «Elegir objetivo» y elige una de tus criaturas.',
+        glow: PLAYABLE, done: (s, log) => played(log, (c) => c.effect?.target === 'allyUnit') },
+      { text: '¡Más fuerte! Ya sabes lo básico. «Cómo jugar», en el Perfil, explica el resto. Gana la partida.', glow: '.unit.ready', done: never },
     ],
   },
 ];

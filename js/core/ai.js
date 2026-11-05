@@ -79,12 +79,9 @@ function choosePlay(state, p) {
   const me = state.players[p];
   // Rival flojo de los primeros niveles (AI_EASY): deja sin gastar parte de la energía.
   const reserve = me.easy ? (state.turnNumber <= me.easy[1] ? me.easy[0] : me.easy[2]) : 0;
-  // Una carta con Combo espera si otra carta útil cabe antes que ella este mismo turno.
-  const waits = (i) => CARD_BY_ID[hand[i]].combo && me.played === 0 && hand.some((id, j) => j !== i
-    && CARD_BY_ID[id].cost + CARD_BY_ID[hand[i]].cost <= me.energy && isUseful(state, p, CARD_BY_ID[id]) && !playError(state, p, j, cardTargets(state, p, j)[0] ?? null));
   for (const i of order) {
     const card = CARD_BY_ID[hand[i]];
-    if (!isUseful(state, p, card) || waits(i) || me.energy - card.cost < reserve) continue;
+    if (!isUseful(state, p, card) || me.energy - card.cost < reserve) continue;
     const targets = cardTargets(state, p, i);
     const target = targets.length ? chooseCardTarget(state, p, card, targets) : null;
     if (!playError(state, p, i, target)) return { type: 'play', handIndex: i, target };

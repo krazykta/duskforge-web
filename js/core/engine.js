@@ -37,7 +37,7 @@ export function createMatch({ decks, seed = Date.now(), firstPlayer = 0, rules =
     players: decks.map((deck) => {
       if (deck.length !== rules.deckSize) throw new Error(`El mazo debe tener ${rules.deckSize} cartas`);
       for (const id of deck) if (!CARD_BY_ID[id]) throw new Error(`Carta desconocida: ${id}`);
-      return { hp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [], played: 0 }; // played: cartas jugadas este turno (Combo)
+      return { hp: rules.startHp, energy: 0, maxEnergy: rules.startEnergy - 1, deck: [], hand: [], board: [] };
     }),
   };
   state.players.forEach((pl, i) => (pl.deck = shuffle(state, [...decks[i]])));
@@ -65,7 +65,6 @@ function startTurn(state, p, drawCard = true) {
   state.turnNumber++;
   pl.maxEnergy = Math.min(state.rules.maxEnergy, pl.maxEnergy + 1);
   pl.energy = pl.maxEnergy;
-  pl.played = 0;
   pl.board.forEach((u) => { u.ready = !u.frozen; u.frozen = false; u.furyUsed = false; });
   emit(state, { type: 'turn', player: p });
   if (drawCard) draw(state, p);
@@ -330,8 +329,6 @@ export function playCard(state, p, handIndex, target = null) {
   const card = CARD_BY_ID[id];
   pl.energy -= card.cost;
   emit(state, { type: 'play', player: p, card: id });
-  const combo = card.combo && pl.played > 0; // Combo: ya habías jugado otra carta este turno
-  pl.played++;
   let u = null;
 
   if (card.type === 'unit') {
@@ -344,10 +341,6 @@ export function playCard(state, p, handIndex, target = null) {
       const e = unitEffect(u);
       if (e && e.trigger === 'spell' && u.hp > 0) applyEffect(state, p, e, null, u);
     }
-  }
-  if (combo) {
-    emit(state, { type: 'combo', player: p, card: id });
-    applyEffect(state, p, card.combo, null, u);
   }
   resolveDeaths(state);
   return { ok: true };

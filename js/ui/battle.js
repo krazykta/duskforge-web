@@ -268,7 +268,6 @@ function showLog() {
       case 'damage': return `${icon('spark')} ${who(e)} −${e.amount}`;
       case 'heal': return `${icon('heart')} ${who(e)} +${e.amount}`;
       case 'death': return `${icon('skull')} ${who(e)}`;
-      case 'combo': return `${icon('bolt')} ¡Combo! ${CARD_BY_ID[e.card].name}`;
       case 'turn': return `<b>Turno de ${e.player === ME ? 'ti' : battle.rivalName}</b>`;
       default: return null;
     }
@@ -440,7 +439,6 @@ async function afterAction({ fly, back, hit } = {}) {
   for (const e of events) {
     if (e.type === 'burn') battle.message = 'Mano llena: carta quemada';
     if (e.type === 'fatigue') battle.message = '¡Mazo vacío! Recibes daño de fatiga';
-    if (e.type === 'combo') battle.message = `¡Combo! ${CARD_BY_ID[e.card].name}`;
   }
   const rects = snapshot();
   const skip = new Set(hit ? [hit] : []);
