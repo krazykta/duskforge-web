@@ -67,6 +67,7 @@ export function setupLesson(n, seed = 1) {
   deal(ME, lesson.hand, lesson.draws);
   deal(FOE, lesson.foe.hand, lesson.foe.draws);
   state.players[FOE].hp = lesson.foe.hp;
+  state.players[FOE].think = 0; // el instructor juega con las reglas sencillas, sin pensar jugadas
   takeEvents(state);
   return state;
 }

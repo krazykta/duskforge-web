@@ -21,6 +21,8 @@ export const AI_FULL_LEVEL = 10;
 // Rival más fácil hasta el nivel 8 sin bajarle la vida: la IA deja energía sin gastar. Uno por nivel, desde el 1:
 // [energía que guarda al principio, hasta qué turno de la partida, energía que guarda después]. Medido en la decisión 51.
 export const AI_EASY = [[2, 8, 1], [2, 6, 1], [2, 4, 1], [1, 99, 0], [1, 14, 0], [1, 10, 0], [1, 8, 0], [1, 6, 0]];
+// Desde el nivel from la IA piensa sus jugadas en una parte de los turnos que sube hasta todos en el nivel full (decisión 54).
+export const AI_THINK = { from: 9, full: 19 };
 export const TUTORIAL_LESSONS = 3; // partidas guiadas antes de las normales (core/tutorial.js)
 
 // Arena (decisión 42, core/arena.js): el mazo de otro jugador con trofeos parecidos, llevado por la IA.

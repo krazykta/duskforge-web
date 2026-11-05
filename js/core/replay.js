@@ -1,6 +1,6 @@
 // Partidas contra la IA. El motor y la IA son deterministas: con la semilla, los mazos y las jugadas del jugador,
 // el servidor repite la partida entera y sabe quién ganó sin fiarse de lo que diga el móvil.
-import { AI_DECKS, AI_EASY, AI_FULL_LEVEL } from './config.js';
+import { AI_DECKS, AI_EASY, AI_FULL_LEVEL, AI_THINK } from './config.js';
 import { actionError, attack, concede, createMatch, endTurn, playCard, takeEvents } from './engine.js';
 import { nextAction } from './ai.js';
 import { matchStats } from './missions.js';
@@ -16,6 +16,7 @@ export const MAX_MOVES = 1500;
 export function setupMatch({ deck, seed, first, rival, level = AI_FULL_LEVEL, foe = null }) {
   const state = createMatch({ decks: [deck, foe?.deck ?? AI_DECKS[rival]], seed, firstPlayer: first });
   if (!foe && AI_EASY[level - 1]) state.players[FOE].easy = AI_EASY[level - 1];
+  state.players[FOE].think = Math.min(1, Math.max(0, (level - AI_THINK.from) / (AI_THINK.full - AI_THINK.from)));
   return state;
 }
 export const aiAction = (state, count) => (count > MAX_AI_ACTIONS ? { type: 'end' } : nextAction(state, FOE));

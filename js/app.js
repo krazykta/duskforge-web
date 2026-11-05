@@ -128,7 +128,7 @@ function showRules() {
     <div class="modal" role="dialog" aria-label="Cómo jugar">
       <h2>Cómo jugar</h2>
       <ul>
-        <li>Deja la vida del rival en <b>0</b> para ganar. Empiezas con 20, y curarte puede llevarte por encima: la vida no tiene tope. El rival también empieza con 20; hasta el nivel 8 juega peor para que aprendas.</li>
+        <li>Deja la vida del rival en <b>0</b> para ganar. Empiezas con 20, y curarte puede llevarte por encima: la vida no tiene tope. El rival también empieza con 20; hasta el nivel 8 juega peor para que aprendas y desde el 9 piensa cada vez más sus jugadas.</li>
         <li>Los mazos tienen <b>24 cartas</b> y cada jugador puede tener hasta <b>10 criaturas</b> en la mesa.</li>
         <li>Cada turno ganas <b>energía</b> ${icon('gem')} (hasta 5). Las cartas cuestan energía. Los dos empezáis con 4 cartas.</li>
         <li>Toca una carta para verla en grande y <b>toca otra vez</b> para jugarla. Si necesita objetivo, toca el objetivo marcado en rojo. Las criaturas del rival también se pueden ampliar.</li>

@@ -4,7 +4,7 @@
 //   2. Atacar: guardianes obligatorios > golpe letal > intercambios favorables > héroe.
 //   3. Terminar el turno.
 import { CARD_BY_ID } from './cards.js';
-import { HERO, other, findUnit, playError, cardTargets, attackTargets } from './engine.js';
+import { HERO, other, findUnit, playError, cardTargets, attackTargets, playCard, attack } from './engine.js';
 
 const unitOf = (state, t) => (t.uid === HERO ? null : findUnit(state, t.player, t.uid));
 const byAtkDesc = (state) => (a, b) => (unitOf(state, b)?.atk ?? 0) - (unitOf(state, a)?.atk ?? 0);
@@ -118,7 +118,58 @@ function chooseAttack(state, p) {
   return null;
 }
 
+// La IA de reglas: la que usan los niveles fáciles y la que imagina el resto del turno al pensar.
+const greedy = (state, p) => choosePlay(state, p) || chooseAttack(state, p) || { type: 'end' };
+
+function apply(state, p, a) {
+  if (a.type === 'play') playCard(state, p, a.handIndex, a.target);
+  else if (a.type === 'attack') attack(state, p, a.uid, a.target);
+}
+
+// Cuánto vale la mesa para p al acabar su turno. Pesos medidos en la decisión 54.
+const unitValue = (u) => (u.hp <= 0 ? 0 : 1 + u.atk * 1.2 + u.hp + (u.guard ? 1 : 0) + (u.shield ? 1 + u.atk * 0.5 : 0) + (u.poison ? 2 : 0)
+  + (u.drain ? u.atk * 0.5 : 0) + (u.stealth ? 1 : 0) + (u.fury ? u.atk * 0.7 : 0));
+function evaluate(state, p) {
+  if (state.winner !== null) return state.winner === p ? 1e6 : -1e6;
+  const me = state.players[p], foe = state.players[other(p)];
+  const sum = (board) => board.reduce((s, u) => s + unitValue(u), 0);
+  const threat = foe.board.reduce((s, u) => s + (u.frozen ? 0 : u.atk), 0);
+  return sum(me.board) - sum(foe.board) + me.hp - foe.hp + me.hand.length - (threat >= me.hp ? 50 : 0);
+}
+
+function candidates(state, p) {
+  const me = state.players[p];
+  const list = [{ type: 'end' }];
+  me.hand.forEach((id, i) => {
+    if (me.hand.indexOf(id) !== i || CARD_BY_ID[id].cost > me.energy) return; // dos copias juegan igual
+    const targets = cardTargets(state, p, i);
+    for (const target of targets.length ? targets : [null]) if (!playError(state, p, i, target)) list.push({ type: 'play', handIndex: i, target });
+  });
+  for (const u of me.board) for (const target of attackTargets(state, p, u.uid)) list.push({ type: 'attack', uid: u.uid, target });
+  return list;
+}
+
+// Prueba cada jugada posible, imagina el resto del turno con la IA de reglas y se queda con la que deja mejor la mesa.
+// shortcut: lo imaginado usa el mismo azar que la partida, así que ve qué carta robaría; si molesta, barajar la copia.
+function think(state, p) {
+  const score = (first) => {
+    const sim = structuredClone(state);
+    sim.events = [];
+    for (let a = first, n = 0; a.type !== 'end' && sim.turn === p && sim.winner === null && n < 30; a = greedy(sim, p), n++) apply(sim, p, a);
+    return evaluate(sim, p);
+  };
+  const plain = greedy(state, p);
+  let best = plain, bestScore = score(plain);
+  for (const a of candidates(state, p)) {
+    const s = score(a);
+    if (s > bestScore + 0.01) { best = a; bestScore = s; }
+  }
+  return best;
+}
+
 export function nextAction(state, p) {
   if (state.winner !== null || state.turn !== p) return { type: 'none' };
-  return choosePlay(state, p) || chooseAttack(state, p) || { type: 'end' };
+  // think: parte de los turnos en que piensa (sin él, todos). El turno decide cuáles, sin gastar azar de la partida.
+  const { easy, think: share = 1 } = state.players[p];
+  return easy || (state.turnNumber * 37) % 100 >= share * 100 ? greedy(state, p) : think(state, p);
 }
