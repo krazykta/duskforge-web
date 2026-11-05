@@ -361,7 +361,7 @@ export const AI_DECKS = [
     'beaked_healer', 'wild_gallop', 'mana_surge', 'centaur_warrior', 'steppe_wind', 'living_tome',
   ],
   [ // Laberinto: minotauros, sueños y callejones sin salida
-    'maze_rat', 'dream_moth', 'young_minotaur', 'labyrinth_guide', 'nightmare_hound', 'sandman',
+    'prism_mage', 'dream_moth', 'crystal_shard', 'labyrinth_guide', 'nightmare_hound', 'sandman',
     'maze_warden', 'night_mare', 'horn_charge', 'dead_end', 'gem_light', 'bad_dream',
   ],
   [ // Micelio: esporas, setas venenosas y canciones
@@ -369,8 +369,8 @@ export const AI_DECKS = [
     'toadstool_sentry', 'falling_star', 'spore_cloud', 'dissonance', 'mycelium_net', 'heroic_ballad',
   ],
   [ // Cosecha: calabazas, segadores y almas del río
-    'pumpkin_head', 'farmhand', 'harvest_crow', 'pumpkin_farmer', 'straw_golem', 'scythe_peasant',
-    'mourner', 'soul_oarsman', 'river_wraith', 'pumpkin_patch', 'rose_oath', 'reaping',
+    'pumpkin_head', 'farmhand', 'harvest_crow', 'pumpkin_farmer', 'black_thorns', 'scythe_peasant',
+    'mourner', 'rose_squire', 'river_wraith', 'pumpkin_patch', 'rose_oath', 'reaping',
   ],
   [ // Mascarada: enmascarados, venenos y trucos de salón
     'masked_servant', 'bronze_sentinel', 'night_owl', 'masked_guest', 'illusionist', 'ball_butler',
@@ -386,7 +386,7 @@ export const AI_DECKS = [
   ],
   [ // Arena: gladiadores, tritones y bandidos
     'young_gladiator', 'road_bandit', 'net_fighter', 'highwayman', 'sunken_priest', 'pearl_diver',
-    'highway_toll', 'triton_guard', 'bandit_archer', 'sand_in_eyes', 'stolen_purse', 'crowd_cheer',
+    'lion_tamer', 'triton_guard', 'bandit_archer', 'sand_in_eyes', 'stolen_purse', 'crowd_cheer',
   ],
   [ // Tumbas: momias, trampas y gatos del templo
     'tomb_scarab', 'temple_cat', 'dusk_recruit', 'embalmer', 'tomb_robber', 'trapmaker',
