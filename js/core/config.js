@@ -15,9 +15,12 @@ export const RULES = {
 
 export const API_VERSION = 7; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
-// Vida inicial del rival según el nivel del jugador (ver aiHp en core/replay.js). Del nivel 1 al fullAt sube de start
-// a RULES.startHp: el mazo inicial gana el 74 % con 8 y el 46 % con 20. Después, +1 cada everyLevels niveles hasta max.
-export const AI_HP = { start: 8, fullAt: 10, everyLevels: 2, max: 30 };
+// Vida inicial del rival según el nivel del jugador (ver aiHp en core/replay.js): 20 hasta fullAt y después
+// +1 cada everyLevels niveles hasta max. Los primeros niveles se facilitan con AI_EASY, no con menos vida.
+export const AI_HP = { start: 20, fullAt: 10, everyLevels: 2, max: 30 };
+// Rival más fácil hasta el nivel 8 sin bajarle la vida: la IA deja energía sin gastar. Uno por nivel, desde el 1:
+// [energía que guarda al principio, hasta qué turno de la partida, energía que guarda después]. Medido en la decisión 51.
+export const AI_EASY = [[2, 8, 1], [2, 6, 1], [2, 4, 1], [1, 99, 0], [1, 14, 0], [1, 10, 0], [1, 8, 0], [1, 6, 0]];
 export const TUTORIAL_LESSONS = 3; // partidas guiadas antes de las normales (core/tutorial.js)
 
 // Arena (decisión 42, core/arena.js): el mazo de otro jugador con trofeos parecidos, llevado por la IA.
