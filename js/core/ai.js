@@ -24,8 +24,11 @@ function chooseCardTarget(state, p, card, targets) {
     return unshielded.sort(byAtkDesc(state))[0] || null;
   }
   if (e.kind === 'freeze') {
+    // La que más pega de las que no podré matar este turno: congelar lo que voy a matar no sirve.
+    const strongest = Math.max(0, ...state.players[p].board.filter((u) => u.ready).map((u) => u.atk));
     const ready = targets.filter((t) => !unitOf(state, t).frozen);
-    return (ready.length ? ready : targets).sort(byAtkDesc(state))[0];
+    const safe = ready.filter((t) => unitOf(state, t).shield || unitOf(state, t).hp > strongest);
+    return (safe.length ? safe : ready.length ? ready : targets).sort(byAtkDesc(state))[0];
   }
   if (e.kind === 'grant') {
     const without = targets.filter((t) => !unitOf(state, t)[e.keyword]);
@@ -60,6 +63,7 @@ function isUseful(state, p, card) {
   if (e.kind === 'freezeAll') return foeBoard.filter((u) => !u.frozen && u.atk > 0).length >= 2;
   if (e.kind === 'shieldAll') return me.board.filter((u) => !u.shield && (!e.only || u[e.only])).length >= (e.only ? 1 : 2);
   if (e.kind === 'weaken') return foeBoard.some((u) => u.atk >= 2);
+  if (e.kind === 'freeze') return foeBoard.some((u) => !u.stealth && !u.frozen && u.atk >= 2); // congelar algo que no pega es tirarla
   if (e.kind === 'summon') return me.board.length < state.rules.boardSize;
   if (e.kind === 'energy') {
     // Solo si la energía extra permite jugar algo que ahora no cabe.
@@ -92,7 +96,7 @@ function chooseAttack(state, p) {
   const foe = state.players[other(p)];
   const ready = state.players[p].board.filter((u) => attackTargets(state, p, u.uid).length > 0);
   if (!ready.length) return null;
-  const hasGuard = foe.board.some((u) => u.guard);
+  const hasGuard = foe.board.some((u) => u.guard && !u.stealth); // un Guardián con Sigilo no obliga (attackTargets)
   const totalAtk = ready.reduce((s, u) => s + u.atk, 0);
 
   for (const u of ready.sort((a, b) => b.atk - a.atk)) {

@@ -13,7 +13,7 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 8; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 9; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
 // El rival empieza siempre con RULES.startHp de vida (decisión 52). Desde este nivel la IA juega con todo (antes, AI_EASY);
 // es el que usan la arena, la forja, el reto diario y las partidas guardadas sin nivel.
