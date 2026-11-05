@@ -349,6 +349,10 @@ body.waiting::before { content: ''; position: fixed; inset: 0 0 auto; height: 3p
 
 .btn.nudge { animation: nudge 1.2s infinite; }
 @keyframes nudge { 50% { box-shadow: 0 0 14px 3px var(--gold); } }
+/* Tutorial: el consejo del paso actual y un brillo en lo que hay que tocar */
+.tut-tip { width: 100%; padding: 6px 10px; border: 1px solid var(--gold); border-radius: 10px; background: rgba(20, 14, 40, 0.92); font: 500 13px/1.25 var(--read); color: var(--text); text-align: center; }
+.tut-tip b { color: var(--gold); }
+.screen.battle .tut-glow { outline: 2px solid var(--gold); outline-offset: 2px; animation: nudge 1.2s infinite; }
 
 /* Zoom de carta: abajo deja a la vista la mesa rival; la de la mano sale justo encima de ella */
 .zoom { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 30; display: flex; gap: 8px; align-items: center; pointer-events: none; animation: zoom-in 0.14s ease-out; }

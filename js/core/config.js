@@ -13,11 +13,12 @@ export const RULES = {
   fatigueDamage: 2, // daño al robar con el mazo vacío
 };
 
-export const API_VERSION = 6; // súbelo si cambia lo que el juego y la función de Supabase se envían
+export const API_VERSION = 7; // súbelo si cambia lo que el juego y la función de Supabase se envían
 
 // Vida inicial del rival según el nivel del jugador (ver aiHp en core/replay.js). Del nivel 1 al fullAt sube de start
 // a RULES.startHp: el mazo inicial gana el 74 % con 8 y el 46 % con 20. Después, +1 cada everyLevels niveles hasta max.
 export const AI_HP = { start: 8, fullAt: 10, everyLevels: 2, max: 30 };
+export const TUTORIAL_LESSONS = 3; // partidas guiadas antes de las normales (core/tutorial.js)
 
 // Arena (decisión 42, core/arena.js): el mazo de otro jugador con trofeos parecidos, llevado por la IA.
 // La derrota se descuenta al empezar: cerrar la app a media partida no la evita.

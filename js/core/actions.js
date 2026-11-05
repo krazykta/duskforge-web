@@ -14,9 +14,11 @@ const refuse = (profile, error) => ({ profile, error });
 const onCard = (fn) => (p, { id }) => (CARD_BY_ID[id] ? fn(p, id) : refuse(p, 'Carta no válida'));
 
 // Ajustes, mazos y avatar no dan ventaja por sí solos: sanitizeProfile descarta los mazos y avatares con cartas que no se tengan.
-function savePrefs(p, { settings = p.settings, decks = p.decks, activeDeck = p.activeDeck, tutorialSeen = false, avatar = p.avatar }) {
+// El tutorial no da recompensa: avanzarlo o saltarlo solo cambia qué partida se juega.
+function savePrefs(p, { settings = p.settings, decks = p.decks, activeDeck = p.activeDeck, tutorialSeen = false, tutorial = 0, avatar = p.avatar }) {
   const list = Array.isArray(decks) ? decks : p.decks;
-  return { profile: sanitizeProfile({ ...p, settings, decks: list, activeDeck, deck: list[activeDeck], tutorialSeen: p.tutorialSeen || tutorialSeen, avatar }) };
+  return { profile: sanitizeProfile({ ...p, settings, decks: list, activeDeck, deck: list[activeDeck], tutorialSeen: p.tutorialSeen || tutorialSeen,
+    tutorial: Math.max(p.tutorial, Number.isInteger(tutorial) ? tutorial : 0), avatar }) };
 }
 
 const ACTIONS = {

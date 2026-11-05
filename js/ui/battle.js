@@ -1,12 +1,13 @@
 // Pantalla de combate: dibuja el estado del motor y traduce toques en acciones.
-import { AI_DECKS, AI_NAMES } from '../core/config.js';
+import { AI_DECKS, AI_NAMES, TUTORIAL_LESSONS } from '../core/config.js';
+import { LESSONS, lessonStep, setupLesson } from '../core/tutorial.js';
 import { CARD_BY_ID } from '../core/cards.js';
 import { attackStyle, fxElement, RANGED } from '../core/cardfx.js';
 import { createMatch, playCard, playError, cardTargets, attack, attackTargets, endTurn, concede, takeEvents, findUnit, actionError, stateSignature, HERO } from '../core/engine.js';
 import { aiAction, MIN_TURNS_TO_COUNT, setupMatch } from '../core/replay.js';
 import { claimMatchRewards, levelOf } from '../core/progression.js';
 import { matchStats } from '../core/missions.js';
-import { app, beginMatch, endMatch, getCloudUser, getProfile, setProfile, go, onTap, wait, ask, artHtml, cardFace, toast } from './store.js';
+import { app, beginMatch, endMatch, getCloudUser, getProfile, setProfile, savePrefs, go, onTap, wait, ask, artHtml, cardFace, toast } from './store.js';
 import { icon } from './icons.js';
 import { avatarHtml } from './avatar.js';
 import { sfx, eventSound } from './sound.js';
@@ -23,6 +24,7 @@ let battle = null;
 // mode (solo con cuenta): { arena: true }, el rival es el mazo de otro jugador y hay trofeos en juego (core/arena.js);
 // { daily: true }, el reto del día (core/daily.js); { forge: true }, un combate del Desafío de la Forja (core/forge.js).
 export async function startBattle(net = null, mode = undefined) {
+  if (!net && !mode && getProfile().tutorial < TUTORIAL_LESSONS && await wantsLesson()) return setupBattle(null, null, getProfile().tutorial);
   if (net || !getCloudUser()) return setupBattle(net, null);
   app.innerHTML = `<section class="screen"><p class="sub preparing">${mode?.arena ? 'Buscando rival…' : 'Preparando la partida…'}</p></section>`;
   onTap(() => {});
@@ -36,18 +38,31 @@ export async function startBattle(net = null, mode = undefined) {
   setupBattle(null, ticket);
 }
 
-function setupBattle(net, ticket) {
+// Las primeras partidas son lecciones (core/tutorial.js). Saltarlas pide confirmación, porque un toque fuera del aviso también dice que no.
+async function wantsLesson() {
+  const n = getProfile().tutorial;
+  app.innerHTML = '<section class="screen battle"></section>';
+  onTap(() => {});
+  if (await ask(`Tutorial ${n + 1} de ${TUTORIAL_LESSONS}: ${LESSONS[n].title}. ${LESSONS[n].intro}`, { yes: 'Empezar', no: 'Saltar tutorial' })) return true;
+  if (!(await ask('¿Saltar el tutorial? Las normas siguen en Perfil → Cómo jugar.', { yes: 'Saltar', no: 'Hacer el tutorial' }))) return true;
+  savePrefs({ tutorial: TUTORIAL_LESSONS });
+  return false;
+}
+
+// lesson: número de lección del tutorial; sin rival real, sin servidor y sin recompensa.
+function setupBattle(net, ticket, lesson = null) {
   ME = net ? net.seat : 0;
   FOE = 1 - ME;
   const rival = ticket?.rival ?? Math.floor(Math.random() * AI_DECKS.length);
-  const state = net
-    ? createMatch({ decks: net.decks, seed: net.seed, firstPlayer: net.first })
+  const state = lesson !== null ? setupLesson(lesson, Date.now())
+    : net ? createMatch({ decks: net.decks, seed: net.seed, firstPlayer: net.first })
     : setupMatch({ deck: ticket?.deck ?? getProfile().deck, seed: ticket?.seed ?? Date.now(), first: ticket?.first ?? (Math.random() < 0.5 ? ME : FOE), rival, level: ticket?.level ?? levelOf(getProfile().xp), foe: ticket?.foe });
   takeEvents(state);
   battle = {
     state,
     net,
-    rivalName: net ? net.name ?? 'Tu amigo' : ticket?.foe ? ticket.foe.name ?? 'Rival de la Arena' : AI_NAMES[rival],
+    rivalName: lesson !== null ? 'Instructor' : net ? net.name ?? 'Tu amigo' : ticket?.foe ? ticket.foe.name ?? 'Rival de la Arena' : AI_NAMES[rival],
+    lesson,
     matchId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
     ticket, // con cuenta: la partida que abrió el servidor ({} si no se pudo)
     moves: [], // las jugadas propias, para que el servidor las repita
@@ -217,6 +232,8 @@ function renderBattle() {
   const targets = new Map(currentTargets().map((t) => [tKey(t), previewOf(t)]));
   const mine = state.turn === ME;
   const live = mine && !battle.busy && state.winner === null;
+  // En el turno rival el consejo se oculta sin dejar de ocupar su sitio, para que la mesa no salte.
+  const tip = battle.lesson !== null && state.winner === null ? LESSONS[battle.lesson].steps[lessonStep(battle.lesson, state, battle.log)] : null;
   app.innerHTML = `
     <section class="screen battle">
       ${heroHtml(FOE, targets)}
@@ -229,11 +246,13 @@ function renderBattle() {
         <span class="message">${battle.message}</span>
         <button class="btn small ${live && nothingLeft() ? 'nudge' : ''}" data-act="end" ${live ? '' : 'disabled'}>Fin de turno</button>
       </div>
+      ${tip ? `<div class="tut-tip" role="status" ${mine ? '' : 'style="visibility: hidden"'}><b>Tutorial ${battle.lesson + 1}/${TUTORIAL_LESSONS}</b> · ${tip.text}</div>` : ''}
       ${boardHtml(ME, targets)}
       ${heroHtml(ME, targets)}
       <div class="hand">${state.players[ME].hand.map(cardHtml).join('')}</div>
       ${zoomHtml()}
     </section>`;
+  if (live && tip?.glow && !battle.sel) app.querySelectorAll(tip.glow).forEach((el) => el.classList.add('tut-glow'));
   battle.prevHandLen = state.players[ME].hand.length;
   battle.prevFoeHand = state.players[FOE].hand.length;
 }
@@ -563,7 +582,7 @@ async function runAiTurn() {
 
 async function askConcede(state) {
   if (state.winner !== null) return;
-  const question = battle.net ? '¿Abandonar la partida con tu amigo?'
+  const question = battle.net ? '¿Abandonar la partida con tu amigo?' : battle.lesson !== null ? '¿Dejar el tutorial? Podrás repetirlo en tu próxima partida.'
     : state.turnNumber < MIN_TURNS_TO_COUNT ? '¿Rendirte? Tan pronto no cuenta como partida ni da recompensa.' : '¿Rendirte? La partida contará como derrota.';
   const sure = await ask(question, { yes: 'Rendirse', no: 'Seguir jugando', danger: true });
   if (!sure || battle?.state !== state || state.winner !== null) return; // el rival sigue jugando mientras se decide
@@ -653,7 +672,12 @@ async function finishMatch() {
     if (!rewards && !r.pending && ticket.stake) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} Pierdes ${ticket.stake} trofeos.`;
     if (!rewards && !r.pending && ticket.forge) note = `${note || 'Terminó demasiado pronto: no cuenta como partida.'} En el desafío cuenta como derrota.`;
   } else if (ticket) note = 'Esta partida no da recompensa.';
-  else if (!abandoned && !net) { // sin cuenta. Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
+  else if (battle.lesson !== null) {
+    if (won) savePrefs({ tutorial: battle.lesson + 1 });
+    note = !won ? 'Repite la lección: el tutorial no da recompensa.'
+      : battle.lesson + 1 < TUTORIAL_LESSONS ? `Tutorial ${battle.lesson + 1} de ${TUTORIAL_LESSONS} superado. Sigue con el siguiente.`
+      : '¡Tutorial completado! Desde ahora las partidas dan monedas y experiencia.';
+  } else if (!abandoned && !net) { // sin cuenta. Las amistosas no pagan: dos amigos podrían dejarse ganar por turnos para sacar monedas.
     const claim = claimMatchRewards(getProfile(), matchId, won, new Date(), matchStats(log, won, ME));
     setProfile(claim.profile);
     rewards = claim.rewards;

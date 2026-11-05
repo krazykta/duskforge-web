@@ -1,6 +1,6 @@
 // Perfil del jugador, progresión y recompensas de partida. Funciones puras.
 // Con cuenta las ejecuta el servidor (core/server.js); sin cuenta, el móvil, y ese progreso no sale de él.
-import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, COSMETIC_KINDS, FORGE, MAIL, SEASON, UPGRADES } from './config.js';
+import { ECONOMY, COLLECTION, STARTER_DECK, ACHIEVEMENTS, COSMETICS, COSMETIC_KINDS, FORGE, MAIL, SEASON, TUTORIAL_LESSONS, UPGRADES } from './config.js';
 import { CARD_BY_ID } from './cards.js';
 import { countCards, deckErrors, fillDeck, maxCopies } from './collection.js';
 import { addProgress, localDay, missionDef } from './missions.js';
@@ -21,6 +21,7 @@ export function newProfile() {
     dailyDone: null, // último día con el reto diario cobrado (core/daily.js)
     forge: null, forgeRuns: 0, // Desafío de la Forja en marcha y cuántos se han empezado (core/forge.js)
     lastFirstWinDay: null, tutorialSeen: false, welcomeClaimed: false, claimedMatches: [], mailClaimed: [],
+    tutorial: 0, // lecciones del tutorial hechas o saltadas (core/tutorial.js)
     collection: countCards(STARTER_DECK),
     deck: [...STARTER_DECK], // mazo activo: siempre igual a decks[activeDeck]
     decks: [[...STARTER_DECK], [], []], // huecos de mazo guardados ([] = vacío)
@@ -93,6 +94,8 @@ export function sanitizeProfile(raw) {
     forgeRuns: int(raw.forgeRuns),
     lastFirstWinDay: typeof raw.lastFirstWinDay === 'string' ? raw.lastFirstWinDay : null,
     tutorialSeen: raw.tutorialSeen === true,
+    // Quien ya jugaba antes del tutorial no lo necesita.
+    tutorial: raw.tutorial === undefined && int(raw.wins) + int(raw.losses) > 0 ? TUTORIAL_LESSONS : int(raw.tutorial, TUTORIAL_LESSONS),
     welcomeClaimed: raw.welcomeClaimed === true,
     claimedMatches: strList(raw.claimedMatches).slice(-MAX_REMEMBERED_MATCHES),
     mailClaimed: strList(raw.mailClaimed).slice(-MAIL.remembered),
