@@ -342,7 +342,7 @@ export const AI_DECKS = [
   ],
   [ // Carnaval: bufones y marionetas que distraen
     'jester', 'jester', 'cog_mouse', 'fortune_teller', 'acrobat', 'puppeteer',
-    'juggling', 'oil_gears', 'healing_spring', 'cursed_clown', 'fire_breather', 'old_rum',
+    'ringmaster', 'oil_gears', 'healing_spring', 'cursed_clown', 'fire_breather', 'old_rum',
   ],
   [ // Trasgos: muchos y pequeños, con granadas
     'goblin_scrapper', 'goblin_scrapper', 'goblin_miner', 'goblin_sapper', 'goblin_thief', 'goblin_horde',
@@ -354,7 +354,7 @@ export const AI_DECKS = [
   ],
   [ // Jungla: serpientes venenosas y jaguares al acecho
     'hunter_apprentice', 'toucan', 'lockpick', 'jungle_shaman', 'jaguar', 'ruins_explorer',
-    'temple_guard', 'moon_potion', 'jade_offering', 'smoke_bomb', 'mire_toad', 'lockpick',
+    'temple_guard', 'moon_potion', 'jade_offering', 'jaguar_warrior', 'mire_toad', 'lockpick',
   ],
   [ // Estepa: centauros veloces y halcones
     'young_centaur', 'academy_student', 'steppe_rider', 'nomad_falconer', 'bola_thrower', 'archivist',
